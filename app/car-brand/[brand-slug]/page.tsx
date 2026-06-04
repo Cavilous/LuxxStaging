@@ -1143,35 +1143,71 @@ const getBrandCars = cache(async (brandName: string, brandSlug: string, inventor
     brandSlug,
     brandSlug.replace(/-/g, " "),
     ...inventoryMatch,
-  ].filter(Boolean)))
+  ].filter(Boolean))).map((term) => term.toLowerCase())
 
-  const cars = await db
-    .select({
-      id: inventory.id,
-      slug: inventory.slug,
-      title: inventory.title,
-      subtitle: inventory.subtitle,
-      pricePerDay: inventory.pricePerDay,
-      images: inventory.images,
-      specifications: inventory.specifications,
-      isFeatured: inventory.isFeatured,
-      focalPoint: inventory.focalPoint,
-      flipHorizontal: inventory.flipHorizontal,
-      flipVertical: inventory.flipVertical,
+  let cars
+  try {
+    cars = await db
+      .select({
+        id: inventory.id,
+        slug: inventory.slug,
+        title: inventory.title,
+        subtitle: inventory.subtitle,
+        pricePerDay: inventory.pricePerDay,
+        images: inventory.images,
+        specifications: inventory.specifications,
+        isFeatured: inventory.isFeatured,
+        focalPoint: inventory.focalPoint,
+        flipHorizontal: inventory.flipHorizontal,
+        flipVertical: inventory.flipVertical,
+        brand: inventory.brand,
+        brandSlug: inventory.brandSlug,
+      })
+      .from(inventory)
+      .where(and(
+        eq(inventory.category, "car"),
+        eq(inventory.isPublished, true),
+        or(
+          eq(inventory.brandSlug, brandSlug),
+          ...matchTerms.flatMap((term) => [
+            ilike(inventory.brand, `%${term}%`),
+            ilike(inventory.title, `%${term}%`),
+          ])
+        )
+      ))
+      .orderBy(desc(inventory.pricePerDay))
+  } catch (richQueryError) {
+    console.error(`[Car brand rich query failed for ${brandSlug}, using compatibility query]:`, richQueryError)
+    const result = await db.execute(sql`
+      SELECT to_jsonb(i) AS item
+      FROM inventory i
+      WHERE i.category = 'car'
+        AND i.is_published = true
+      ORDER BY i.id
+    `)
+    const rows = Array.isArray(result) ? result : Array.isArray((result as any)?.rows) ? (result as any).rows : []
+    cars = rows.map((row: any) => {
+      const item = row?.item || row || {}
+      return {
+        id: item.id,
+        slug: item.slug || null,
+        title: item.title || "Luxury Car",
+        subtitle: item.subtitle || "",
+        pricePerDay: item.pricePerDay ?? item.price_per_day ?? null,
+        images: item.images || [],
+        specifications: item.specifications || {},
+        isFeatured: item.isFeatured ?? item.is_featured ?? false,
+        focalPoint: item.focalPoint ?? item.focal_point ?? null,
+        flipHorizontal: item.flipHorizontal ?? item.flip_horizontal ?? false,
+        flipVertical: item.flipVertical ?? item.flip_vertical ?? false,
+        brand: item.brand || null,
+        brandSlug: item.brandSlug ?? item.brand_slug ?? null,
+      }
+    }).filter((car: any) => {
+      const haystack = `${car.brand || ""} ${car.brandSlug || ""} ${car.title || ""}`.toLowerCase()
+      return matchTerms.some((term) => haystack.includes(term))
     })
-    .from(inventory)
-    .where(and(
-      eq(inventory.category, "car"),
-      eq(inventory.isPublished, true),
-      or(
-        eq(inventory.brandSlug, brandSlug),
-        ...matchTerms.flatMap((term) => [
-          ilike(inventory.brand, `%${term}%`),
-          ilike(inventory.title, `%${term}%`),
-        ])
-      )
-    ))
-    .orderBy(desc(inventory.pricePerDay))
+  }
 
   return cars.filter((car) => {
     const images = Array.isArray(car.images) ? car.images : []
@@ -1190,11 +1226,17 @@ export default async function CarBrandPage({ params }: BrandPageProps) {
   }
 
   const seoSlug = `miami/${brandSlug}-rental`
-  const existingSeoPage = await db
-    .select({ id: seoPages.id, contentStatus: seoPages.contentStatus, isPublished: seoPages.isPublished })
-    .from(seoPages)
-    .where(eq(seoPages.slug, seoSlug))
-    .limit(1)
+  let existingSeoPage: { id: string, contentStatus: string | null, isPublished: boolean }[] = []
+
+  try {
+    existingSeoPage = await db
+      .select({ id: seoPages.id, contentStatus: seoPages.contentStatus, isPublished: seoPages.isPublished })
+      .from(seoPages)
+      .where(eq(seoPages.slug, seoSlug))
+      .limit(1)
+  } catch (error) {
+    console.error(`[Car brand SEO redirect lookup failed for ${brandSlug}]:`, error)
+  }
 
   if (existingSeoPage.length > 0 && existingSeoPage[0].contentStatus !== 'pending') {
     permanentRedirect(`/${seoSlug}`)
