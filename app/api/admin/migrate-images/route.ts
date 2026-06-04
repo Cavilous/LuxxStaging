@@ -8,20 +8,21 @@ import { processImageFromUrl } from "@/lib/image-pipeline"
 import type { ImageObject } from "@/lib/image-types"
 import { isImageObject } from "@/lib/image-types"
 
-const JWT_SECRET = process.env.JWT_SECRET
-if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET environment variable is required')
-}
-
 export const dynamic = "force-dynamic"
 export const maxDuration = 300
 
 async function verifyAdmin(request: NextRequest): Promise<boolean> {
+  const jwtSecret = process.env.JWT_SECRET
+  if (!jwtSecret) {
+    console.error("JWT_SECRET environment variable is not set")
+    return false
+  }
+
   const cookieStore = await cookies()
   const token = cookieStore.get('admin_session')?.value
   if (!token) return false
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as { role?: string }
+    const decoded = jwt.verify(token, jwtSecret) as { role?: string }
     return decoded.role === 'super_admin' || decoded.role === 'admin'
   } catch {
     return false
