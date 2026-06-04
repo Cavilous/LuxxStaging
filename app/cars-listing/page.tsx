@@ -2,7 +2,7 @@ import { Suspense, cache } from "react"
 import { CarsPageContent } from "@/components/cars-page-content"
 import { BreadcrumbSchema } from "@/components/breadcrumb-schema"
 import { db } from "@/lib/db"
-import { eq, and, desc } from "drizzle-orm"
+import { eq, and, desc, sql } from "drizzle-orm"
 import { inventory } from "@/lib/db/schema"
 import type { Metadata } from "next"
 import { getPrimaryImage } from "@/lib/media-utils"
@@ -37,6 +37,30 @@ function SkeletonCard() {
   )
 }
 
+function getExecuteRows(result: any): any[] {
+  if (Array.isArray(result)) return result
+  if (Array.isArray(result?.rows)) return result.rows
+  return []
+}
+
+function normalizeInventoryRow(row: any) {
+  const item = row?.item || row || {}
+
+  return {
+    id: item.id,
+    slug: item.slug || null,
+    title: item.title || "Luxury Car",
+    subtitle: item.subtitle || "",
+    images: item.images || [],
+    pricePerDay: item.pricePerDay ?? item.price_per_day ?? null,
+    isFeatured: item.isFeatured ?? item.is_featured ?? false,
+    specifications: item.specifications || {},
+    focalPoint: item.focalPoint ?? item.focal_point ?? null,
+    flipHorizontal: item.flipHorizontal ?? item.flip_horizontal ?? false,
+    flipVertical: item.flipVertical ?? item.flip_vertical ?? false,
+  }
+}
+
 const CarsData = cache(async () => {
   try {
     let cars
@@ -60,23 +84,17 @@ const CarsData = cache(async () => {
         .orderBy(desc(inventory.isFeatured), desc(inventory.createdAt))
     } catch (richQueryError) {
       console.error("[Cars listing rich query failed, using compatibility query]:", richQueryError)
-      cars = await db
-        .select({
-          id: inventory.id,
-          slug: inventory.slug,
-          title: inventory.title,
-          subtitle: inventory.subtitle,
-          images: inventory.images,
-          pricePerDay: inventory.pricePerDay,
-          isFeatured: inventory.isFeatured,
-          specifications: inventory.specifications,
-        })
-        .from(inventory)
-        .where(and(eq(inventory.category, "car"), eq(inventory.isPublished, true)))
-        .orderBy(desc(inventory.isFeatured), desc(inventory.pricePerDay))
+      const result = await db.execute(sql`
+        SELECT to_jsonb(i) AS item
+        FROM inventory i
+        WHERE i.category = 'car'
+          AND i.is_published = true
+        ORDER BY i.id
+      `)
+      cars = getExecuteRows(result)
     }
 
-    const transformedCars = cars.map((car) => {
+    const transformedCars = cars.map(normalizeInventoryRow).map((car) => {
       const specs = (car.specifications as any) || {}
 
       const normalizeBodyType = (type: string) => {
@@ -126,7 +144,7 @@ const CarsData = cache(async () => {
         price: `$${car.pricePerDay ? Number(car.pricePerDay).toLocaleString() : "0"}`,
         priceUnit: "day",
         image: primaryImage || fallbackImage,
-        focalPoint: "focalPoint" in car && car.focalPoint ? car.focalPoint : '50% 40%',
+        focalPoint: car.focalPoint || '50% 40%',
         specs: [
           specs.seats ? `${specs.seats} seats` : "2 seats",
           specs.horsepower ? `${specs.horsepower}hp` : "",
@@ -142,8 +160,8 @@ const CarsData = cache(async () => {
         seats: specs.seats?.toString() || "2",
         transmission: specs.transmission || "Auto",
         color: car.subtitle?.split(" / ")[0] || "Black",
-        flipHorizontal: "flipHorizontal" in car ? car.flipHorizontal || false : false,
-        flipVertical: "flipVertical" in car ? car.flipVertical || false : false,
+        flipHorizontal: car.flipHorizontal || false,
+        flipVertical: car.flipVertical || false,
       }
     })
 
