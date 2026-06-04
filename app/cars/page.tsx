@@ -8,6 +8,7 @@ import type { Metadata } from "next"
 import { getPrimaryImage, getPrimaryLqImage } from "@/lib/media-utils"
 import { getSortSetting } from "@/lib/sort-settings-actions"
 import { getInventoryOrderBy } from "@/lib/inventory-sort-utils"
+import { getFallbackCars } from "@/lib/fallback-cars"
 
 export const revalidate = 600
 
@@ -56,6 +57,7 @@ function normalizeInventoryRow(row: any) {
     title: item.title || "Luxury Car",
     subtitle: item.subtitle || "",
     brand: item.brand || null,
+    brandSlug: item.brandSlug ?? item.brand_slug ?? null,
     images: item.images || [],
     pricePerDay: item.pricePerDay ?? item.price_per_day ?? null,
     isFeatured: item.isFeatured ?? item.is_featured ?? false,
@@ -71,7 +73,7 @@ const CarsData = cache(async () => {
     const sortMode = await getSortSetting("car")
     const orderClauses = getInventoryOrderBy(sortMode)
 
-    let cars
+    let cars: any[] = []
     try {
       cars = await db
         .select({
@@ -93,14 +95,22 @@ const CarsData = cache(async () => {
         .orderBy(...orderClauses)
     } catch (richQueryError) {
       console.error("[Cars page rich query failed, using compatibility query]:", richQueryError)
-      const result = await db.execute(sql`
-        SELECT to_jsonb(i) AS item
-        FROM inventory i
-        WHERE i.category = 'car'
-          AND i.is_published = true
-        ORDER BY i.id
-      `)
-      cars = getExecuteRows(result)
+      try {
+        const result = await db.execute(sql`
+          SELECT to_jsonb(i) AS item
+          FROM inventory i
+          WHERE i.category = 'car'
+            AND i.is_published = true
+          ORDER BY i.id
+        `)
+        cars = getExecuteRows(result)
+      } catch (compatibilityQueryError) {
+        console.error("[Cars page compatibility query failed]:", compatibilityQueryError)
+      }
+    }
+
+    if (cars.length === 0) {
+      cars = getFallbackCars()
     }
 
     const transformedCars = cars.map(normalizeInventoryRow).map((car) => {

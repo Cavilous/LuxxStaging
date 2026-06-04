@@ -9,8 +9,39 @@ import { inventory, homePageSections } from "@/lib/db/schema"
 import { eq, asc, and, sql } from "drizzle-orm"
 import { cache } from "react"
 import { getPrimaryImage, getPrimaryLqImage } from "@/lib/media-utils"
+import { getFallbackFeaturedCars } from "@/lib/fallback-cars"
 
 export const revalidate = 300
+
+function getFallbackHomeCars() {
+  const fallbackImage = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400"%3E%3Cdefs%3E%3ClinearGradient id="g" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%23000;stop-opacity:1"/%3E%3Cstop offset="100%25" style="stop-color:%23333;stop-opacity:1"/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23g)" width="600" height="400"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" fill="%23ECAC36" font-size="24" font-family="Arial"%3ELuxx Miami%3C/text%3E%3C/svg%3E'
+
+  return getFallbackFeaturedCars(8).map((car) => {
+    const specs = car.specifications || {}
+    const specsList = [
+      specs.seats ? `${specs.seats} seats` : "2 seats",
+      specs.horsepower ? `${specs.horsepower}hp` : "",
+      specs.acceleration || "",
+      specs.transmission || "Auto",
+    ].filter(Boolean)
+
+    return {
+      id: car.slug || car.id,
+      type: "car" as const,
+      title: car.title,
+      subtitle: car.subtitle || "",
+      price: car.pricePerDay ? `$${Number(car.pricePerDay).toLocaleString()}` : "",
+      priceUnit: "day",
+      image: getPrimaryImage(car.images as unknown[]) || fallbackImage,
+      lqImage: getPrimaryLqImage(car.images as unknown[]),
+      focalPoint: car.focalPoint,
+      flipHorizontal: car.flipHorizontal,
+      flipVertical: car.flipVertical,
+      specs: specsList,
+      badges: car.isFeatured ? ["Featured"] : [],
+    }
+  })
+}
 
 const getHomePageSection = cache(async (section: string) => {
   try {
@@ -87,6 +118,10 @@ const getHomePageSection = cache(async (section: string) => {
       }
     }
 
+    if (items.length === 0 && section === "featured_exotics") {
+      return getFallbackHomeCars()
+    }
+
     return items.map((item) => {
       const specs = (item.specifications as any) || {}
       const specsList = []
@@ -153,6 +188,9 @@ const getHomePageSection = cache(async (section: string) => {
     })
   } catch (error) {
     console.error(`Error fetching home page section "${section}":`, error)
+    if (section === "featured_exotics") {
+      return getFallbackHomeCars()
+    }
     return []
   }
 })

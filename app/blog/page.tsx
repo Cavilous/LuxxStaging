@@ -7,6 +7,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { Calendar, Tag, ArrowRight } from "lucide-react"
 import { normalizeImageUrl } from "@/lib/image-url-utils"
+import { fallbackBlogPosts } from "@/lib/fallback-blog-posts"
 
 export const revalidate = 600
 
@@ -59,7 +60,8 @@ async function getBlogPosts() {
 }
 
 export default async function BlogPage() {
-  const posts = await getBlogPosts()
+  const dbPosts = await getBlogPosts()
+  const posts = dbPosts.length > 0 ? dbPosts : fallbackBlogPosts
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white">
@@ -91,7 +93,7 @@ export default async function BlogPage() {
             {posts.map((post) => (
               <Link
                 key={post.id}
-                href={`/blog/${post.slug}`}
+                href={"href" in post ? post.href : `/blog/${post.slug}`}
                 className="group bg-[#111] rounded-lg overflow-hidden border border-[#ECAC36]/20 hover:border-[#ECAC36]/50 transition-all duration-300 hover:shadow-[0_0_30px_rgba(212,175,55,0.15)]"
               >
                 {post.featuredImage && normalizeImageUrl(post.featuredImage) && !post.featuredImage.includes('luxx.miami') ? (

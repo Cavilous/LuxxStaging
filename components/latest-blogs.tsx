@@ -6,9 +6,11 @@ import { blogPosts } from "@/lib/db/schema"
 import { eq, desc } from "drizzle-orm"
 import { cache } from "react"
 import { normalizeImageUrl } from "@/lib/image-url-utils"
+import { fallbackBlogPosts } from "@/lib/fallback-blog-posts"
 
 interface BlogPost {
   slug: string
+  href?: string
   title: string
   excerpt: string | null
   content: string
@@ -85,10 +87,7 @@ const getLatestBlogs = cache(async (): Promise<BlogPost[]> => {
 
 export async function LatestBlogs() {
   const posts = await getLatestBlogs()
-
-  if (posts.length === 0) {
-    return null
-  }
+  const visiblePosts = posts.length > 0 ? posts : fallbackBlogPosts
 
   return (
     <section className="py-20 bg-gradient-to-b from-black to-[#0A0A0A]">
@@ -112,13 +111,13 @@ export async function LatestBlogs() {
         </div>
 
         <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
-          {posts.map((post) => {
+          {visiblePosts.map((post) => {
             const thumbnail = getBlogThumbnail(post)
 
             return (
             <Link
               key={post.slug}
-              href={`/blog/${post.slug}`}
+              href={post.href || `/blog/${post.slug}`}
               className="group block"
             >
               <article className="bg-[#111111] border border-[#222222] hover:border-[#ECAC36]/40 transition-all duration-300 overflow-hidden cut-corner">

@@ -6,6 +6,7 @@ import { eq, and, desc, sql } from "drizzle-orm"
 import { inventory } from "@/lib/db/schema"
 import type { Metadata } from "next"
 import { getPrimaryImage } from "@/lib/media-utils"
+import { getFallbackCars } from "@/lib/fallback-cars"
 
 export const metadata: Metadata = {
   title: "Luxury Exotic Car Rentals Miami | Lamborghini, Ferrari, Rolls Royce",
@@ -51,6 +52,8 @@ function normalizeInventoryRow(row: any) {
     slug: item.slug || null,
     title: item.title || "Luxury Car",
     subtitle: item.subtitle || "",
+    brand: item.brand || null,
+    brandSlug: item.brandSlug ?? item.brand_slug ?? null,
     images: item.images || [],
     pricePerDay: item.pricePerDay ?? item.price_per_day ?? null,
     isFeatured: item.isFeatured ?? item.is_featured ?? false,
@@ -63,7 +66,7 @@ function normalizeInventoryRow(row: any) {
 
 const CarsData = cache(async () => {
   try {
-    let cars
+    let cars: any[] = []
     try {
       cars = await db
         .select({
@@ -71,6 +74,8 @@ const CarsData = cache(async () => {
           slug: inventory.slug,
           title: inventory.title,
           subtitle: inventory.subtitle,
+          brand: inventory.brand,
+          brandSlug: inventory.brandSlug,
           images: inventory.images,
           focalPoint: inventory.focalPoint,
           flipHorizontal: inventory.flipHorizontal,
@@ -84,14 +89,22 @@ const CarsData = cache(async () => {
         .orderBy(desc(inventory.isFeatured), desc(inventory.createdAt))
     } catch (richQueryError) {
       console.error("[Cars listing rich query failed, using compatibility query]:", richQueryError)
-      const result = await db.execute(sql`
-        SELECT to_jsonb(i) AS item
-        FROM inventory i
-        WHERE i.category = 'car'
-          AND i.is_published = true
-        ORDER BY i.id
-      `)
-      cars = getExecuteRows(result)
+      try {
+        const result = await db.execute(sql`
+          SELECT to_jsonb(i) AS item
+          FROM inventory i
+          WHERE i.category = 'car'
+            AND i.is_published = true
+          ORDER BY i.id
+        `)
+        cars = getExecuteRows(result)
+      } catch (compatibilityQueryError) {
+        console.error("[Cars listing compatibility query failed]:", compatibilityQueryError)
+      }
+    }
+
+    if (cars.length === 0) {
+      cars = getFallbackCars()
     }
 
     const transformedCars = cars.map(normalizeInventoryRow).map((car) => {
@@ -109,9 +122,10 @@ const CarsData = cache(async () => {
         return typeMap[type.toLowerCase()] || "Coupe"
       }
 
-      const normalizeBrand = (title: string) => {
-        if (!title) return "Luxury"
-        const firstWord = title.split(" ")[0] || "Luxury"
+      const normalizeBrand = (title: string, fallbackBrand?: string | null) => {
+        const rawBrand = fallbackBrand || title
+        if (!rawBrand) return "Luxury"
+        const firstWord = rawBrand.split(" ")[0] || "Luxury"
         const brandMap: Record<string, string> = {
           "Ferrari": "Ferrari",
           "Lamborghini": "Lamborghini",
@@ -125,7 +139,12 @@ const CarsData = cache(async () => {
           "Audi": "Audi",
           "Bentley": "Bentley",
           "Land": "Land Rover",
+          "Range": "Land Rover",
           "Maserati": "Maserati",
+          "Cadillac": "Cadillac",
+          "Chevrolet": "Chevrolet",
+          "Ford": "Ford",
+          "Tesla": "Tesla",
         }
         return brandMap[firstWord] || firstWord
       }
@@ -155,7 +174,7 @@ const CarsData = cache(async () => {
           ...(car.isFeatured ? ["Featured"] : []),
           ...(specs.bodyType === "convertible" ? ["Convertible"] : []),
         ],
-        brand: normalizeBrand(car.title),
+        brand: car.brand || normalizeBrand(car.title, specs.make),
         bodyType: normalizeBodyType(specs.bodyType),
         seats: specs.seats?.toString() || "2",
         transmission: specs.transmission || "Auto",

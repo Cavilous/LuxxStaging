@@ -7,6 +7,7 @@ import Link from "next/link"
 import { Phone, MessageCircle } from "lucide-react"
 import { cache } from "react"
 import { InventoryCard } from "@/components/inventory-card"
+import { getFallbackCarsByTerms } from "@/lib/fallback-cars"
 
 export const dynamic = 'force-dynamic'
 
@@ -1145,7 +1146,7 @@ const getBrandCars = cache(async (brandName: string, brandSlug: string, inventor
     ...inventoryMatch,
   ].filter(Boolean))).map((term) => term.toLowerCase())
 
-  let cars
+  let cars: any[] = []
   try {
     cars = await db
       .select({
@@ -1212,6 +1213,11 @@ const getBrandCars = cache(async (brandName: string, brandSlug: string, inventor
       console.error(`[Car brand compatibility query failed for ${brandSlug}]:`, compatibilityQueryError)
       cars = []
     }
+  }
+
+  const fallbackMatches = getFallbackCarsByTerms(matchTerms)
+  if (fallbackMatches.length > cars.length) {
+    cars = fallbackMatches
   }
 
   return cars.filter((car) => {

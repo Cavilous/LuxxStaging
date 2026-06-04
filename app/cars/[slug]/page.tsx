@@ -11,6 +11,7 @@ import type { Metadata } from "next"
 import { buildCarSpecRows, getExplicitFeatures, isPresentString, isPresentNumber } from "@/lib/display-guards"
 import { getBrandSeoUrl } from "@/lib/seo-constants"
 import { PhotoGallery } from "@/components/photo-gallery-wrapper"
+import { getFallbackCars } from "@/lib/fallback-cars"
 
 export const revalidate = 900
 export const dynamicParams = true
@@ -39,6 +40,15 @@ interface CarDetailPageProps {
 }
 
 async function getCarBySlug(slug: string) {
+  const fallbackMatch = () => {
+    const fallbackCars = getFallbackCars()
+    const exact = fallbackCars.find((car) => car.slug === slug)
+    if (exact) return exact
+
+    const make = slug.split('-')[0]
+    return fallbackCars.find((car) => car.slug.startsWith(`${make}-`)) || null
+  }
+
   try {
     const cars = await db
       .select()
@@ -75,14 +85,40 @@ async function getCarBySlug(slug: string) {
       return fallbackCars[0]
     }
 
-    return null
+    return fallbackMatch()
   } catch (error) {
     console.error('Error fetching car:', error)
-    return null
+    return fallbackMatch()
   }
 }
 
 async function getSimilarCars(currentCarId: string, brand: string) {
+  const fallbackSimilarCars = () => {
+    const normalizedBrand = brand.toLowerCase()
+    return getFallbackCars()
+      .filter((car) => car.id !== currentCarId && car.slug !== currentCarId)
+      .sort((a, b) => {
+        const aSame = a.brand.toLowerCase().startsWith(normalizedBrand) ? 1 : 0
+        const bSame = b.brand.toLowerCase().startsWith(normalizedBrand) ? 1 : 0
+        return bSame - aSame
+      })
+      .slice(0, 3)
+      .map((car) => ({
+        id: car.slug,
+        type: "car" as const,
+        title: car.title,
+        subtitle: car.subtitle || "Premium",
+        price: car.pricePerDay ? `$${Number(car.pricePerDay).toLocaleString()}` : "",
+        priceUnit: "day",
+        image: car.images[0],
+        specs: [],
+        badges: car.isFeatured ? ["Popular"] : [],
+        focalPoint: car.focalPoint || '50% 40%',
+        flipHorizontal: car.flipHorizontal || false,
+        flipVertical: car.flipVertical || false,
+      }))
+  }
+
   try {
     const allCars = await db
       .select()
@@ -112,6 +148,10 @@ async function getSimilarCars(currentCarId: string, brand: string) {
 
     const sortedCars = [...sameBrandCars, ...otherCars].slice(0, 3)
 
+    if (sortedCars.length === 0) {
+      return fallbackSimilarCars()
+    }
+
     return sortedCars.map((car) => {
       const specs = (car.specifications as any) || {}
       const images = Array.isArray(car.images) 
@@ -134,7 +174,7 @@ async function getSimilarCars(currentCarId: string, brand: string) {
     })
   } catch (error) {
     console.error('Error fetching similar cars:', error)
-    return []
+    return fallbackSimilarCars()
   }
 }
 
@@ -149,7 +189,7 @@ export async function generateMetadata({ params }: CarDetailPageProps): Promise<
   }
 
   const specs = (car.specifications as any) || {}
-  const brand = car.title?.split(' ')[0] || "Luxury"
+  const brand = (car as any).brand || car.title?.split(' ')[0] || "Luxury"
   const images = Array.isArray(car.images) 
     ? (car.images as any[]).map((img: any) => typeof img === 'string' ? img : img.url).filter(Boolean)
     : []
@@ -191,7 +231,7 @@ export default async function CarDetailPage({ params }: CarDetailPageProps) {
   }
 
   const specs = (car.specifications as any) || {}
-  const brand = car.title?.split(' ')[0] || "Luxury"
+  const brand = (car as any).brand || car.title?.split(' ')[0] || "Luxury"
   const similarCars = await getSimilarCars(car.id, brand)
   
   // Fallback gradient image (data URI) instead of placeholder.svg
