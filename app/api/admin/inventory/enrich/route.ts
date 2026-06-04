@@ -5,11 +5,6 @@ import { inventory, auditLogs } from "@/lib/db/schema"
 import { eq } from "drizzle-orm"
 import { requireApiAuth } from "@/lib/auth-helpers"
 
-const openai = new OpenAI({
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-})
-
 const CONFIDENCE_THRESHOLD = 0.75
 
 interface EnrichmentUpdate {
@@ -171,6 +166,21 @@ export async function POST(request: NextRequest) {
   }
   
   try {
+    const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY
+    const baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL
+
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: "OpenAI API key not configured" },
+        { status: 500 }
+      )
+    }
+
+    const openai = new OpenAI({
+      apiKey,
+      baseURL: baseURL || undefined,
+    })
+
     const body = await request.json()
     const { inventoryId, category, title, subtitle, currentSpecs } = body
 

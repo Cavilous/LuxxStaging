@@ -1,8 +1,6 @@
 import 'server-only'
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-
 const FROM_EMAIL = 'Luxx Miami <requests@luxxmiami.com>'
 const ADMIN_EMAIL = 'luxxmiamigroup@gmail.com'
 
@@ -20,6 +18,8 @@ export async function sendEmail(options: EmailOptions) {
       console.error('❌ RESEND_API_KEY not configured in environment variables')
       return { success: false, error: 'RESEND_API_KEY not configured' }
     }
+
+    const resend = new Resend(process.env.RESEND_API_KEY)
 
     console.log('📧 Attempting to send email via Resend:', {
       from: FROM_EMAIL,

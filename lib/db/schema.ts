@@ -46,6 +46,15 @@ export const inventory = pgTable('inventory', {
   serviceCities: jsonb('service_cities').default(sql`'["miami"]'::jsonb`),
   tags: jsonb('tags').default(sql`'[]'::jsonb`),
   transactionType: text('transaction_type').notNull().default('rental'),
+  tourEnabled: boolean('tour_enabled').default(false),
+  tourCategory: text('tour_category'),
+  tourMaxPassengers: integer('tour_max_passengers').default(1),
+  tourDurations: text('tour_durations').array().default(sql`ARRAY['1h', '2h']::text[]`),
+  tourPricing: jsonb('tour_pricing').default(sql`'{"perHour": {"pax1": 300, "pax2": 225, "pax3": 175, "pax4": 150, "allowPax4": false}}'::jsonb`),
+  tourOperatingHours: jsonb('tour_operating_hours').default(sql`'{"monday": {"start": "09:00", "end": "18:00"}, "tuesday": {"start": "09:00", "end": "18:00"}, "wednesday": {"start": "09:00", "end": "18:00"}, "thursday": {"start": "09:00", "end": "18:00"}, "friday": {"start": "09:00", "end": "18:00"}, "saturday": {"start": "09:00", "end": "20:00"}, "sunday": {"start": "10:00", "end": "18:00"}}'::jsonb`),
+  tourBlackouts: jsonb('tour_blackouts').default(sql`'[]'::jsonb`),
+  tourPickupLocation: text('tour_pickup_location').default('Luxx Brickell, Miami, FL'),
+  tourRoutes: text('tour_routes').array().default(sql`ARRAY[]::text[]`),
   metaTitle: text('meta_title'),
   metaDescription: text('meta_description'),
   aiContentGenerated: boolean('ai_content_generated').notNull().default(false),
@@ -469,11 +478,40 @@ export const inventoryDisplaySettings = pgTable('inventory_display_settings', {
   categoryIdx: uniqueIndex('idx_inv_display_settings_category').on(table.category),
 }))
 
+export const tourRoutes = pgTable('tour_routes', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  title: text('title').notNull(),
+  description: text('description'),
+  duration: text('duration').notNull(),
+  waypoints: jsonb('waypoints').default(sql`'[]'::jsonb`),
+  hasPhotoStop: boolean('has_photo_stop').default(false),
+  photoStopNote: text('photo_stop_note'),
+  mapEmbedUrl: text('map_embed_url'),
+  gallery: text('gallery').array().default(sql`ARRAY[]::text[]`),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+}, (table) => ({
+  durationIdx: index('idx_tour_routes_duration').on(table.duration),
+}))
+
+export const tourAddOns = pgTable('tour_addons', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  title: text('title').notNull(),
+  price: decimal('price', { precision: 10, scale: 2 }).notNull(),
+  perBooking: boolean('per_booking').default(true),
+  perPassenger: boolean('per_passenger').default(false),
+  isActive: boolean('is_active').default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+}, (table) => ({
+  activeIdx: index('idx_tour_addons_active').on(table.isActive),
+}))
+
 export const tourBookings = pgTable('tour_bookings', {
   id: uuid('id').defaultRandom().primaryKey(),
   bookingReference: text('booking_reference').notNull().unique(),
   carId: uuid('car_id').references(() => inventory.id).notNull(),
-  routeId: text('route_id').notNull(),
+  routeId: uuid('route_id').references(() => tourRoutes.id).notNull(),
   date: text('date').notNull(),
   startTime: text('start_time').notNull(),
   durationMinutes: integer('duration_minutes').notNull(),
@@ -487,6 +525,8 @@ export const tourBookings = pgTable('tour_bookings', {
   contact: jsonb('contact').notNull(),
   waiverSigned: boolean('waiver_signed').default(false),
   waiverSignedAt: timestamp('waiver_signed_at', { withTimezone: true }),
+  paymentIntentId: text('payment_intent_id'),
+  notes: text('notes'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ({

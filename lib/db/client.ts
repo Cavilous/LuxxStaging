@@ -1,6 +1,6 @@
 import 'server-only'
 import { db } from '../db'
-import { inventory, adminUsers, tourBookings } from './schema'
+import { inventory, adminUsers, tourAddOns, tourBookings, tourRoutes } from './schema'
 import { eq, and, ilike, desc, asc, inArray } from 'drizzle-orm'
 import { sql } from 'drizzle-orm'
 import * as bcrypt from 'bcryptjs'
@@ -18,6 +18,18 @@ function getJWTSecret() {
 }
 
 export function createDbClient() {
+  const toCamelKey = (key: string) => key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase())
+  const toSnakeKey = (key: string) => key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`)
+  const resolveColumn = (table: any, column: string) => table[column] || table[toCamelKey(column)]
+  const toSnakeRow = (row: any): any => {
+    if (!row || typeof row !== 'object' || row instanceof Date) return row
+    if (Array.isArray(row)) return row.map(toSnakeRow)
+
+    return Object.fromEntries(
+      Object.entries(row).map(([key, value]) => [toSnakeKey(key), toSnakeRow(value)])
+    )
+  }
+
   const createQueryBuilder = (table: any) => {
     let query: any = {
       filters: [],
@@ -91,8 +103,8 @@ export function createDbClient() {
     try {
       const dbData: any = {}
       Object.keys(data).forEach(key => {
-        const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`)
-        dbData[snakeKey] = data[key]
+        const tableKey = table[key] ? key : toCamelKey(key)
+        dbData[tableKey] = data[key]
       })
       
       const result = await db
@@ -100,7 +112,7 @@ export function createDbClient() {
         .values(dbData)
         .returning()
       
-      return { data: result[0] || null, error: null }
+      return { data: toSnakeRow(result[0]) || null, error: null }
     } catch (error) {
       console.error('[DB Insert Error]:', error)
       return { 
@@ -112,7 +124,7 @@ export function createDbClient() {
 
   const executeUpdate = async (table: any, data: any, column: string, value: any) => {
     try {
-      const col = table[column]
+      const col = resolveColumn(table, column)
       if (!col) {
         return { data: null, error: { message: `Column ${column} not found` } }
       }
@@ -120,8 +132,8 @@ export function createDbClient() {
       // Convert camelCase keys to snake_case for database
       const dbData: any = {}
       Object.keys(data).forEach(key => {
-        const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`)
-        dbData[snakeKey] = data[key]
+        const tableKey = table[key] ? key : toCamelKey(key)
+        dbData[tableKey] = data[key]
       })
       
       const result = await db
@@ -130,7 +142,7 @@ export function createDbClient() {
         .where(eq(col, value))
         .returning()
       
-      return { data: result[0] || null, error: null }
+      return { data: toSnakeRow(result[0]) || null, error: null }
     } catch (error) {
       console.error('[DB Update Error]:', error)
       return { 
@@ -147,7 +159,7 @@ export function createDbClient() {
       // Apply filters
       if (query.filters.length > 0) {
         const conditions = query.filters.map((filter: any) => {
-          const col = table[filter.column]
+          const col = resolveColumn(table, filter.column)
           if (!col) return null
           
           switch (filter.type) {
@@ -173,7 +185,7 @@ export function createDbClient() {
       // Apply ordering
       if (query.orderBy.length > 0) {
         const orderDef = query.orderBy[0]
-        const col = table[orderDef.column]
+        const col = resolveColumn(table, orderDef.column)
         if (col) {
           dbQuery = dbQuery.orderBy(orderDef.ascending ? asc(col) : desc(col)) as any
         }
@@ -188,12 +200,12 @@ export function createDbClient() {
       
       if (single) {
         return { 
-          data: result[0] || null, 
+          data: toSnakeRow(result[0]) || null, 
           error: result[0] ? null : { message: 'No data found' }
         }
       }
       
-      return { data: result, error: null }
+      return { data: toSnakeRow(result), error: null }
     } catch (error) {
       console.error('[DB Query Error]:', error)
       return { 
@@ -210,6 +222,10 @@ export function createDbClient() {
           return createQueryBuilder(inventory)
         case 'admin_users':
           return createQueryBuilder(adminUsers)
+        case 'tour_routes':
+          return createQueryBuilder(tourRoutes)
+        case 'tour_addons':
+          return createQueryBuilder(tourAddOns)
         case 'tour_bookings':
           return createQueryBuilder(tourBookings)
         default:
