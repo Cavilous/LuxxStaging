@@ -39,23 +39,42 @@ function SkeletonCard() {
 
 const CarsData = cache(async () => {
   try {
-    const cars = await db
-      .select({
-        id: inventory.id,
-        slug: inventory.slug,
-        title: inventory.title,
-        subtitle: inventory.subtitle,
-        images: inventory.images,
-        focalPoint: inventory.focalPoint,
-        flipHorizontal: inventory.flipHorizontal,
-        flipVertical: inventory.flipVertical,
-        pricePerDay: inventory.pricePerDay,
-        isFeatured: inventory.isFeatured,
-        specifications: inventory.specifications,
-      })
-      .from(inventory)
-      .where(and(eq(inventory.category, "car"), eq(inventory.isPublished, true)))
-      .orderBy(desc(inventory.isFeatured), desc(inventory.createdAt))
+    let cars
+    try {
+      cars = await db
+        .select({
+          id: inventory.id,
+          slug: inventory.slug,
+          title: inventory.title,
+          subtitle: inventory.subtitle,
+          images: inventory.images,
+          focalPoint: inventory.focalPoint,
+          flipHorizontal: inventory.flipHorizontal,
+          flipVertical: inventory.flipVertical,
+          pricePerDay: inventory.pricePerDay,
+          isFeatured: inventory.isFeatured,
+          specifications: inventory.specifications,
+        })
+        .from(inventory)
+        .where(and(eq(inventory.category, "car"), eq(inventory.isPublished, true)))
+        .orderBy(desc(inventory.isFeatured), desc(inventory.createdAt))
+    } catch (richQueryError) {
+      console.error("[Cars listing rich query failed, using compatibility query]:", richQueryError)
+      cars = await db
+        .select({
+          id: inventory.id,
+          slug: inventory.slug,
+          title: inventory.title,
+          subtitle: inventory.subtitle,
+          images: inventory.images,
+          pricePerDay: inventory.pricePerDay,
+          isFeatured: inventory.isFeatured,
+          specifications: inventory.specifications,
+        })
+        .from(inventory)
+        .where(and(eq(inventory.category, "car"), eq(inventory.isPublished, true)))
+        .orderBy(desc(inventory.isFeatured), desc(inventory.pricePerDay))
+    }
 
     const transformedCars = cars.map((car) => {
       const specs = (car.specifications as any) || {}
@@ -107,7 +126,7 @@ const CarsData = cache(async () => {
         price: `$${car.pricePerDay ? Number(car.pricePerDay).toLocaleString() : "0"}`,
         priceUnit: "day",
         image: primaryImage || fallbackImage,
-        focalPoint: car.focalPoint || '50% 40%',
+        focalPoint: "focalPoint" in car && car.focalPoint ? car.focalPoint : '50% 40%',
         specs: [
           specs.seats ? `${specs.seats} seats` : "2 seats",
           specs.horsepower ? `${specs.horsepower}hp` : "",
@@ -123,15 +142,15 @@ const CarsData = cache(async () => {
         seats: specs.seats?.toString() || "2",
         transmission: specs.transmission || "Auto",
         color: car.subtitle?.split(" / ")[0] || "Black",
-        flipHorizontal: car.flipHorizontal || false,
-        flipVertical: car.flipVertical || false,
+        flipHorizontal: "flipHorizontal" in car ? car.flipHorizontal || false : false,
+        flipVertical: "flipVertical" in car ? car.flipVertical || false : false,
       }
     })
 
     return <CarsPageContent initialCars={transformedCars} />
   } catch (error) {
     console.error("Error fetching cars:", error)
-    return <div className="text-center py-8 text-red-400">Error loading cars</div>
+    return <CarsPageContent initialCars={[]} />
   }
 })
 
