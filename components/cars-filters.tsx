@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { ChevronDown, DollarSign, Tag } from "lucide-react"
+import { Car, ChevronDown, DollarSign, SlidersHorizontal, Tag, X } from "lucide-react"
 
 interface CarsFiltersProps {
   filters: {
@@ -15,6 +15,7 @@ interface CarsFiltersProps {
 }
 
 const BRANDS = ["Ferrari", "Lamborghini", "Rolls-Royce", "McLaren", "Porsche", "Mercedes", "BMW", "Audi", "Bentley", "Aston Martin", "Maserati", "Bugatti", "Koenigsegg", "Pagani"]
+const BODY_TYPES = ["Supercar", "Convertible", "SUV", "Sedan", "Coupe"]
 
 function formatPrice(value: number): string {
   return `$${value.toLocaleString()}`
@@ -28,6 +29,13 @@ export function CarsFilters({ filters, onFiltersChange }: CarsFiltersProps) {
     onFiltersChange({ brands: newBrands })
   }
 
+  const toggleBodyType = (bodyType: string) => {
+    const newBodyTypes = filters.bodyTypes.includes(bodyType)
+      ? filters.bodyTypes.filter((type) => type !== bodyType)
+      : [...filters.bodyTypes, bodyType]
+    onFiltersChange({ bodyTypes: newBodyTypes })
+  }
+
   const clearAll = () => {
     onFiltersChange({
       brands: [],
@@ -37,16 +45,21 @@ export function CarsFilters({ filters, onFiltersChange }: CarsFiltersProps) {
   }
 
   const activeCount = filters.brands.length + 
+    filters.bodyTypes.length +
     (filters.priceRange[0] > 0 || filters.priceRange[1] < 5000 ? 1 : 0)
 
   return (
-    <div className="bg-[#0A0A0A] border-b border-[#ECAC36]/20 sticky top-0 z-40">
+    <div className="bg-[#0A0A0A]/95 border-b border-[#ECAC36]/20 sticky top-0 z-40 backdrop-blur-md">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center gap-3 overflow-x-auto scrollbar-hide">
-          {/* Brand Dropdown - First */}
+          <div className="hidden md:flex items-center gap-2 pr-1 text-sm font-semibold text-white">
+            <SlidersHorizontal className="h-4 w-4 text-[#ECAC36]" />
+            Filters
+          </div>
+
           <Popover>
             <PopoverTrigger asChild>
-              <Button className="cut-corner-button bg-[#0A0A0A] border border-[#ECAC36]/30 text-white hover:border-[#ECAC36] whitespace-nowrap">
+              <Button className="magnetic-hover cut-corner-button bg-[#0A0A0A] border border-[#ECAC36]/30 text-white hover:border-[#ECAC36] whitespace-nowrap">
                 <Tag className="mr-1 h-4 w-4" />
                 Brand {filters.brands.length > 0 && `(${filters.brands.length})`}
                 <ChevronDown className="ml-2 h-4 w-4" />
@@ -60,7 +73,7 @@ export function CarsFilters({ filters, onFiltersChange }: CarsFiltersProps) {
                     <button
                       key={brand}
                       onClick={() => toggleBrand(brand)}
-                      className={`text-left px-3 py-2 text-sm cut-corner-button ${
+                      className={`magnetic-hover text-left px-3 py-2 text-sm cut-corner-button ${
                         filters.brands.includes(brand)
                           ? "bg-[#ECAC36] text-black"
                           : "text-white hover:bg-[#ECAC36]/10 border border-[#ECAC36]/30"
@@ -74,10 +87,39 @@ export function CarsFilters({ filters, onFiltersChange }: CarsFiltersProps) {
             </PopoverContent>
           </Popover>
 
-          {/* Price Range - Second */}
           <Popover>
             <PopoverTrigger asChild>
-              <Button className="cut-corner-button bg-[#0A0A0A] border border-[#ECAC36]/30 text-white hover:border-[#ECAC36] whitespace-nowrap" aria-label="Filter by price range">
+              <Button className="magnetic-hover cut-corner-button bg-[#0A0A0A] border border-[#ECAC36]/30 text-white hover:border-[#ECAC36] whitespace-nowrap">
+                <Car className="mr-1 h-4 w-4" />
+                Body {filters.bodyTypes.length > 0 && `(${filters.bodyTypes.length})`}
+                <ChevronDown className="ml-2 h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-72 bg-[#0A0A0A] border-[#ECAC36]/30 cut-corner-card">
+              <div className="space-y-3">
+                <h4 className="font-medium text-white">Select Body Types</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  {BODY_TYPES.map((bodyType) => (
+                    <button
+                      key={bodyType}
+                      onClick={() => toggleBodyType(bodyType)}
+                      className={`magnetic-hover text-left px-3 py-2 text-sm cut-corner-button ${
+                        filters.bodyTypes.includes(bodyType)
+                          ? "bg-[#ECAC36] text-black"
+                          : "text-white hover:bg-[#ECAC36]/10 border border-[#ECAC36]/30"
+                      }`}
+                    >
+                      {bodyType}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button className="magnetic-hover cut-corner-button bg-[#0A0A0A] border border-[#ECAC36]/30 text-white hover:border-[#ECAC36] whitespace-nowrap" aria-label="Filter by price range">
                 <DollarSign className="mr-1 h-4 w-4" />
                 {formatPrice(filters.priceRange[0])} - {formatPrice(filters.priceRange[1])}
                 <ChevronDown className="ml-2 h-4 w-4" />
@@ -102,17 +144,43 @@ export function CarsFilters({ filters, onFiltersChange }: CarsFiltersProps) {
             </PopoverContent>
           </Popover>
 
-          {/* Clear All */}
           {activeCount > 0 && (
             <Button
               onClick={clearAll}
               variant="ghost"
-              className="text-[#ECAC36] hover:text-[#ECAC36]/80 hover:bg-[#ECAC36]/10 cut-corner-button ml-auto"
+              className="magnetic-hover text-[#ECAC36] hover:text-[#ECAC36]/80 hover:bg-[#ECAC36]/10 cut-corner-button ml-auto"
             >
               Clear All ({activeCount})
             </Button>
           )}
         </div>
+
+        {activeCount > 0 && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {[...filters.brands, ...filters.bodyTypes].map((filter) => (
+              <button
+                key={filter}
+                onClick={() => {
+                  if (filters.brands.includes(filter)) toggleBrand(filter)
+                  if (filters.bodyTypes.includes(filter)) toggleBodyType(filter)
+                }}
+                className="luxx-filter-chip inline-flex items-center gap-2 cut-corner border border-[#ECAC36]/35 bg-[#ECAC36]/10 px-3 py-1.5 text-xs font-semibold text-[#ECAC36] hover:bg-[#ECAC36]/20"
+              >
+                {filter}
+                <X className="h-3 w-3" />
+              </button>
+            ))}
+            {(filters.priceRange[0] > 0 || filters.priceRange[1] < 5000) && (
+              <button
+                onClick={() => onFiltersChange({ priceRange: [0, 5000] })}
+                className="luxx-filter-chip inline-flex items-center gap-2 cut-corner border border-[#ECAC36]/35 bg-[#ECAC36]/10 px-3 py-1.5 text-xs font-semibold text-[#ECAC36] hover:bg-[#ECAC36]/20"
+              >
+                {formatPrice(filters.priceRange[0])} - {formatPrice(filters.priceRange[1])}
+                <X className="h-3 w-3" />
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

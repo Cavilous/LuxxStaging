@@ -671,6 +671,13 @@ const BRANDS: Record<string, BrandData> = {
   },
 }
 
+const BRAND_MATCH_TERMS: Record<string, string[]> = {
+  mercedes: ["mercedes-benz", "mercedes-amg", "amg", "g-wagon"],
+  "rolls-royce": ["rolls royce", "rolls-royce", "rollsroyce"],
+  "land-rover": ["land rover", "range rover", "rangerover"],
+  "aston-martin": ["aston martin", "aston"],
+}
+
 const VALID_BRANDS = Object.keys(BRANDS)
 
 export async function generateStaticParams() {
@@ -722,6 +729,13 @@ export async function generateMetadata({ params }: BrandPageProps): Promise<Meta
 }
 
 const getBrandCars = cache(async (brandName: string, brandSlug: string) => {
+  const matchTerms = Array.from(new Set([
+    brandName,
+    brandSlug,
+    brandSlug.replace(/-/g, " "),
+    ...(BRAND_MATCH_TERMS[brandSlug] || []),
+  ].filter(Boolean)))
+
   const cars = await db
     .select({
       id: inventory.id,
@@ -740,8 +754,10 @@ const getBrandCars = cache(async (brandName: string, brandSlug: string) => {
       eq(inventory.isPublished, true),
       or(
         eq(inventory.brandSlug, brandSlug),
-        ilike(inventory.brand, `%${brandName}%`),
-        ilike(inventory.title, `%${brandName}%`)
+        ...matchTerms.flatMap((term) => [
+          ilike(inventory.brand, `%${term}%`),
+          ilike(inventory.title, `%${term}%`),
+        ])
       )
     ))
 
@@ -896,7 +912,7 @@ export default async function BrandPage({ params }: BrandPageProps) {
                 className="inline-flex items-center gap-2 px-8 py-4 bg-transparent border-2 border-[#ECAC36] text-[#ECAC36] font-bold cut-corner hover:bg-[#ECAC36] hover:text-black transition-all duration-300"
               >
                 View All Exotic Cars
-                <span>→</span>
+                <span aria-hidden="true">&rarr;</span>
               </Link>
             </div>
           </div>

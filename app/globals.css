@@ -395,6 +395,186 @@
   .sticky-filter.elevated {
     box-shadow: var(--shadow-rest);
   }
+
+  .luxx-magnetic-card {
+    position: relative;
+    transform-style: preserve-3d;
+    transform:
+      perspective(1000px)
+      rotateX(var(--luxx-rotate-x, 0deg))
+      rotateY(var(--luxx-rotate-y, 0deg))
+      translate3d(0, var(--luxx-lift, 0px), 0);
+    transition:
+      transform 360ms var(--ease-luxury),
+      border-color 280ms var(--ease-luxury),
+      box-shadow 280ms var(--ease-luxury);
+    will-change: transform;
+  }
+
+  .luxx-magnetic-card:hover,
+  .luxx-magnetic-card:focus-within {
+    --luxx-lift: -8px;
+    border-color: rgba(236, 172, 54, 0.42);
+    box-shadow: 0 18px 55px rgba(0, 0, 0, 0.45), 0 0 32px rgba(236, 172, 54, 0.13);
+  }
+
+  .luxx-card-shine {
+    opacity: 0;
+    background:
+      radial-gradient(
+        circle at var(--luxx-shine-x, 50%) var(--luxx-shine-y, 50%),
+        rgba(255, 247, 219, 0.34),
+        rgba(236, 172, 54, 0.16) 22%,
+        transparent 48%
+      ),
+      linear-gradient(
+        112deg,
+        transparent 0%,
+        transparent 38%,
+        rgba(255, 255, 255, 0.22) 48%,
+        rgba(236, 172, 54, 0.2) 52%,
+        transparent 64%,
+        transparent 100%
+      );
+    mix-blend-mode: screen;
+    transform: translateX(-18%);
+    transition: opacity 260ms var(--ease-luxury), transform 700ms var(--ease-luxury);
+  }
+
+  .luxx-magnetic-card:hover .luxx-card-shine,
+  .luxx-magnetic-card:focus-within .luxx-card-shine {
+    opacity: 1;
+    transform: translateX(18%);
+  }
+
+  .luxx-card-edge {
+    background: linear-gradient(90deg, transparent, rgba(236, 172, 54, 0.55), transparent);
+    opacity: 0;
+    transition: opacity 280ms var(--ease-luxury);
+  }
+
+  .luxx-magnetic-card:hover .luxx-card-edge,
+  .luxx-magnetic-card:focus-within .luxx-card-edge {
+    opacity: 1;
+  }
+
+  .luxx-glimmer-panel::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(112deg, transparent 0%, transparent 42%, rgba(255, 255, 255, 0.22) 50%, transparent 60%, transparent 100%);
+    opacity: 0;
+    transform: translateX(-45%);
+    transition: opacity 280ms var(--ease-luxury), transform 720ms var(--ease-luxury);
+    mix-blend-mode: screen;
+  }
+
+  .luxx-glimmer-panel:hover::before,
+  .luxx-glimmer-panel:focus-within::before {
+    opacity: 1;
+    transform: translateX(45%);
+  }
+
+  .magnetic-hover {
+    transition: transform 260ms var(--ease-luxury), border-color 260ms var(--ease-luxury), background 260ms var(--ease-luxury);
+  }
+
+  .magnetic-hover:hover,
+  .magnetic-hover:focus-visible {
+    transform: translateY(-2px);
+  }
+
+  .luxx-hero-scanline {
+    background: linear-gradient(180deg, transparent, rgba(236, 172, 54, 0.38), transparent);
+    height: 28%;
+    opacity: 0.55;
+    animation: luxxScanline 5.5s ease-in-out infinite;
+  }
+
+  .luxx-index-panel {
+    animation: luxxIndexFloat 8s ease-in-out infinite;
+  }
+
+  .luxx-index-panel:nth-child(2) {
+    animation-delay: 0.45s;
+  }
+
+  .luxx-index-panel:nth-child(3) {
+    animation-delay: 0.9s;
+  }
+
+  .luxx-filter-chip {
+    animation: luxxChipIn 180ms var(--ease-luxury) both;
+  }
+
+  .luxx-callout-arrow {
+    animation: luxxArrowPulse 1.6s ease-in-out infinite;
+  }
+
+  @keyframes luxxScanline {
+    0%, 100% {
+      transform: translateY(-40%);
+    }
+    50% {
+      transform: translateY(285%);
+    }
+  }
+
+  @keyframes luxxIndexFloat {
+    0%, 100% {
+      transform: translateY(0);
+      border-color: rgba(236, 172, 54, 0.22);
+    }
+    50% {
+      transform: translateY(-6px);
+      border-color: rgba(236, 172, 54, 0.5);
+    }
+  }
+
+  @keyframes luxxChipIn {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes luxxArrowPulse {
+    0%, 100% {
+      opacity: 0.45;
+      transform: translateX(0);
+    }
+    50% {
+      opacity: 1;
+      transform: translateX(5px);
+    }
+  }
+
+  @media (hover: none), (pointer: coarse), (prefers-reduced-motion: reduce) {
+    .luxx-magnetic-card,
+    .luxx-magnetic-card:hover,
+    .luxx-magnetic-card:focus-within,
+    .magnetic-hover,
+    .magnetic-hover:hover,
+    .magnetic-hover:focus-visible {
+      transform: none;
+      transition: border-color 200ms ease, box-shadow 200ms ease, background 200ms ease;
+      will-change: auto;
+    }
+
+    .luxx-card-shine,
+    .luxx-glimmer-panel::before,
+    .luxx-hero-scanline,
+    .luxx-index-panel,
+    .luxx-callout-arrow {
+      animation: none;
+      transition: none;
+    }
+  }
 }
 
 

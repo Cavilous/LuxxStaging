@@ -8,6 +8,10 @@ import { LoadMoreGrid } from "@/components/load-more-grid"
 const INITIAL_ITEMS = 12
 const LOAD_MORE_COUNT = 8
 
+function normalizeFilterValue(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "")
+}
+
 function SkeletonCard() {
   return (
     <div className="bg-[#0A0A0A] cut-corner-card overflow-hidden">
@@ -41,14 +45,8 @@ function EmptyState({ onClearFilters }: { onClearFilters: () => void }) {
             Clear All Filters
           </button>
         </div>
-        <div
-          className="absolute top-0 right-0 w-32 h-32 bg-[#ECAC36]/5 blur-3xl"
-          style={{ transform: "translate(30%, -30%)" }}
-        />
-        <div
-          className="absolute bottom-0 left-0 w-32 h-32 bg-[#ECAC36]/5 blur-3xl"
-          style={{ transform: "translate(-30%, 30%)" }}
-        />
+        <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[#ECAC36]/40 to-transparent" />
+        <div className="absolute inset-x-8 bottom-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
       </div>
     </div>
   )
@@ -103,8 +101,16 @@ export function CarsPageContent({ initialCars }: CarsPageContentProps) {
 
   const filteredAndSortedCars = useMemo(() => {
     const filtered = initialCars.filter((car) => {
-      if (filters.brands.length && !filters.brands.includes(car.brand)) return false
-      if (filters.bodyTypes.length && !filters.bodyTypes.includes(car.bodyType)) return false
+      const carBrand = normalizeFilterValue(`${car.brand} ${car.title}`)
+      const carBodyType = normalizeFilterValue(car.bodyType)
+
+      if (filters.brands.length && !filters.brands.some((brand) => carBrand.includes(normalizeFilterValue(brand)))) {
+        return false
+      }
+
+      if (filters.bodyTypes.length && !filters.bodyTypes.some((bodyType) => carBodyType === normalizeFilterValue(bodyType))) {
+        return false
+      }
 
       const price = Number.parseInt(car.price.replace(/[$,]/g, ""))
       if (price < filters.priceRange[0] || price > filters.priceRange[1]) return false

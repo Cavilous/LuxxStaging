@@ -11,9 +11,52 @@ interface BlogPost {
   slug: string
   title: string
   excerpt: string | null
+  content: string
   featuredImage: string | null
   category: string | null
   publishedAt: Date | null
+}
+
+const categoryFallbackImages: Record<string, string> = {
+  club: "/stock_images/luxury_nightclub_int_0b64e371.jpg",
+  clubs: "/stock_images/luxury_nightclub_int_56b34f5f.jpg",
+  nightlife: "/stock_images/miami_nightlife_skyl_c19dcbc8.jpg",
+  restaurant: "/stock_images/fine_dining_restaura_997d193e.jpg",
+  restaurants: "/stock_images/waterfront_restauran_f596cc11.jpg",
+  dining: "/stock_images/luxury_restaurant_fi_c9f5151e.jpg",
+  travel: "/miami-penthouse-ocean-view.png",
+  cars: "/ferrari-sf90-stradale.png",
+  yachts: "/luxury-azimut-yacht.png",
+  villas: "/luxury-waterfront-villa.png",
+}
+
+function normalizeBlogImage(url: string | null | undefined): string | null {
+  if (!url) return null
+  const trimmed = url.trim()
+  if (!trimmed) return null
+  if (trimmed.startsWith("/")) return trimmed
+  return normalizeImageUrl(trimmed)
+}
+
+function extractFirstContentImage(content: string): string | null {
+  const htmlMatch = content.match(/<img[^>]+src=["']([^"']+)["']/i)
+  if (htmlMatch?.[1]) return htmlMatch[1]
+
+  const markdownMatch = content.match(/!\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/)
+  if (markdownMatch?.[1]) return markdownMatch[1]
+
+  return null
+}
+
+function getBlogThumbnail(post: BlogPost): string {
+  const featured = normalizeBlogImage(post.featuredImage)
+  if (featured) return featured
+
+  const contentImage = normalizeBlogImage(extractFirstContentImage(post.content))
+  if (contentImage) return contentImage
+
+  const categoryKey = post.category?.toLowerCase().trim() || ""
+  return categoryFallbackImages[categoryKey] || "/luxury-penthouse-miami-interior.png"
 }
 
 const getLatestBlogs = cache(async (): Promise<BlogPost[]> => {
@@ -23,6 +66,7 @@ const getLatestBlogs = cache(async (): Promise<BlogPost[]> => {
         slug: blogPosts.slug,
         title: blogPosts.title,
         excerpt: blogPosts.excerpt,
+        content: blogPosts.content,
         featuredImage: blogPosts.featuredImage,
         category: blogPosts.category,
         publishedAt: blogPosts.publishedAt,
@@ -68,7 +112,10 @@ export async function LatestBlogs() {
         </div>
 
         <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
-          {posts.map((post) => (
+          {posts.map((post) => {
+            const thumbnail = getBlogThumbnail(post)
+
+            return (
             <Link
               key={post.slug}
               href={`/blog/${post.slug}`}
@@ -76,18 +123,13 @@ export async function LatestBlogs() {
             >
               <article className="bg-[#111111] border border-[#222222] hover:border-[#ECAC36]/40 transition-all duration-300 overflow-hidden cut-corner">
                 <div className="relative h-48 overflow-hidden">
-                  {post.featuredImage && normalizeImageUrl(post.featuredImage) ? (
-                    <Image
-                      src={normalizeImageUrl(post.featuredImage)!}
-                      alt={post.title}
-                      fill
-                      className="object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                  ) : (
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#1a1a1a] to-[#0a0a0a] flex items-center justify-center">
-                      <span className="text-[#ECAC36]/30 text-4xl font-heading font-bold">LUXX</span>
-                    </div>
-                  )}
+                  <Image
+                    src={thumbnail}
+                    alt={post.title}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 33vw"
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                   {post.category && (
                     <span className="absolute top-4 left-4 px-3 py-1 bg-[#ECAC36]/90 text-black text-xs font-semibold tracking-wider uppercase">
@@ -120,7 +162,7 @@ export async function LatestBlogs() {
                 </div>
               </article>
             </Link>
-          ))}
+          )})}
         </div>
 
         <div className="mt-8 text-center md:hidden">

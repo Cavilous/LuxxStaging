@@ -94,6 +94,12 @@ const CarsData = cache(async () => {
           "Porsche": "Porsche",
           "BMW": "BMW",
           "Audi": "Audi",
+          "Bentley": "Bentley",
+          "Land": "Land Rover",
+          "Maserati": "Maserati",
+          "Aston": "Aston Martin",
+          "Cadillac": "Cadillac",
+          "Tesla": "Tesla",
         }
         return brandMap[firstWord] || firstWord
       }

@@ -3,6 +3,7 @@ import { InventoryRow } from "@/components/inventory-row"
 import { LatestBlogs } from "@/components/latest-blogs"
 import { LocalBusinessSchema } from "@/components/local-business-schema"
 import { HomepageSeoSection } from "@/components/homepage-seo-section"
+import { PresentationCallouts } from "@/components/presentation-callouts"
 import { db, withRetry } from "@/lib/db"
 import { inventory, homePageSections } from "@/lib/db/schema"
 import { eq, asc, and, sql } from "drizzle-orm"
@@ -166,6 +167,7 @@ export default async function HomePage() {
     <div className="min-h-screen bg-black">
       <LocalBusinessSchema />
       <HeroSection />
+      <PresentationCallouts />
 
       <main>
         <InventoryRow 
@@ -205,8 +207,8 @@ export default async function HomePage() {
             </div>
 
             <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
-              <div className="group cut-corner bg-gradient-to-br from-black/60 via-black/40 to-black/60 p-8 hover-lift border border-[#ECAC36]/20 hover:border-[#ECAC36]/40 transition-all duration-300 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-[#ECAC36]/5 blur-2xl group-hover:bg-[#ECAC36]/10 transition-all duration-500"></div>
+              <div className="luxx-glimmer-panel group cut-corner bg-gradient-to-br from-black/60 via-black/40 to-black/60 p-8 hover-lift border border-[#ECAC36]/20 hover:border-[#ECAC36]/40 transition-all duration-300 relative overflow-hidden">
+                <div className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-[#ECAC36]/50 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
                 <h3 className="text-2xl font-heading font-bold text-white mb-3 relative z-10">Miami Club Guide</h3>
                 <p className="text-gray-300 mb-6 leading-relaxed relative z-10">
                   Exclusive access to Miami's hottest nightlife venues and VIP experiences.
@@ -216,12 +218,12 @@ export default async function HomePage() {
                   className="inline-flex items-center gap-2 text-[#ECAC36] hover:text-[#e6c766] font-semibold transition-all duration-300 group-hover:gap-3 relative z-10"
                 >
                   Explore Clubs 
-                  <span className="text-lg">→</span>
+                  <span className="text-lg" aria-hidden="true">&rarr;</span>
                 </a>
               </div>
 
-              <div className="group cut-corner bg-gradient-to-br from-black/60 via-black/40 to-black/60 p-8 hover-lift border border-[#ECAC36]/20 hover:border-[#ECAC36]/40 transition-all duration-300 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-[#ECAC36]/5 blur-2xl group-hover:bg-[#ECAC36]/10 transition-all duration-500"></div>
+              <div className="luxx-glimmer-panel group cut-corner bg-gradient-to-br from-black/60 via-black/40 to-black/60 p-8 hover-lift border border-[#ECAC36]/20 hover:border-[#ECAC36]/40 transition-all duration-300 relative overflow-hidden">
+                <div className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-[#ECAC36]/50 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
                 <h3 className="text-2xl font-heading font-bold text-white mb-3 relative z-10">Restaurant Guide</h3>
                 <p className="text-gray-300 mb-6 leading-relaxed relative z-10">
                   Curated dining experiences at Miami's most prestigious restaurants.
@@ -231,12 +233,12 @@ export default async function HomePage() {
                   className="inline-flex items-center gap-2 text-[#ECAC36] hover:text-[#e6c766] font-semibold transition-all duration-300 group-hover:gap-3 relative z-10"
                 >
                   View Restaurants 
-                  <span className="text-lg">→</span>
+                  <span className="text-lg" aria-hidden="true">&rarr;</span>
                 </a>
               </div>
 
-              <div className="group cut-corner bg-gradient-to-br from-black/60 via-black/40 to-black/60 p-8 hover-lift border border-[#ECAC36]/20 hover:border-[#ECAC36]/40 transition-all duration-300 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-[#ECAC36]/5 blur-2xl group-hover:bg-[#ECAC36]/10 transition-all duration-500"></div>
+              <div className="luxx-glimmer-panel group cut-corner bg-gradient-to-br from-black/60 via-black/40 to-black/60 p-8 hover-lift border border-[#ECAC36]/20 hover:border-[#ECAC36]/40 transition-all duration-300 relative overflow-hidden">
+                <div className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-[#ECAC36]/50 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
                 <h3 className="text-2xl font-heading font-bold text-white mb-3 relative z-10">Work With Us</h3>
                 <p className="text-gray-300 mb-6 leading-relaxed relative z-10">
                   Partner with Miami's premier luxury rental service for exclusive opportunities.
@@ -246,7 +248,7 @@ export default async function HomePage() {
                   className="inline-flex items-center gap-2 text-[#ECAC36] hover:text-[#e6c766] font-semibold transition-all duration-300 group-hover:gap-3 relative z-10"
                 >
                   Learn More 
-                  <span className="text-lg">→</span>
+                  <span className="text-lg" aria-hidden="true">&rarr;</span>
                 </a>
               </div>
             </div>

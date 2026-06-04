@@ -69,8 +69,21 @@ const BRAND_SLUG_TO_INVENTORY: Record<string, string> = {
   'dodge': 'Dodge',
 }
 
+const BRAND_MATCH_TERMS: Record<string, string[]> = {
+  mercedes: ['Mercedes-Benz', 'Mercedes-AMG', 'AMG', 'G-Wagon'],
+  'rolls-royce': ['Rolls Royce', 'Rolls-Royce', 'RollsRoyce'],
+  'land-rover': ['Land Rover', 'Range Rover', 'RangeRover'],
+  'aston-martin': ['Aston Martin', 'Aston'],
+}
+
 export async function getInventoryByBrand(brandSlug: string) {
   const brandName = BRAND_SLUG_TO_INVENTORY[brandSlug] || brandSlug.replace(/-/g, ' ')
+  const matchTerms = Array.from(new Set([
+    brandName,
+    brandSlug,
+    brandSlug.replace(/-/g, ' '),
+    ...(BRAND_MATCH_TERMS[brandSlug] || []),
+  ].filter(Boolean)))
 
   try {
     const results = await withRetry(
@@ -83,8 +96,10 @@ export async function getInventoryByBrand(brandSlug: string) {
             eq(inventory.isPublished, true),
             or(
               eq(inventory.brandSlug, brandSlug),
-              ilike(inventory.brand, `%${brandName}%`),
-              ilike(inventory.title, `%${brandName}%`)
+              ...matchTerms.flatMap((term) => [
+                ilike(inventory.brand, `%${term}%`),
+                ilike(inventory.title, `%${term}%`),
+              ])
             )
           )
         )

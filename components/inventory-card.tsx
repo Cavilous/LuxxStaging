@@ -1,7 +1,8 @@
 "use client"
 
-import Image from "next/image"
 import Link from "next/link"
+import { useRef } from "react"
+import type { CSSProperties, PointerEvent } from "react"
 import { normalizeImageUrl } from "@/lib/media-utils"
 import { ProgressiveImage } from "@/components/progressive-image"
 
@@ -49,6 +50,8 @@ export function InventoryCard({
   priority = false,
   yachtPricing,
 }: InventoryCardProps) {
+  const cardRef = useRef<HTMLDivElement>(null)
+  const animationFrame = useRef<number | null>(null)
   const normalizedImage = normalizeImageUrl(image)
   
   const getFlipTransform = () => {
@@ -100,8 +103,59 @@ export function InventoryCard({
 
   const hasValidPrice = price && price !== "$0" && price !== "0" && price.trim() !== ""
 
+  const cardStyle = {
+    "--luxx-shine-x": "50%",
+    "--luxx-shine-y": "50%",
+    "--luxx-rotate-x": "0deg",
+    "--luxx-rotate-y": "0deg",
+  } as CSSProperties
+
+  const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType !== "mouse" || typeof window === "undefined") return
+    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
+
+    const card = cardRef.current
+    if (!card || animationFrame.current !== null) return
+
+    const { clientX, clientY } = event
+    animationFrame.current = window.requestAnimationFrame(() => {
+      const rect = card.getBoundingClientRect()
+      const x = clientX - rect.left
+      const y = clientY - rect.top
+      const rotateX = ((y - rect.height / 2) / (rect.height / 2)) * -4.5
+      const rotateY = ((x - rect.width / 2) / (rect.width / 2)) * 4.5
+
+      card.style.setProperty("--luxx-shine-x", `${Math.max(0, Math.min(100, (x / rect.width) * 100))}%`)
+      card.style.setProperty("--luxx-shine-y", `${Math.max(0, Math.min(100, (y / rect.height) * 100))}%`)
+      card.style.setProperty("--luxx-rotate-x", `${rotateX.toFixed(2)}deg`)
+      card.style.setProperty("--luxx-rotate-y", `${rotateY.toFixed(2)}deg`)
+      animationFrame.current = null
+    })
+  }
+
+  const resetPointerEffect = () => {
+    if (animationFrame.current !== null) {
+      window.cancelAnimationFrame(animationFrame.current)
+      animationFrame.current = null
+    }
+
+    const card = cardRef.current
+    if (!card) return
+    card.style.setProperty("--luxx-shine-x", "50%")
+    card.style.setProperty("--luxx-shine-y", "50%")
+    card.style.setProperty("--luxx-rotate-x", "0deg")
+    card.style.setProperty("--luxx-rotate-y", "0deg")
+  }
+
   return (
-    <div className="group bg-[#0A0A0A] overflow-hidden transition-all duration-300 rounded-lg hover:shadow-[0_0_30px_rgba(236,172,54,0.15)] hover:-translate-y-1">
+    <div
+      ref={cardRef}
+      className="luxx-magnetic-card group bg-[#0A0A0A] overflow-hidden rounded-lg border border-white/10"
+      style={cardStyle}
+      onPointerMove={handlePointerMove}
+      onPointerLeave={resetPointerEffect}
+    >
       <Link href={getDetailUrl()} className="block cursor-pointer">
         <div className="relative aspect-[3/2] overflow-hidden">
           <ProgressiveImage
@@ -118,6 +172,7 @@ export function InventoryCard({
           />
 
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
+          <div className="luxx-card-shine absolute inset-0 pointer-events-none"></div>
 
           {badgeToShow !== null && (
             <div className="absolute top-3 left-3 z-10">
@@ -128,10 +183,11 @@ export function InventoryCard({
           )}
         </div>
 
-        <div className="p-4 space-y-2">
+        <div className="relative p-4 space-y-2">
+          <div className="luxx-card-edge absolute inset-x-4 top-0 h-px"></div>
           <div className="mb-3">
             {hasValidPrice ? (
-              <div className="font-bold text-2xl md:text-3xl leading-none text-[#ECAC36] tracking-tight">
+              <div className="font-bold text-2xl md:text-3xl leading-none text-[#ECAC36] tracking-normal">
                 {price}<span className="font-medium text-sm md:text-base text-gray-400 ml-1">/{priceUnit}</span>
               </div>
             ) : (

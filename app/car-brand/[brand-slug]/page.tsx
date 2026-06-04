@@ -1137,7 +1137,14 @@ export async function generateMetadata({ params }: BrandPageProps): Promise<Meta
   }
 }
 
-const getBrandCars = cache(async (brandName: string, brandSlug: string) => {
+const getBrandCars = cache(async (brandName: string, brandSlug: string, inventoryMatch: string[] = []) => {
+  const matchTerms = Array.from(new Set([
+    brandName,
+    brandSlug,
+    brandSlug.replace(/-/g, " "),
+    ...inventoryMatch,
+  ].filter(Boolean)))
+
   const cars = await db
     .select({
       id: inventory.id,
@@ -1158,8 +1165,10 @@ const getBrandCars = cache(async (brandName: string, brandSlug: string) => {
       eq(inventory.isPublished, true),
       or(
         eq(inventory.brandSlug, brandSlug),
-        ilike(inventory.brand, `%${brandName}%`),
-        ilike(inventory.title, `%${brandName}%`)
+        ...matchTerms.flatMap((term) => [
+          ilike(inventory.brand, `%${term}%`),
+          ilike(inventory.title, `%${term}%`),
+        ])
       )
     ))
     .orderBy(desc(inventory.pricePerDay))
@@ -1191,7 +1200,7 @@ export default async function CarBrandPage({ params }: BrandPageProps) {
     permanentRedirect(`/${seoSlug}`)
   }
 
-  const cars = await getBrandCars(brand.name, brand.slug)
+  const cars = await getBrandCars(brand.name, brand.slug, brand.inventoryMatch)
 
   const collectionSchema = {
     "@context": "https://schema.org",
@@ -1318,7 +1327,7 @@ export default async function CarBrandPage({ params }: BrandPageProps) {
                 className="inline-flex items-center gap-2 px-8 py-4 bg-transparent border-2 border-[#ECAC36] text-[#ECAC36] font-bold cut-corner hover:bg-[#ECAC36] hover:text-black transition-all duration-300"
               >
                 View All Exotic Cars
-                <span>→</span>
+                <span aria-hidden="true">&rarr;</span>
               </Link>
             </div>
           </div>
