@@ -1178,35 +1178,40 @@ const getBrandCars = cache(async (brandName: string, brandSlug: string, inventor
       .orderBy(desc(inventory.pricePerDay))
   } catch (richQueryError) {
     console.error(`[Car brand rich query failed for ${brandSlug}, using compatibility query]:`, richQueryError)
-    const result = await db.execute(sql`
-      SELECT to_jsonb(i) AS item
-      FROM inventory i
-      WHERE i.category = 'car'
-        AND i.is_published = true
-      ORDER BY i.id
-    `)
-    const rows = Array.isArray(result) ? result : Array.isArray((result as any)?.rows) ? (result as any).rows : []
-    cars = rows.map((row: any) => {
-      const item = row?.item || row || {}
-      return {
-        id: item.id,
-        slug: item.slug || null,
-        title: item.title || "Luxury Car",
-        subtitle: item.subtitle || "",
-        pricePerDay: item.pricePerDay ?? item.price_per_day ?? null,
-        images: item.images || [],
-        specifications: item.specifications || {},
-        isFeatured: item.isFeatured ?? item.is_featured ?? false,
-        focalPoint: item.focalPoint ?? item.focal_point ?? null,
-        flipHorizontal: item.flipHorizontal ?? item.flip_horizontal ?? false,
-        flipVertical: item.flipVertical ?? item.flip_vertical ?? false,
-        brand: item.brand || null,
-        brandSlug: item.brandSlug ?? item.brand_slug ?? null,
-      }
-    }).filter((car: any) => {
-      const haystack = `${car.brand || ""} ${car.brandSlug || ""} ${car.title || ""}`.toLowerCase()
-      return matchTerms.some((term) => haystack.includes(term))
-    })
+    try {
+      const result = await db.execute(sql`
+        SELECT to_jsonb(i) AS item
+        FROM inventory i
+        WHERE i.category = 'car'
+          AND i.is_published = true
+        ORDER BY i.id
+      `)
+      const rows = Array.isArray(result) ? result : Array.isArray((result as any)?.rows) ? (result as any).rows : []
+      cars = rows.map((row: any) => {
+        const item = row?.item || row || {}
+        return {
+          id: item.id,
+          slug: item.slug || null,
+          title: item.title || "Luxury Car",
+          subtitle: item.subtitle || "",
+          pricePerDay: item.pricePerDay ?? item.price_per_day ?? null,
+          images: item.images || [],
+          specifications: item.specifications || {},
+          isFeatured: item.isFeatured ?? item.is_featured ?? false,
+          focalPoint: item.focalPoint ?? item.focal_point ?? null,
+          flipHorizontal: item.flipHorizontal ?? item.flip_horizontal ?? false,
+          flipVertical: item.flipVertical ?? item.flip_vertical ?? false,
+          brand: item.brand || null,
+          brandSlug: item.brandSlug ?? item.brand_slug ?? null,
+        }
+      }).filter((car: any) => {
+        const haystack = `${car.brand || ""} ${car.brandSlug || ""} ${car.title || ""}`.toLowerCase()
+        return matchTerms.some((term) => haystack.includes(term))
+      })
+    } catch (compatibilityQueryError) {
+      console.error(`[Car brand compatibility query failed for ${brandSlug}]:`, compatibilityQueryError)
+      cars = []
+    }
   }
 
   return cars.filter((car) => {
