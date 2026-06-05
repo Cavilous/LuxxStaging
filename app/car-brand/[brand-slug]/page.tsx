@@ -1,7 +1,7 @@
-import { notFound, permanentRedirect } from "next/navigation"
+import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 import { db } from "@/lib/db"
-import { inventory, seoPages } from "@/lib/db/schema"
+import { inventory } from "@/lib/db/schema"
 import { eq, and, desc, ilike, or, sql } from "drizzle-orm"
 import Link from "next/link"
 import { Phone, MessageCircle } from "lucide-react"
@@ -1231,23 +1231,6 @@ export default async function CarBrandPage({ params }: BrandPageProps) {
 
   if (!brand) {
     notFound()
-  }
-
-  const seoSlug = `miami/${brandSlug}-rental`
-  let existingSeoPage: { id: string, contentStatus: string | null, isPublished: boolean }[] = []
-
-  try {
-    existingSeoPage = await db
-      .select({ id: seoPages.id, contentStatus: seoPages.contentStatus, isPublished: seoPages.isPublished })
-      .from(seoPages)
-      .where(eq(seoPages.slug, seoSlug))
-      .limit(1)
-  } catch (error) {
-    console.error(`[Car brand SEO redirect lookup failed for ${brandSlug}]:`, error)
-  }
-
-  if (existingSeoPage.length > 0 && existingSeoPage[0].contentStatus !== 'pending') {
-    permanentRedirect(`/${seoSlug}`)
   }
 
   const cars = await getBrandCars(brand.name, brand.slug, brand.inventoryMatch)

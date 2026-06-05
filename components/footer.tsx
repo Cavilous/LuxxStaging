@@ -7,15 +7,12 @@ import { Instagram } from "lucide-react"
 import { SOCIAL_LINKS } from "@/lib/social-config"
 
 const FOOTER_BRAND_LINKS = [
-  { name: "Aston Martin", slug: "aston-martin" },
   { name: "Audi", slug: "audi" },
   { name: "Bentley", slug: "bentley" },
   { name: "BMW", slug: "bmw" },
   { name: "Cadillac", slug: "cadillac" },
   { name: "Ferrari", slug: "ferrari" },
   { name: "Lamborghini", slug: "lamborghini" },
-  { name: "Land Rover", slug: "land-rover" },
-  { name: "Maserati", slug: "maserati" },
   { name: "McLaren", slug: "mclaren" },
   { name: "Mercedes", slug: "mercedes" },
   { name: "Porsche", slug: "porsche" },
@@ -74,7 +71,7 @@ export function Footer() {
                 <li key={brand.slug} className="flex items-center justify-center md:justify-start">
                   <span className="text-[#ECAC36] mr-2 text-xs">◆</span>
                   <Link
-                    href={`/miami/${brand.slug}-rental`}
+                    href={`/car-brand/${brand.slug}`}
                     className="hover:text-gold-gradient transition-colors duration-[220ms] ease-[cubic-bezier(0.2,0.8,0.2,1)]"
                   >
                     {brand.name} Rental Miami

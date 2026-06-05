@@ -99,8 +99,12 @@ export default async function SeoPage({ params }: SeoPageProps) {
     notFound()
   }
 
-  let page: any = await getSeoPage(city, seoSlug)
   const fallbackBrandSlug = parseBrandRentalSeoSlug(seoSlug)
+  if (fallbackBrandSlug) {
+    redirect(`/car-brand/${fallbackBrandSlug}`)
+  }
+
+  let page: any = await getSeoPage(city, seoSlug)
 
   if (!page) {
     page = createBrandSeoFallbackPage(city, seoSlug)
