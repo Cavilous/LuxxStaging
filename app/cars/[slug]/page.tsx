@@ -335,19 +335,36 @@ export default async function CarDetailPage({ params, searchParams }: CarDetailP
                   )}
                 </div>
                 {selectedDiscount && (
-                  <div className="mb-4 rounded-xl border border-[#ECAC36]/25 bg-[#ECAC36]/10 p-3 text-sm">
-                    <p className="font-medium text-white">
-                      Multi-day discount applied for {selectedDiscount.days} days.
-                    </p>
-                    <p className="mt-1 text-gray-300">
-                      Standard rate: ${basePricePerDay.toLocaleString()}/day. Savings: ${selectedDiscount.savingsPerDay.toLocaleString()}/day, about ${selectedDiscount.totalSavings.toLocaleString()} over {selectedDiscount.days} days.
-                    </p>
+                  <div className="mb-4 rounded-xl border border-[#ECAC36]/25 bg-[#ECAC36]/10 p-4 text-sm">
+                    <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
+                      <div>
+                        <p className="font-medium text-white">
+                          Multi-day discount applied for {selectedDiscount.days} days.
+                        </p>
+                        <p className="mt-1 text-gray-300">
+                          Standard rate: ${basePricePerDay.toLocaleString()}/day. Daily savings: ${selectedDiscount.savingsPerDay.toLocaleString()}.
+                        </p>
+                      </div>
+                      <div className="rounded-lg border border-[#ECAC36]/30 bg-black/30 px-4 py-3 text-left sm:text-right">
+                        <span className="block text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-[#B5B5B5]">
+                          You save
+                        </span>
+                        <strong className="block text-2xl font-black leading-none text-[#ECAC36]">
+                          ${selectedDiscount.totalSavings.toLocaleString()}
+                        </strong>
+                        <span className="mt-1 block text-[0.72rem] text-gray-400">
+                          over {selectedDiscount.days} days
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 )}
                 <div className="mb-4 grid grid-cols-2 gap-2">
                   {CAR_DISCOUNT_TIERS.map((tier) => {
                     const rate = getTieredDailyRate(basePricePerDay, tier.days)
                     const isSelected = selectedDiscount?.days === tier.days
+                    const tierSavingsPerDay = Math.max(0, basePricePerDay - rate)
+                    const tierSavingsTotal = tierSavingsPerDay * tier.days
 
                     return (
                       <a
@@ -362,6 +379,9 @@ export default async function CarDetailPage({ params, searchParams }: CarDetailP
                         <span className="block font-semibold">{tier.label}</span>
                         <span className={isSelected ? "text-black/80" : "text-[#ECAC36]"}>
                           ${rate.toLocaleString()}/day
+                        </span>
+                        <span className={isSelected ? "mt-0.5 block text-[0.68rem] text-black/70" : "mt-0.5 block text-[0.68rem] text-gray-500"}>
+                          Save ${tierSavingsTotal.toLocaleString()}
                         </span>
                       </a>
                     )

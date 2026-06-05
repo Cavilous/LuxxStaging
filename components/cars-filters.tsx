@@ -1,9 +1,11 @@
 "use client"
 
 import { useState } from "react"
+import type { CSSProperties } from "react"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
 import { cn } from "@/lib/utils"
+import { getFleetBrandLogoStyle } from "@/lib/brand-logo-utils"
 import type { FleetBrandFilterOption } from "@/lib/car-filter-utils"
 import { Car, Check, ChevronDown, DollarSign, SlidersHorizontal, Tag, X } from "lucide-react"
 
@@ -98,11 +100,44 @@ export function CarsFilters({
 
   const activeCount = selectedBrands.length + selectedBodyTypes.length + (hasCustomPrice ? 1 : 0)
   const priceLabel = formatPriceRange(filters.priceRange, priceMax, hasPricesAboveMax)
+  const totalBrandCount = displayBrands.reduce((total, brand) => total + brand.count, 0)
 
   return (
     <div className="sticky top-0 z-40 border-y border-[#ECAC36]/15 bg-[#050505]/95 backdrop-blur-xl">
       <div className="container mx-auto px-4 py-3 md:py-4">
         <div className="border border-white/[0.07] bg-[linear-gradient(180deg,rgba(255,255,255,0.045),rgba(255,255,255,0.018))] px-3 py-3 shadow-[0_18px_44px_rgba(0,0,0,0.28)] cut-corner-card md:px-4">
+          <div className="luxx-brand-shortcut-rail" aria-label="Quick brand filters">
+            <button
+              type="button"
+              onClick={() => onFiltersChange({ brands: [] })}
+              aria-pressed={selectedBrands.length === 0}
+              className={cn("luxx-brand-shortcut", selectedBrands.length === 0 && "is-active")}
+            >
+              <span className="luxx-brand-shortcut-logo luxx-brand-shortcut-logo--all" aria-hidden="true" />
+              <span>All</span>
+              <em>{totalBrandCount}</em>
+            </button>
+            {displayBrands.map(({ name: brand, count }) => {
+              const logoStyle = getFleetBrandLogoStyle(brand) as CSSProperties | null
+              const isSelected = selectedBrands.includes(brand)
+
+              return (
+                <button
+                  key={`quick-${brand}`}
+                  type="button"
+                  onClick={() => toggleBrand(brand)}
+                  aria-pressed={isSelected}
+                  className={cn("luxx-brand-shortcut", isSelected && "is-active")}
+                  style={logoStyle || undefined}
+                >
+                  <span className="luxx-brand-shortcut-logo" aria-hidden="true" />
+                  <span>{brand}</span>
+                  <em>{count}</em>
+                </button>
+              )
+            })}
+          </div>
+
           <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
             <div className="flex shrink-0 items-center justify-between gap-3 xl:w-[12.5rem]">
               <div className="flex items-center gap-2.5 text-sm font-semibold uppercase tracking-[0.14em] text-white/90">

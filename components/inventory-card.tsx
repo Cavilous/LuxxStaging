@@ -9,6 +9,7 @@ import type {
 import { normalizeImageUrl } from "@/lib/media-utils"
 import { ProgressiveImage } from "@/components/progressive-image"
 import { CAR_DISCOUNT_TIERS, getDiscountHref, getTieredDailyRate, parseDailyRate } from "@/lib/car-discount-tiers"
+import { getFleetBrandLogo, getFleetBrandLogoStyle } from "@/lib/brand-logo-utils"
 
 interface InventoryCardProps {
   type: "car" | "yacht" | "villa" | "jet"
@@ -53,46 +54,6 @@ function supportsDesktopMotion(): boolean {
     window.matchMedia("(hover: hover) and (pointer: fine)").matches &&
     !window.matchMedia("(prefers-reduced-motion: reduce)").matches
   )
-}
-
-function getBrandMark(brand?: string): string | null {
-  if (!brand) return null
-
-  const normalizedBrand = brand.trim()
-  if (!normalizedBrand) return null
-
-  const brandMarks: Record<string, string> = {
-    "aston martin": "AM",
-    audi: "A",
-    bentley: "B",
-    bmw: "BMW",
-    bugatti: "B",
-    cadillac: "C",
-    ferrari: "F",
-    lamborghini: "LB",
-    "land rover": "LR",
-    lexus: "L",
-    maserati: "M",
-    mclaren: "MC",
-    "mercedes-benz": "MB",
-    mercedes: "MB",
-    porsche: "P",
-    "range rover": "RR",
-    "rolls-royce": "RR",
-    rolls: "RR",
-  }
-
-  const key = normalizedBrand.toLowerCase().replace(/\s+/g, " ")
-  if (brandMarks[key]) return brandMarks[key]
-
-  const initials = normalizedBrand
-    .split(/[\s-]+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((word) => word[0])
-    .join("")
-
-  return initials || normalizedBrand.slice(0, 2)
 }
 
 export function InventoryCard({
@@ -184,7 +145,9 @@ export function InventoryCard({
   const detailUrl = getDetailUrl()
   const dailyRate = type === "car" ? parseDailyRate(price) : 0
   const showDiscountTiers = type === "car" && dailyRate > 0
-  const brandMark = type === "car" ? getBrandMark(brand) : null
+  const brandLogo = type === "car" ? getFleetBrandLogo(brand, title) : null
+  const brandLogoStyle = type === "car" ? getFleetBrandLogoStyle(brand, title) : null
+  const ratePreviewTiers = showDiscountTiers ? CAR_DISCOUNT_TIERS.slice(0, 3) : []
 
   useEffect(() => {
     if (!showDiscountTiers) return
@@ -212,6 +175,7 @@ export function InventoryCard({
   const cardStyle = {
     "--luxx-shine-x": "50%",
     "--luxx-shine-y": "50%",
+    ...(brandLogoStyle || {}),
   } as CSSProperties
 
   const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -291,10 +255,18 @@ export function InventoryCard({
             priority={priority}
           />
 
-          {brandMark && (
+          {brandLogo && (
             <div
               className="luxx-car-brand-glow"
-              data-brand-mark={brandMark}
+              data-brand-logo-key={brandLogo.key}
+              aria-hidden="true"
+            />
+          )}
+
+          {brandLogo && (
+            <span
+              className="luxx-card-brand-badge"
+              data-brand-logo-key={brandLogo.key}
               aria-hidden="true"
             />
           )}
@@ -320,6 +292,22 @@ export function InventoryCard({
             ) : (
               <div className="font-semibold text-lg text-[#ECAC36]">
                 Call for pricing
+              </div>
+            )}
+            {ratePreviewTiers.length > 0 && (
+              <div className="luxx-card-rate-strip" aria-label={`Multi-day rate preview for ${title}`}>
+                {ratePreviewTiers.map((tier) => {
+                  const rate = getTieredDailyRate(dailyRate, tier.days)
+                  const savingsPerDay = Math.max(0, dailyRate - rate)
+
+                  return (
+                    <span key={tier.slug} className="luxx-card-rate-pill">
+                      <span>{tier.label}</span>
+                      <strong>${rate.toLocaleString()}</strong>
+                      <em>save ${savingsPerDay.toLocaleString()}/day</em>
+                    </span>
+                  )
+                })}
               </div>
             )}
           </div>
