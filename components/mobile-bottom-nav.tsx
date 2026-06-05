@@ -33,11 +33,12 @@ const navItems = [
 ] as const
 
 function isActivePath(pathname: string | null, matches: readonly string[]) {
-  const currentPath = pathname || "/"
+  const currentPath = (pathname || "/").replace(/\/+$/, "") || "/"
 
   return matches.some((match) => {
-    if (match === "/") return currentPath === "/"
-    return currentPath === match || currentPath.startsWith(`${match}/`)
+    const normalizedMatch = match.replace(/\/+$/, "") || "/"
+    if (normalizedMatch === "/") return currentPath === "/"
+    return currentPath === normalizedMatch || currentPath.startsWith(`${normalizedMatch}/`)
   })
 }
 
@@ -56,6 +57,7 @@ export function MobileBottomNav() {
               key={item.label}
               href={item.href}
               className={`luxx-mobile-bottom-nav-item ${isActive ? "is-active" : ""}`}
+              data-active={isActive ? "true" : undefined}
               aria-current={isActive ? "page" : undefined}
             >
               <span className="luxx-mobile-bottom-nav-icon">

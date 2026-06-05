@@ -174,7 +174,7 @@ export function InventoryCard({
       window.matchMedia("(pointer: coarse)").matches ||
       window.matchMedia("(max-width: 768px)").matches
 
-    if (!mobileLike || reduceMotion || !("IntersectionObserver" in window)) return
+    if (mobileLike || reduceMotion || !("IntersectionObserver" in window)) return
 
     const observer = new IntersectionObserver(
       ([entry]) => {
