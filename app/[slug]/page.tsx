@@ -171,7 +171,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
             </Link>
 
             <Link 
-              href="/villas"
+              href="/houses"
               className="group relative bg-gradient-to-br from-gray-900 to-black border border-gray-800 rounded-xl p-8 text-center hover:border-[#ECAC36]/50 transition-all duration-300"
             >
               <div className="w-16 h-16 mx-auto mb-4 bg-[#ECAC36]/10 rounded-full flex items-center justify-center group-hover:bg-[#ECAC36]/20 transition-colors">

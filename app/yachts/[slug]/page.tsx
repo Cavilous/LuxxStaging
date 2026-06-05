@@ -25,8 +25,23 @@ function getYachtImages(yacht: { images?: unknown }) {
     .filter(Boolean)
 }
 
+function normalizeRouteToken(value: string | null | undefined) {
+  return (value || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "")
+}
+
 function getFallbackYachtBySlug(slug: string) {
-  return getFallbackYachts().find((yacht) => yacht.slug === slug) || null
+  const normalizedSlug = normalizeRouteToken(slug)
+
+  return getFallbackYachts().find((yacht) => {
+    return [
+      yacht.slug,
+      yacht.id,
+      yacht.title,
+    ].some((value) => normalizeRouteToken(value) === normalizedSlug)
+  }) || null
 }
 
 function getYachtPrice4Hr(yacht: { pricePerHour?: unknown; pricePer4Hr?: unknown }) {
@@ -75,7 +90,7 @@ async function getYachtBySlug(slug: string) {
           eq(inventory.isPublished, true),
           or(
             eq(inventory.slug, slug),
-            ilike(inventory.title, `%${slug.replace("-", " ")}%`)
+            ilike(inventory.title, `%${slug.replace(/-/g, " ")}%`)
           )
         )
       )
@@ -276,9 +291,7 @@ export default async function YachtDetailPage({ params }: YachtDetailPageProps) 
             Yachts
           </a>
           <span className="mx-2">/</span>
-          <a href={`/yachts/${yachtData.brand.toLowerCase()}`} className="hover:text-[#ECAC36]">
-            {yachtData.brand}
-          </a>
+          <span>{yachtData.brand}</span>
           <span className="mx-2">/</span>
           <span className="text-white">{yachtData.title}</span>
         </nav>

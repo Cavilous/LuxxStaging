@@ -347,7 +347,7 @@ export default async function SeoPage({ params }: SeoPageProps) {
                   No inventory currently available for this category.
                 </p>
                 <Link
-                  href={`/${page.category === 'car' ? 'cars' : page.category === 'yacht' ? 'yachts' : 'villas'}`}
+                  href={`/${page.category === 'car' ? 'cars' : page.category === 'yacht' ? 'yachts' : 'houses'}`}
                   className="inline-flex items-center gap-2 bg-[#ECAC36] hover:bg-[#b8972e] text-black font-bold py-3 px-8 rounded-lg transition-colors"
                 >
                   Browse All {page.category === 'car' ? 'Cars' : page.category === 'yacht' ? 'Yachts' : 'Villas'}

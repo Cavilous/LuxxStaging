@@ -6,7 +6,7 @@ import { RequestInfoDrawer } from "@/components/request-info-drawer"
 import { ProductSchema } from "@/components/product-schema"
 import { BreadcrumbSchema } from "@/components/breadcrumb-schema"
 import { db } from "@/lib/db"
-import { eq, and, ne } from "drizzle-orm"
+import { eq, and, ne, or, ilike } from "drizzle-orm"
 import { inventory } from "@/lib/db/schema"
 import type { Metadata } from "next"
 import { buildVillaSpecRows, getExplicitFeatures, getExplicitAmenities, isPresentString, isPresentNumber } from "@/lib/display-guards"
@@ -20,8 +20,23 @@ export const dynamicParams = true
 
 const fallbackImage = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400"%3E%3Cdefs%3E%3ClinearGradient id="g" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%23000;stop-opacity:1"/%3E%3Cstop offset="100%25" style="stop-color:%23333;stop-opacity:1"/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23g)" width="600" height="400"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" fill="%23ECAC36" font-size="24" font-family="Arial"%3ELuxx Miami%3C/text%3E%3C/svg%3E'
 
+function normalizeRouteToken(value: string | null | undefined) {
+  return (value || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "")
+}
+
 function getFallbackVillaBySlug(slug: string) {
-  return getFallbackVillas().find((villa) => villa.slug === slug) || null
+  const normalizedSlug = normalizeRouteToken(slug)
+
+  return getFallbackVillas().find((villa) => {
+    return [
+      villa.slug,
+      villa.id,
+      villa.title,
+    ].some((value) => normalizeRouteToken(value) === normalizedSlug)
+  }) || null
 }
 
 function getVillaImages(images: unknown) {
@@ -87,8 +102,11 @@ async function getVillaBySlug(slug: string) {
       .where(
         and(
           eq(inventory.category, "villa"),
-          eq(inventory.slug, slug),
-          eq(inventory.isPublished, true)
+          eq(inventory.isPublished, true),
+          or(
+            eq(inventory.slug, slug),
+            ilike(inventory.title, `%${slug.replace(/-/g, " ")}%`)
+          )
         )
       )
       .limit(1)
@@ -245,12 +263,7 @@ export default async function VillaDetailPage({ params }: VillaDetailPageProps) 
           </a>
           <span className="mx-2">/</span>
           {villaData.neighborhood ? (
-            <a
-              href={`/houses/${villaData.neighborhood.toLowerCase().replace(" ", "-")}`}
-              className="hover:text-[#ECAC36]"
-            >
-              {villaData.neighborhood}
-            </a>
+            <span>{villaData.neighborhood}</span>
           ) : (
             <span>Miami</span>
           )}

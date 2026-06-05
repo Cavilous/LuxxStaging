@@ -11,12 +11,20 @@ import { eq, asc, and, sql } from "drizzle-orm"
 import { cache } from "react"
 import { getPrimaryImage, getPrimaryLqImage } from "@/lib/media-utils"
 import { getFallbackFeaturedCars } from "@/lib/fallback-cars"
+import { getFallbackYachts } from "@/lib/fallback-yachts"
+import { getFallbackVillas } from "@/lib/fallback-villas"
 
 export const revalidate = 300
 
-function getFallbackHomeCars() {
-  const fallbackImage = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400"%3E%3Cdefs%3E%3ClinearGradient id="g" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%23000;stop-opacity:1"/%3E%3Cstop offset="100%25" style="stop-color:%23333;stop-opacity:1"/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23g)" width="600" height="400"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" fill="%23ECAC36" font-size="24" font-family="Arial"%3ELuxx Miami%3C/text%3E%3C/svg%3E'
+const fallbackInventoryImage = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400"%3E%3Cdefs%3E%3ClinearGradient id="g" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%23000;stop-opacity:1"/%3E%3Cstop offset="100%25" style="stop-color:%23333;stop-opacity:1"/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23g)" width="600" height="400"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" fill="%23ECAC36" font-size="24" font-family="Arial"%3ELuxx Miami%3C/text%3E%3C/svg%3E'
 
+function getFeaturedFirst<T extends { isFeatured?: boolean | null }>(items: T[], limit = 8) {
+  return [...items]
+    .sort((a, b) => Number(Boolean(b.isFeatured)) - Number(Boolean(a.isFeatured)))
+    .slice(0, limit)
+}
+
+function getFallbackHomeCars() {
   return getFallbackFeaturedCars(8).map((car) => {
     const specs = car.specifications || {}
     const specsList = [
@@ -33,7 +41,7 @@ function getFallbackHomeCars() {
       subtitle: car.subtitle || "",
       price: car.pricePerDay ? `$${Number(car.pricePerDay).toLocaleString()}` : "",
       priceUnit: "day",
-      image: getPrimaryImage(car.images as unknown[]) || fallbackImage,
+      image: getPrimaryImage(car.images as unknown[]) || fallbackInventoryImage,
       lqImage: getPrimaryLqImage(car.images as unknown[]),
       focalPoint: car.focalPoint,
       flipHorizontal: car.flipHorizontal,
@@ -42,6 +50,80 @@ function getFallbackHomeCars() {
       badges: car.isFeatured ? ["Featured"] : [],
     }
   })
+}
+
+function getFallbackHomeYachts() {
+  return getFeaturedFirst(getFallbackYachts()).map((yacht) => {
+    const specs = yacht.specifications || {}
+    const price4hr = yacht.pricePer4Hr
+      ? Number(yacht.pricePer4Hr)
+      : yacht.pricePerHour
+        ? Number(yacht.pricePerHour) * 4
+        : 0
+
+    const specsList = [
+      specs.length ? `${specs.length} length` : "",
+      specs.guests ? `${specs.guests} guests` : "Up to 13 guests",
+      specs.crew ? `${specs.crew} crew` : "Crew included",
+      specs.amenities?.[0] || "Premium amenities",
+    ].filter(Boolean)
+
+    return {
+      id: yacht.slug || yacht.id,
+      type: "yacht" as const,
+      title: yacht.title,
+      subtitle: yacht.subtitle || "Luxury Yacht",
+      price: price4hr > 0 ? `$${price4hr.toLocaleString()}` : "",
+      priceUnit: price4hr > 0 ? "4h" : "",
+      image: getPrimaryImage(yacht.images as unknown[]) || fallbackInventoryImage,
+      lqImage: getPrimaryLqImage(yacht.images as unknown[]),
+      focalPoint: yacht.focalPoint || "50% 40%",
+      flipHorizontal: yacht.flipHorizontal || false,
+      flipVertical: yacht.flipVertical || false,
+      specs: specsList,
+      badges: yacht.isFeatured ? ["Featured"] : [],
+    }
+  })
+}
+
+function getFallbackHomeVillas() {
+  return getFeaturedFirst(getFallbackVillas()).map((villa) => {
+    const specs = (villa.specifications as any) || {}
+    const images = Array.isArray(villa.images) ? villa.images : []
+    const thumbnails = Array.isArray(villa.thumbnails) ? villa.thumbnails : []
+    const primaryThumbnail = thumbnails.length > 0 ? getPrimaryImage(thumbnails as unknown[]) : null
+    const primaryImage = primaryThumbnail || getPrimaryImage(images as unknown[])
+
+    const specsList = [
+      specs.bedrooms ? `${specs.bedrooms} BR` : "",
+      specs.bathrooms ? `${specs.bathrooms} BA` : "",
+      specs.guests ? `${specs.guests} guests` : "",
+      specs.location || specs.neighborhood || villa.subtitle || "Miami",
+    ].filter(Boolean)
+
+    return {
+      id: villa.slug || villa.id,
+      type: "villa" as const,
+      title: villa.title,
+      subtitle: specs.location || villa.subtitle || "Luxury Villa",
+      price: villa.pricePerDay ? `$${Number(villa.pricePerDay).toLocaleString()}` : "Rate upon request",
+      priceUnit: villa.pricePerDay ? "night" : "",
+      image: primaryImage || fallbackInventoryImage,
+      lqImage: getPrimaryLqImage(images as unknown[]),
+      focalPoint: villa.focalPoint || "50% 40%",
+      flipHorizontal: villa.flipHorizontal || false,
+      flipVertical: villa.flipVertical || false,
+      specs: specsList,
+      badges: villa.isFeatured ? ["Featured"] : [],
+    }
+  })
+}
+
+function getFallbackHomeSection(section: string) {
+  if (section === "featured_exotics") return getFallbackHomeCars()
+  if (section === "luxury_yachts") return getFallbackHomeYachts()
+  if (section === "premium_villas") return getFallbackHomeVillas()
+  return []
 }
 
 const getHomePageSection = cache(async (section: string) => {
@@ -119,8 +201,8 @@ const getHomePageSection = cache(async (section: string) => {
       }
     }
 
-    if (items.length === 0 && section === "featured_exotics") {
-      return getFallbackHomeCars()
+    if (items.length === 0) {
+      return getFallbackHomeSection(section)
     }
 
     return items.map((item) => {
@@ -167,8 +249,6 @@ const getHomePageSection = cache(async (section: string) => {
       const primaryImage = getPrimaryImage(item.images as unknown[])
 
       // Fallback gradient image (data URI) instead of placeholder.svg
-      const fallbackImage = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400"%3E%3Cdefs%3E%3ClinearGradient id="g" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%23000;stop-opacity:1"/%3E%3Cstop offset="100%25" style="stop-color:%23333;stop-opacity:1"/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23g)" width="600" height="400"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" fill="%23ECAC36" font-size="24" font-family="Arial"%3ELuxx Miami%3C/text%3E%3C/svg%3E'
-
       const lqImage = getPrimaryLqImage(item.images as unknown[])
 
       return {
@@ -178,7 +258,7 @@ const getHomePageSection = cache(async (section: string) => {
         subtitle: item.subtitle || "",
         price,
         priceUnit,
-        image: primaryImage || fallbackImage,
+        image: primaryImage || fallbackInventoryImage,
         lqImage,
         focalPoint: item.focalPoint || '50% 40%',
         flipHorizontal: item.flipHorizontal || false,
@@ -189,10 +269,7 @@ const getHomePageSection = cache(async (section: string) => {
     })
   } catch (error) {
     console.error(`Error fetching home page section "${section}":`, error)
-    if (section === "featured_exotics") {
-      return getFallbackHomeCars()
-    }
-    return []
+    return getFallbackHomeSection(section)
   }
 })
 
