@@ -23,10 +23,10 @@ export function DemoAcknowledgementGate() {
 
     const params = new URLSearchParams(window.location.search)
     if (params.get("demoPreview") === "reset") {
-      window.sessionStorage.removeItem(STORAGE_KEY)
+      window.localStorage.removeItem(STORAGE_KEY)
     }
 
-    setVisible(window.sessionStorage.getItem(STORAGE_KEY) !== "true")
+    setVisible(window.localStorage.getItem(STORAGE_KEY) !== "true")
     setReady(true)
   }, [isAdminRoute])
 
@@ -45,7 +45,7 @@ export function DemoAcknowledgementGate() {
 
   const enterDemo = () => {
     if (!checked) return
-    window.sessionStorage.setItem(STORAGE_KEY, "true")
+    window.localStorage.setItem(STORAGE_KEY, "true")
     setVisible(false)
   }
 

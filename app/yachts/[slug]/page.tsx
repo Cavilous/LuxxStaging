@@ -28,6 +28,10 @@ function getFallbackYachtBySlug(slug: string) {
   return getFallbackYachts().find((yacht) => yacht.slug === slug) || null
 }
 
+function getFallbackYachtStaticParams() {
+  return getFallbackYachts().map((yacht) => ({ slug: yacht.slug }))
+}
+
 function getYachtPrice4Hr(yacht: { pricePerHour?: unknown; pricePer4Hr?: unknown }) {
   const pricePerHour = yacht.pricePerHour ? Number(yacht.pricePerHour) : 0
   return yacht.pricePer4Hr ? Number(yacht.pricePer4Hr) : pricePerHour * 4
@@ -54,6 +58,10 @@ function mapSimilarYacht(yacht: any) {
 }
 
 export async function generateStaticParams() {
+  if (!process.env.DATABASE_URL && !process.env.POSTGRES_URL && !process.env.POSTGRES_PRISMA_URL) {
+    return getFallbackYachtStaticParams()
+  }
+
   try {
     const yachts = await db
       .select({ slug: inventory.slug })
@@ -66,7 +74,7 @@ export async function generateStaticParams() {
       .map((yacht) => ({ slug: String(yacht.slug) }))
   } catch (error) {
     console.error('Error generating static params for yachts:', error)
-    return []
+    return getFallbackYachtStaticParams()
   }
 }
 

@@ -1,10 +1,12 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, type CSSProperties } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import {
   ArrowRight,
   Car,
+  ChevronLeft,
+  ChevronRight,
   CheckCircle2,
   ExternalLink,
   EyeOff,
@@ -27,14 +29,33 @@ type DemoStep = {
   title: string
   body: string
   callout: string
+  note: string
   href?: string
   actionLabel?: string
   scrollTarget?: string[]
   scrollTop?: boolean
+  spotlightSelectors?: string[]
   secondaryActions?: DemoAction[]
 }
 
 type PendingScroll = (Pick<DemoStep, "scrollTarget" | "scrollTop"> & { href: string }) | null
+type SpotlightPlacement = "top" | "bottom"
+type SpotlightState = {
+  top: number
+  left: number
+  width: number
+  height: number
+  tooltipTop: number
+  tooltipLeft: number
+  arrowLeft: number
+  pointerTop: number
+  pointerLeft: number
+  placement: SpotlightPlacement
+}
+
+type DemoTooltipStyle = CSSProperties & {
+  "--luxx-demo-arrow-left"?: string
+}
 
 const demoSteps: DemoStep[] = [
   {
@@ -42,54 +63,67 @@ const demoSteps: DemoStep[] = [
     label: "Homepage",
     icon: Home,
     title: "Homepage ready",
-    body: "The homepage hero, featured sections, and visual polish are ready for the client walkthrough.",
-    callout: "Start with the homepage for the first client pass.",
+    body: "Hero, featured rows, and visual polish are ready for review.",
+    callout: "Start at the hero, then move into the first featured row.",
+    note: "Use this as the opening moment: polished, private, and intentionally staged for review.",
     href: "/",
     actionLabel: "Open homepage",
     scrollTop: true,
+    spotlightSelectors: ["#home .page-reveal", "#home"],
   },
   {
     key: "menu-logos",
     label: "Menu logos",
     icon: Sparkles,
     title: "Menu logo hovers ready",
-    body: "The Exotic Cars menu now reveals brand-specific logo glow states on hover, with matching logo-backed brand chips on mobile.",
-    callout: "Hover Exotic Cars, then hover a brand like Bentley to show the logo reveal.",
+    body: "Desktop hover reveals brand logo glow; mobile chips carry the same cue.",
+    callout: "Hover Exotic Cars, then Bentley.",
+    note: "Point out that the navigation feels more premium without changing the client flow.",
     href: "/",
     actionLabel: "Open homepage",
     scrollTop: true,
+    spotlightSelectors: [
+      ".luxx-header-nav-group:nth-child(2) > .luxx-header-menu-link",
+      ".luxx-mobile-menu-trigger",
+    ],
   },
   {
     key: "fleet",
     label: "Fleet cards",
     icon: Car,
     title: "Fleet cards ready",
-    body: "The featured fleet cards are ready to show with polished motion, cleaner images, and simple browsing.",
-    callout: "Scroll to the featured fleet cards and show the browsing polish.",
+    body: "Featured cards show motion, cleaner media, and a clear browse path.",
+    callout: "Review the card row and View All path.",
+    note: "This is the main visual upgrade: cards should feel responsive, smooth, and high-end.",
     href: "/",
     actionLabel: "Show cards",
     scrollTarget: ["Featured Exotics"],
-    secondaryActions: [{ label: "Open full fleet", href: "/cars" }],
+    spotlightSelectors: ["#featured-exotics .fleet-grid", "#featured-exotics"],
+    secondaryActions: [{ label: "Open full fleet", href: "/cars-listing" }],
   },
   {
     key: "bentley",
     label: "Bentley page",
     icon: Sparkles,
     title: "Bentley brand page ready",
-    body: "The Bentley page is ready to show a focused brand path with matching vehicles for the preview.",
-    callout: "Use Bentley to show the brand page and inventory path.",
+    body: "The Bentley path shows focused brand inventory for the preview.",
+    callout: "Use Bentley to show the brand inventory path.",
+    note: "This is where the client can compare staging against their current brand pages.",
     href: "/car-brand/bentley",
     actionLabel: "Open Bentley",
+    spotlightSelectors: ["main h1", "h1", ".fleet-grid"],
   },
   {
     key: "listings",
     label: "Yachts & villas",
     icon: Ship,
     title: "Yachts and villas ready",
-    body: "Yacht and villa listing pages load with safe preview inventory while final live listings are reconciled.",
-    callout: "Open yachts first, then villas. Both listing views are ready to review.",
+    body: "Yachts and villas load safe preview inventory for review.",
+    callout: "Open yachts first, then villas.",
+    note: "Keep this quick in the walkthrough: the point is that the preview does not dead-end.",
     href: "/yachts",
     actionLabel: "Open yachts",
+    spotlightSelectors: ["main h1", "h1", "#luxury-yachts", "#premium-villas"],
     secondaryActions: [{ label: "Open villas", href: "/houses" }],
   },
   {
@@ -97,8 +131,9 @@ const demoSteps: DemoStep[] = [
     label: "Private preview",
     icon: EyeOff,
     title: "Private preview ready",
-    body: "The staging preview is marked private for review, with public visibility handled in the launch checklist.",
-    callout: "Share that the preview stays private while the team reviews it.",
+    body: "The staging preview stays private while launch rules are finalized.",
+    callout: "Share that review stays private until launch.",
+    note: "Use this to reassure them the demo is not being positioned as a public launch.",
     secondaryActions: [{ label: "Open preview rules", href: "/robots.txt" }],
   },
   {
@@ -106,8 +141,9 @@ const demoSteps: DemoStep[] = [
     label: "Inventory sync notes",
     icon: CheckCircle2,
     title: "Items for the existing dev team",
-    body: "Included in the package: a short handoff list to reconcile inventory fields, publish rules, and final source timing.",
-    callout: "Frame this as normal handoff alignment for production parity.",
+    body: "Final inventory fields, publish rules, and source timing stay in handoff.",
+    callout: "Frame this as normal production alignment.",
+    note: "This keeps open items positioned as implementation notes, not blockers for tonight's presentation.",
   },
 ]
 
@@ -125,13 +161,46 @@ function scrollToHeading(targets: string[]) {
   match?.scrollIntoView({ behavior: "smooth", block: "center" })
 }
 
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max)
+}
+
+function findVisibleTarget(selectors: string[]) {
+  for (const selector of selectors) {
+    const candidates = Array.from(document.querySelectorAll<HTMLElement>(selector))
+    const target = candidates.find((element) => {
+      const rect = element.getBoundingClientRect()
+      const style = window.getComputedStyle(element)
+
+      return (
+        rect.width > 8 &&
+        rect.height > 8 &&
+        rect.bottom > 0 &&
+        rect.top < window.innerHeight &&
+        style.display !== "none" &&
+        style.visibility !== "hidden" &&
+        style.opacity !== "0"
+      )
+    })
+
+    if (target) return target
+  }
+
+  return null
+}
+
 export function PresentationCallouts() {
   const router = useRouter()
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(true)
   const [activeKey, setActiveKey] = useState(demoSteps[0].key)
   const [pendingScroll, setPendingScroll] = useState<PendingScroll>(null)
+  const [spotlight, setSpotlight] = useState<SpotlightState | null>(null)
   const active = demoSteps.find((step) => step.key === activeKey) || demoSteps[0]
+  const activeIndex = Math.max(
+    demoSteps.findIndex((step) => step.key === active.key),
+    0,
+  )
   const ActiveIcon = active.icon
 
   useEffect(() => {
@@ -150,6 +219,78 @@ export function PresentationCallouts() {
 
     return () => window.clearTimeout(timeout)
   }, [pathname, pendingScroll])
+
+  useEffect(() => {
+    if (!isOpen || !active.spotlightSelectors?.length) {
+      setSpotlight(null)
+      return
+    }
+
+    let frameId: number | null = null
+    let settleTimeout: number | null = null
+
+    const updateSpotlight = () => {
+      frameId = null
+
+      if (window.innerWidth < 768) {
+        setSpotlight(null)
+        return
+      }
+
+      const target = findVisibleTarget(active.spotlightSelectors || [])
+      if (!target) {
+        setSpotlight(null)
+        return
+      }
+
+      const rect = target.getBoundingClientRect()
+      const margin = 16
+      const pad = 10
+      const tooltipWidth = Math.min(320, window.innerWidth - margin * 2)
+      const centerX = rect.left + rect.width / 2
+      const tooltipLeft = clamp(centerX - tooltipWidth / 2, margin, window.innerWidth - tooltipWidth - margin)
+      const placement: SpotlightPlacement = rect.top > 176 || rect.bottom + 150 > window.innerHeight ? "top" : "bottom"
+      const tooltipTop = placement === "top" ? Math.max(margin, rect.top - 18) : Math.min(window.innerHeight - margin, rect.bottom + 18)
+      const ringLeft = clamp(rect.left - pad, margin, window.innerWidth - margin)
+      const ringTop = clamp(rect.top - pad, margin, window.innerHeight - margin)
+      const ringWidth = clamp(rect.width + pad * 2, 0, window.innerWidth - ringLeft - margin)
+      const ringHeight = clamp(rect.height + pad * 2, 0, window.innerHeight - ringTop - margin)
+
+      setSpotlight({
+        top: ringTop,
+        left: ringLeft,
+        width: ringWidth,
+        height: ringHeight,
+        tooltipTop,
+        tooltipLeft,
+        arrowLeft: clamp(centerX - tooltipLeft, 22, tooltipWidth - 22),
+        pointerTop:
+          placement === "top"
+            ? Math.max(margin, ringTop - 30)
+            : Math.min(window.innerHeight - margin - 24, ringTop + ringHeight + 6),
+        pointerLeft: clamp(centerX - 11, margin, window.innerWidth - margin - 22),
+        placement,
+      })
+    }
+
+    const requestUpdate = () => {
+      if (frameId === null) {
+        frameId = window.requestAnimationFrame(updateSpotlight)
+      }
+    }
+
+    requestUpdate()
+    settleTimeout = window.setTimeout(requestUpdate, 180)
+    window.addEventListener("scroll", requestUpdate, { passive: true })
+    window.addEventListener("resize", requestUpdate)
+
+    return () => {
+      if (frameId !== null) window.cancelAnimationFrame(frameId)
+      if (settleTimeout !== null) window.clearTimeout(settleTimeout)
+      window.removeEventListener("scroll", requestUpdate)
+      window.removeEventListener("resize", requestUpdate)
+    }
+  }, [active, isOpen, pathname])
 
   function goToStep(step: DemoStep) {
     setActiveKey(step.key)
@@ -182,26 +323,71 @@ export function PresentationCallouts() {
     router.push(action.href)
   }
 
+  function goToRelativeStep(direction: -1 | 1) {
+    const nextIndex = (activeIndex + direction + demoSteps.length) % demoSteps.length
+    goToStep(demoSteps[nextIndex])
+  }
+
   return (
-    <div className="fixed bottom-4 right-4 z-50 max-w-[calc(100vw-2rem)]">
+    <div className="luxx-demo-callouts fixed inset-x-3 bottom-3 z-[70] max-w-none sm:inset-x-auto sm:bottom-4 sm:right-4 sm:max-w-[calc(100vw-2rem)]">
       {!isOpen ? (
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          className="magnetic-hover cut-corner border border-[#ECAC36]/50 bg-black/90 px-4 py-3 text-sm font-bold text-[#ECAC36] shadow-2xl backdrop-blur-md"
+          className="luxx-demo-toggle magnetic-hover cut-corner flex min-h-12 w-full items-center justify-center border border-[#ECAC36]/50 bg-black/90 px-5 py-3 text-sm font-bold text-[#ECAC36] shadow-2xl backdrop-blur-md sm:w-auto"
           aria-label="Open presentation notes"
+          aria-expanded={false}
         >
           Demo Notes
         </button>
       ) : (
         <>
-          <div className="mb-2 ml-auto flex w-[min(390px,calc(100vw-2rem))] items-center gap-2 border border-[#ECAC36]/25 bg-black/85 px-3 py-2 text-xs font-semibold text-gray-200 shadow-xl backdrop-blur-md">
-            <ArrowRight className="h-4 w-4 shrink-0 text-[#ECAC36]" />
-            <span>{active.callout}</span>
-          </div>
+          {spotlight ? (
+            <>
+              <div
+                className="luxx-demo-spotlight"
+                style={{
+                  top: `${spotlight.top}px`,
+                  left: `${spotlight.left}px`,
+                  width: `${spotlight.width}px`,
+                  height: `${spotlight.height}px`,
+                }}
+                aria-hidden="true"
+              />
+              <div
+                className={`luxx-demo-pointer luxx-demo-pointer--${spotlight.placement}`}
+                style={{
+                  top: `${spotlight.pointerTop}px`,
+                  left: `${spotlight.pointerLeft}px`,
+                }}
+                aria-hidden="true"
+              >
+                <ArrowRight className="h-5 w-5" />
+              </div>
+              <div
+                className={`luxx-demo-tooltip luxx-demo-tooltip--${spotlight.placement}`}
+                style={
+                  {
+                    top: `${spotlight.tooltipTop}px`,
+                    left: `${spotlight.tooltipLeft}px`,
+                    "--luxx-demo-arrow-left": `${spotlight.arrowLeft}px`,
+                  } as DemoTooltipStyle
+                }
+                aria-live="polite"
+              >
+                <span className="luxx-demo-tooltip-kicker">{active.label}</span>
+                <span>{active.callout}</span>
+              </div>
+            </>
+          ) : (
+            <div className="luxx-demo-banner mb-2 ml-auto flex w-full items-center gap-2 border border-[#ECAC36]/25 bg-black/85 px-3 py-2.5 text-xs font-semibold text-gray-200 shadow-xl backdrop-blur-md sm:w-[min(390px,calc(100vw-2rem))]">
+              <ArrowRight className="h-4 w-4 shrink-0 text-[#ECAC36]" />
+              <span>{active.callout}</span>
+            </div>
+          )}
 
-          <aside className="cut-corner w-[min(390px,calc(100vw-2rem))] border border-[#ECAC36]/35 bg-black/90 p-4 text-white shadow-2xl backdrop-blur-md">
-            <div className="mb-3 flex items-start justify-between gap-3">
+          <aside className="luxx-demo-panel cut-corner max-h-[calc(100svh-1.5rem)] w-full overflow-y-auto overscroll-contain border border-[#ECAC36]/35 bg-black/90 p-3 text-white shadow-2xl backdrop-blur-md sm:w-[min(390px,calc(100vw-2rem))] sm:p-4">
+            <div className="luxx-demo-panel-header mb-3 flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-bold uppercase text-[#ECAC36]">Client walkthrough</p>
                 <h2 className="mt-1 text-lg font-heading font-black">Ready checklist</h2>
@@ -209,10 +395,10 @@ export function PresentationCallouts() {
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="rounded-sm p-1.5 text-gray-400 hover:bg-white/10 hover:text-white"
+                className="luxx-demo-close flex h-12 w-12 shrink-0 items-center justify-center rounded-sm text-gray-400 hover:bg-white/10 hover:text-white"
                 aria-label="Close presentation notes"
               >
-                <X className="h-4 w-4" />
+                <X className="h-5 w-5" />
               </button>
             </div>
 
@@ -235,7 +421,7 @@ export function PresentationCallouts() {
                           key={step.key}
                           type="button"
                           onClick={() => goToStep(step)}
-                          className={`magnetic-hover cut-corner flex items-center justify-between gap-3 px-3 py-2.5 text-left text-sm font-bold ${
+                          className={`luxx-demo-step-button magnetic-hover cut-corner flex min-h-12 items-center justify-between gap-3 px-3 py-3 text-left text-sm font-bold sm:min-h-0 sm:py-2.5 ${
                             isActive
                               ? "bg-[#ECAC36] text-black"
                               : "border border-white/15 bg-white/5 text-gray-200 hover:border-[#ECAC36]/40"
@@ -268,6 +454,10 @@ export function PresentationCallouts() {
               </p>
               <h3 className="mb-2 pr-10 text-base font-bold">{active.title}</h3>
               <p className="text-sm leading-relaxed text-gray-300">{active.body}</p>
+              <div className="luxx-demo-note mt-3 border border-[#ECAC36]/20 bg-[#ECAC36]/10 px-3 py-2 text-xs leading-relaxed text-[#f4d28a]">
+                <span className="font-bold text-[#ECAC36]">Walkthrough note: </span>
+                {active.note}
+              </div>
 
               {active.actionLabel ? (
                 <div className="mt-3 flex flex-wrap gap-2">
@@ -286,7 +476,7 @@ export function PresentationCallouts() {
 
                       goToStep(active)
                     }}
-                    className="cut-corner bg-[#ECAC36] px-3 py-2 text-xs font-bold text-black hover:bg-[#e6c766]"
+                    className="luxx-demo-action cut-corner min-h-11 bg-[#ECAC36] px-4 py-3 text-sm font-bold text-black hover:bg-[#e6c766] sm:min-h-0 sm:px-3 sm:py-2 sm:text-xs"
                   >
                     {active.actionLabel}
                   </button>
@@ -295,7 +485,7 @@ export function PresentationCallouts() {
                       key={action.href}
                       type="button"
                       onClick={() => goToAction(action)}
-                      className="cut-corner border border-[#ECAC36]/35 px-3 py-2 text-xs font-bold text-[#ECAC36] hover:bg-[#ECAC36] hover:text-black"
+                      className="luxx-demo-action cut-corner min-h-11 border border-[#ECAC36]/35 px-4 py-3 text-sm font-bold text-[#ECAC36] hover:bg-[#ECAC36] hover:text-black sm:min-h-0 sm:px-3 sm:py-2 sm:text-xs"
                     >
                       {action.label}
                     </button>
@@ -308,7 +498,7 @@ export function PresentationCallouts() {
                       key={action.href}
                       type="button"
                       onClick={() => goToAction(action)}
-                      className="cut-corner border border-[#ECAC36]/35 px-3 py-2 text-xs font-bold text-[#ECAC36] hover:bg-[#ECAC36] hover:text-black"
+                      className="luxx-demo-action cut-corner min-h-11 border border-[#ECAC36]/35 px-4 py-3 text-sm font-bold text-[#ECAC36] hover:bg-[#ECAC36] hover:text-black sm:min-h-0 sm:px-3 sm:py-2 sm:text-xs"
                     >
                       {action.label}
                     </button>
@@ -317,9 +507,31 @@ export function PresentationCallouts() {
               ) : null}
             </div>
 
+            <div className="luxx-demo-controls mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+              <button
+                type="button"
+                onClick={() => goToRelativeStep(-1)}
+                className="luxx-demo-nav cut-corner flex min-h-11 items-center justify-center gap-2 border border-white/15 bg-white/5 px-3 py-2 text-xs font-bold text-gray-200 hover:border-[#ECAC36]/45 hover:text-[#ECAC36]"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Previous
+              </button>
+              <span className="text-xs font-bold text-gray-500">
+                {activeIndex + 1}/{demoSteps.length}
+              </span>
+              <button
+                type="button"
+                onClick={() => goToRelativeStep(1)}
+                className="luxx-demo-nav cut-corner flex min-h-11 items-center justify-center gap-2 bg-[#ECAC36] px-3 py-2 text-xs font-bold text-black hover:bg-[#e6c766]"
+              >
+                Next
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+
             <div className="mt-3 flex items-center gap-2 text-xs text-gray-400">
-              <CheckCircle2 className="h-4 w-4 text-[#ECAC36]" />
-              Ready items and package notes are organized for the walkthrough.
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-[#ECAC36]" />
+              <span>Use Next to walk through each improvement in order.</span>
             </div>
           </aside>
         </>

@@ -1,9 +1,9 @@
 "use client"
 
-import Link from "next/link"
 import { useEffect, useId, useRef, useState } from "react"
 import type {
   CSSProperties,
+  MouseEvent as ReactMouseEvent,
   PointerEvent as ReactPointerEvent,
 } from "react"
 import { normalizeImageUrl } from "@/lib/media-utils"
@@ -314,14 +314,28 @@ export function InventoryCard({
     setIsRateGuideOpen((isOpen) => !isOpen)
   }
 
+  const handleCardClick = (event: ReactMouseEvent<HTMLDivElement>) => {
+    const target = event.target instanceof HTMLElement ? event.target : null
+    if (!target || target.closest("button")) return
+
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+
+    const anchor = target.closest<HTMLAnchorElement>("a[href]")
+    const href = anchor?.getAttribute("href") || detailUrl
+
+    event.preventDefault()
+    window.location.assign(href)
+  }
+
   return (
     <div
       ref={cardRef}
-      className={`car-card luxx-magnetic-card luxx-inventory-card luxx-inventory-card--${type} group bg-[#0A0A0A] rounded-lg border border-white/10`}
+      className={`car-card luxx-magnetic-card luxx-inventory-card luxx-inventory-card--${type} group cursor-pointer bg-[#0A0A0A] rounded-lg border border-white/10`}
       data-brand={brandLogo?.key || brand}
       data-brand-logo-key={brandLogo?.key}
       data-brand-logo={brandLogo?.logo}
       style={cardStyle}
+      onClickCapture={handleCardClick}
       onPointerMove={handlePointerMove}
       onPointerLeave={resetPointerEffect}
     >
@@ -331,7 +345,7 @@ export function InventoryCard({
           aria-hidden="true"
         />
       )}
-      <Link href={detailUrl} className="relative z-[1] block cursor-pointer">
+      <a href={detailUrl} className="relative z-[1] block cursor-pointer">
         <div className="car-img-wrap relative aspect-[3/2] overflow-hidden">
           <ProgressiveImage
             src={getPlaceholderImage()}
@@ -376,8 +390,11 @@ export function InventoryCard({
           {showSubtitle && (
             <p className="text-sm truncate text-gray-500">{displaySubtitle}</p>
           )}
+          <span className="mt-3 inline-flex min-h-9 items-center justify-center border border-[#ECAC36]/30 bg-[#ECAC36]/10 px-3 text-xs font-bold uppercase tracking-normal text-[#ECAC36] transition-colors duration-200 cut-corner-button group-hover:border-[#ECAC36]/70 group-hover:bg-[#ECAC36]/15">
+            View vehicle
+          </span>
         </div>
-      </Link>
+      </a>
       {showDiscountTiers && (
         <div
           ref={rateGuideRef}
@@ -413,7 +430,7 @@ export function InventoryCard({
               const reservationTotal = getReservationTotal(rate, tier.days)
 
               return (
-                <Link
+                <a
                   key={tier.slug}
                   href={tierHref}
                   className={`luxx-rate-guide-row focus-angular ${
@@ -445,7 +462,7 @@ export function InventoryCard({
                       Save <span className="luxx-rate-guide-save-value">${savingsPerDay.toLocaleString()}/day</span>
                     </span>
                   </span>
-                </Link>
+                </a>
               )
             })}
           </div>

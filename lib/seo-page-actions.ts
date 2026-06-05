@@ -2,7 +2,8 @@ import 'server-only'
 import { db, withRetry } from '@/lib/db'
 import { seoPages, seoPageUnits, seoIntentMappings, inventory } from '@/lib/db/schema'
 import { eq, and, desc, asc, sql, inArray, ilike, or } from 'drizzle-orm'
-import { getCityName, SERVICE_CITIES } from '@/lib/seo-constants'
+import { getCityName, SERVICE_CITIES, getBrandSeoDisplayName, normalizeBrandSeoSlug } from '@/lib/seo-constants'
+import { getFallbackCarsByTerms } from '@/lib/fallback-cars'
 
 export async function getSeoPageBySlug(slug: string) {
   try {
@@ -77,13 +78,19 @@ const BRAND_MATCH_TERMS: Record<string, string[]> = {
 }
 
 export async function getInventoryByBrand(brandSlug: string) {
-  const brandName = BRAND_SLUG_TO_INVENTORY[brandSlug] || brandSlug.replace(/-/g, ' ')
+  const normalizedBrandSlug = normalizeBrandSeoSlug(brandSlug)
+  const brandName =
+    BRAND_SLUG_TO_INVENTORY[normalizedBrandSlug] ||
+    getBrandSeoDisplayName(normalizedBrandSlug) ||
+    normalizedBrandSlug.replace(/-/g, ' ')
   const matchTerms = Array.from(new Set([
     brandName,
+    normalizedBrandSlug,
+    normalizedBrandSlug.replace(/-/g, ' '),
     brandSlug,
     brandSlug.replace(/-/g, ' '),
-    ...(BRAND_MATCH_TERMS[brandSlug] || []),
-  ].filter(Boolean)))
+    ...(BRAND_MATCH_TERMS[normalizedBrandSlug] || []),
+  ].filter(Boolean))).map((term) => term.toLowerCase())
 
   try {
     const results = await withRetry(
@@ -95,7 +102,7 @@ export async function getInventoryByBrand(brandSlug: string) {
             eq(inventory.category, 'car'),
             eq(inventory.isPublished, true),
             or(
-              eq(inventory.brandSlug, brandSlug),
+              eq(inventory.brandSlug, normalizedBrandSlug),
               ...matchTerms.flatMap((term) => [
                 ilike(inventory.brand, `%${term}%`),
                 ilike(inventory.title, `%${term}%`),
@@ -105,12 +112,13 @@ export async function getInventoryByBrand(brandSlug: string) {
         )
         .orderBy(desc(inventory.isFeatured), desc(inventory.pricePerDay)),
       3,
-      `brand-inventory-${brandSlug}`
+      `brand-inventory-${normalizedBrandSlug}`
     )
-    return results
+    const fallbackMatches = getFallbackCarsByTerms(matchTerms)
+    return fallbackMatches.length > results.length ? fallbackMatches : results
   } catch (error) {
-    console.error(`[Brand Inventory Error] brand="${brandSlug}":`, error)
-    return []
+    console.error(`[Brand Inventory Error] brand="${normalizedBrandSlug}":`, error)
+    return getFallbackCarsByTerms(matchTerms)
   }
 }
 

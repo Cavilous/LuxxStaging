@@ -1,7 +1,9 @@
 import { notFound, redirect } from "next/navigation"
 import type { Metadata } from "next"
+import type { CSSProperties } from "react"
 import { getSeoPageBySlug, getSeoPageUnits, getAlternativeUnits, getInventoryByBrand } from "@/lib/seo-page-actions"
-import { SERVICE_CITIES } from "@/lib/seo-constants"
+import { getBrandSeoDisplayName, parseBrandRentalSeoSlug, SERVICE_CITIES } from "@/lib/seo-constants"
+import { getFleetBrandPageLogoStyle } from "@/lib/brand-logo-utils"
 import { InventoryCard } from "@/components/inventory-card"
 import Link from "next/link"
 
@@ -23,29 +25,66 @@ async function getSeoPage(city: string, seoSlug: string) {
   return getSeoPageBySlug(compositeSlug)
 }
 
+function getCityDisplayName(city: string): string {
+  return SERVICE_CITIES.find(c => c.slug === city)?.name || city.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+}
+
+function createBrandSeoFallbackPage(city: string, seoSlug: string) {
+  const brandSlug = parseBrandRentalSeoSlug(seoSlug)
+  if (!brandSlug) return null
+
+  const cityName = getCityDisplayName(city)
+  const brandName = getBrandSeoDisplayName(brandSlug)
+
+  return {
+    id: "",
+    slug: `${city}/${seoSlug}`,
+    pageType: "brand-city",
+    city,
+    brand: brandSlug,
+    model: null,
+    category: "car",
+    intent: null,
+    title: `${brandName} Rental ${cityName}`,
+    h1: `${brandName} Rentals in ${cityName}`,
+    metaTitle: `${brandName} Rental ${cityName} | Exotic Car Rentals - LUXX Miami`,
+    metaDescription: `Rent a ${brandName} in ${cityName} with LUXX Miami. Browse available ${brandName} vehicles, daily rates, and delivery options.`,
+    content: null,
+    contentStatus: "fallback",
+    isPublished: true,
+    isIndexable: false,
+    canonicalUrl: `https://luxxmiami.com/${city}/${seoSlug}`,
+    redirectTo: null,
+    createdAt: null,
+    updatedAt: null,
+  }
+}
+
 export async function generateMetadata({ params }: SeoPageProps): Promise<Metadata> {
   const { slug: city, "seo-slug": seoSlug } = await params
 
   if (!isValidCity(city)) return {}
 
   const page = await getSeoPage(city, seoSlug)
-  if (!page) return { title: "Page Not Found | Luxx Miami" }
+  const fallbackPage = !page ? createBrandSeoFallbackPage(city, seoSlug) : null
+  const metadataPage = page || fallbackPage
+  if (!metadataPage) return { title: "Page Not Found | Luxx Miami" }
 
   const metadata: Metadata = {
-    title: page.metaTitle || page.title,
-    description: page.metaDescription,
+    title: metadataPage.metaTitle || metadataPage.title,
+    description: metadataPage.metaDescription,
     alternates: {
-      canonical: page.canonicalUrl || `https://luxxmiami.com/${city}/${seoSlug}`,
+      canonical: metadataPage.canonicalUrl || `https://luxxmiami.com/${city}/${seoSlug}`,
     },
     openGraph: {
-      title: page.metaTitle || page.title,
-      description: page.metaDescription || undefined,
+      title: metadataPage.metaTitle || metadataPage.title,
+      description: metadataPage.metaDescription || undefined,
       type: "website",
       url: `https://luxxmiami.com/${city}/${seoSlug}`,
     },
   }
 
-  if (!page.isIndexable) {
+  if (!metadataPage.isIndexable) {
     metadata.robots = { index: false, follow: true }
   }
 
@@ -60,11 +99,15 @@ export default async function SeoPage({ params }: SeoPageProps) {
     notFound()
   }
 
-  const page = await getSeoPage(city, seoSlug)
+  let page: any = await getSeoPage(city, seoSlug)
+  const fallbackBrandSlug = parseBrandRentalSeoSlug(seoSlug)
 
   if (!page) {
-    console.log(`[SEO Page] Not found in DB: "${city}/${seoSlug}"`)
-    notFound()
+    page = createBrandSeoFallbackPage(city, seoSlug)
+    if (!page) {
+      console.log(`[SEO Page] Not found in DB: "${city}/${seoSlug}"`)
+      notFound()
+    }
   }
 
   if (page.redirectTo) {
@@ -72,15 +115,25 @@ export default async function SeoPage({ params }: SeoPageProps) {
   }
 
   if (!page.isPublished) {
+    const fallbackPage = createBrandSeoFallbackPage(city, seoSlug)
+    if (fallbackPage) {
+      page = fallbackPage
+    } else {
+      notFound()
+    }
+  }
+
+  if (!page.isPublished) {
     notFound()
   }
 
-  const units = await getSeoPageUnits(page.id)
+  const units = page.id ? await getSeoPageUnits(page.id) : []
 
   let brandInventory: any[] = []
   if (page.pageType === 'brand-city') {
-    if (page.brand) {
-      brandInventory = await getInventoryByBrand(page.brand)
+    const brandSlug = fallbackBrandSlug || page.brand
+    if (brandSlug) {
+      brandInventory = await getInventoryByBrand(brandSlug)
     } else {
       console.warn(`[SEO Page] brand-city page "${page.slug}" has no brand field set`)
     }
@@ -89,11 +142,17 @@ export default async function SeoPage({ params }: SeoPageProps) {
   const hasUnits = units.length > 0
   const hasBrandInventory = brandInventory.length > 0
   let alternativeUnits: any[] = []
-  if (!hasUnits && !hasBrandInventory) {
+  if (page.pageType !== 'brand-city' && !hasUnits && !hasBrandInventory) {
     alternativeUnits = await getAlternativeUnits(page.category, page.city, 6)
   }
 
   const displayUnits = hasUnits ? units : alternativeUnits
+  const brandDisplayName = page.pageType === 'brand-city'
+    ? getBrandSeoDisplayName(fallbackBrandSlug || page.brand)
+    : ""
+  const brandPageStyle = page.pageType === 'brand-city'
+    ? getFleetBrandPageLogoStyle(brandDisplayName, page.title) as CSSProperties | null
+    : null
 
   const structuredData = {
     "@context": "https://schema.org",
@@ -122,13 +181,17 @@ export default async function SeoPage({ params }: SeoPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <div
+      className={page.pageType === 'brand-city' ? "luxx-brand-page min-h-screen bg-black" : "min-h-screen bg-black"}
+      data-brand={fallbackBrandSlug || page.brand || undefined}
+      style={brandPageStyle ?? undefined}
+    >
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
 
-      <section className="pt-24 pb-12 px-4">
+      <section className={page.pageType === 'brand-city' ? "luxx-brand-hero pt-24 pb-12 px-4" : "pt-24 pb-12 px-4"}>
         <div className="container mx-auto max-w-7xl">
           <nav className="flex items-center gap-2 text-sm text-gray-500 mb-8">
             <Link href="/" className="hover:text-[#ECAC36] transition-colors">Home</Link>
@@ -163,9 +226,12 @@ export default async function SeoPage({ params }: SeoPageProps) {
         <section className="pb-12 px-4">
           <div className="container mx-auto max-w-7xl">
             <h2 className="text-2xl md:text-3xl font-heading font-bold text-white mb-6">
-              Available <span className="text-[#ECAC36]">{page.title?.replace(' Rental Miami', '').replace(' Miami', '')}</span> Inventory
+              Available <span className="text-[#ECAC36]">{brandDisplayName || page.title?.replace(' Rental Miami', '').replace(' Miami', '')}</span> Rentals
             </h2>
-            <div className="fleet-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6">
+            <div
+              className="fleet-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6"
+              data-brand-filter={fallbackBrandSlug || page.brand || undefined}
+            >
               {brandInventory.map((unit: any, index: number) => {
                 const images = Array.isArray(unit.images)
                   ? (unit.images as any[])
@@ -182,6 +248,7 @@ export default async function SeoPage({ params }: SeoPageProps) {
                     key={unit.id}
                     type="car"
                     title={unit.title}
+                    brand={brandDisplayName || unit.brand}
                     subtitle={unit.subtitle || ""}
                     price={`$${Number(unit.pricePerDay || 0).toLocaleString()}`}
                     priceUnit="day"
@@ -216,7 +283,14 @@ export default async function SeoPage({ params }: SeoPageProps) {
       {!hasBrandInventory && (
         <section className="pb-16 px-4">
           <div className="container mx-auto max-w-7xl">
-            {!hasUnits && (
+            {page.pageType === 'brand-city' ? (
+              <div className="mb-8 p-6 bg-[#111111] border border-[#333333] rounded-lg">
+                <p className="text-gray-300">
+                  No {brandDisplayName || page.title?.toLowerCase()} vehicles are currently shown in this staging
+                  inventory. Contact our concierge team for availability or special requests.
+                </p>
+              </div>
+            ) : !hasUnits && (
               <div className="mb-8 p-6 bg-[#111111] border border-[#333333] rounded-lg">
                 <p className="text-gray-300">
                   We're currently building our {page.title?.toLowerCase()} fleet.

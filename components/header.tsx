@@ -4,8 +4,8 @@ import { useState, useEffect, useCallback, type CSSProperties, type PointerEvent
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Menu, Phone, ChevronDown, Home, Car, Anchor, Building, Briefcase, Instagram } from "lucide-react"
+import { Sheet, SheetContent } from "@/components/ui/sheet"
+import { Menu, Phone, ChevronDown, Home, Car, Anchor, Building, Briefcase, Instagram, X } from "lucide-react"
 import { SOCIAL_LINKS } from "@/lib/social-config"
 import { TrackedPhoneLink } from "@/components/tracked-phone-link"
 import { getFleetBrandLogoStyle } from "@/lib/brand-logo-utils"
@@ -293,29 +293,39 @@ export function Header() {
 
           {/* Mobile: Phone + Menu */}
           <div className="flex items-center gap-3 lg:hidden">
-            <TrackedPhoneLink 
+            <TrackedPhoneLink
               phoneNumber="+13056055899"
-              className="flex items-center justify-center w-10 h-10 bg-[#ECAC36] hover:bg-[#d49c2e] text-black rounded transition-colors"
+              className="flex h-12 w-12 items-center justify-center rounded bg-[#ECAC36] text-black transition-colors hover:bg-[#d49c2e]"
               ariaLabel="Call us"
               suppressHydrationWarning
             >
               <Phone className="h-5 w-5" />
             </TrackedPhoneLink>
-            
+
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
-              <SheetTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="luxx-mobile-menu-trigger text-white hover:bg-white/10 w-10 h-10"
-                  aria-label="Open navigation menu"
-                  aria-expanded={isOpen}
-                >
-                  <Menu className="h-6 w-6" aria-hidden="true" />
-                </Button>
-              </SheetTrigger>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="luxx-mobile-menu-trigger h-12 w-12 text-white hover:bg-white/10"
+                aria-label="Open navigation menu"
+                aria-controls="luxx-mobile-navigation"
+                aria-expanded={isOpen}
+                onClick={() => setIsOpen(true)}
+              >
+                <Menu className="h-6 w-6" aria-hidden="true" />
+              </Button>
               <SheetContent side="right" className="luxx-mobile-sheet bg-black/98 backdrop-blur-md border-l border-white/10 w-full sm:w-full sm:max-w-full p-0 overflow-y-auto">
-                <div className="luxx-mobile-menu flex min-h-full flex-col px-5 pb-7 pt-6">
+                <button
+                  type="button"
+                  className="luxx-mobile-sheet-close"
+                  aria-label="Close navigation menu"
+                  aria-controls="luxx-mobile-navigation"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <X className="h-6 w-6" aria-hidden="true" />
+                </button>
+                <div id="luxx-mobile-navigation" className="luxx-mobile-menu flex min-h-full flex-col px-5 pb-7 pt-6">
                   <div className="luxx-mobile-menu-brand">
                     <Image
                       src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/profile-pic-logo-transparent-background%20%281%29-NsrnIlw2XUmCf9NaHqCqGNTdzkkgw9.png"
@@ -369,6 +379,7 @@ export function Header() {
                                     href={brand.href}
                                     className="luxx-mobile-brand-chip"
                                     style={getBrandStyle(brand.name)}
+                                    aria-label={`View ${brand.name} rentals`}
                                     onClick={() => setIsOpen(false)}
                                   >
                                     <span className="relative z-10">{brand.name}</span>

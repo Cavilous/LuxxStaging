@@ -23,6 +23,10 @@ function getFallbackVillaBySlug(slug: string) {
   return getFallbackVillas().find((villa) => villa.slug === slug) || null
 }
 
+function getFallbackVillaStaticParams() {
+  return getFallbackVillas().map((villa) => ({ slug: villa.slug }))
+}
+
 function getVillaImages(images: unknown) {
   return Array.isArray(images)
     ? (images as any[]).map((img: any) => typeof img === 'string' ? img : img?.url).filter(Boolean)
@@ -69,6 +73,10 @@ function mapSimilarVillas(villas: any[], currentVillaId: string, currentVillaSlu
 }
 
 export async function generateStaticParams() {
+  if (!process.env.DATABASE_URL && !process.env.POSTGRES_URL && !process.env.POSTGRES_PRISMA_URL) {
+    return getFallbackVillaStaticParams()
+  }
+
   try {
     const villas = await db
       .select({ slug: inventory.slug })
@@ -81,7 +89,7 @@ export async function generateStaticParams() {
       .map((villa) => ({ slug: String(villa.slug) }))
   } catch (error) {
     console.error('Error generating static params for villas:', error)
-    return []
+    return getFallbackVillaStaticParams()
   }
 }
 
