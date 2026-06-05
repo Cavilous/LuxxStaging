@@ -76,6 +76,15 @@ const nextConfig = {
     const isProduction = process.env.NODE_ENV === 'production'
 
     return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'X-Robots-Tag',
+            value: 'noindex, nofollow, noarchive',
+          },
+        ],
+      },
       ...(!isProduction ? [
         {
           source: '/_next/:path*',

@@ -1,15 +1,33 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { CarsFilters } from "@/components/cars-filters"
 import { InventoryCard } from "@/components/inventory-card"
 import { LoadMoreGrid } from "@/components/load-more-grid"
 
 const INITIAL_ITEMS = 12
 const LOAD_MORE_COUNT = 8
+const BRAND_ORDER = ["Ferrari", "Lamborghini", "Rolls-Royce", "McLaren", "Porsche", "Bentley", "Mercedes", "BMW", "Audi", "Land Rover", "Cadillac", "Maserati", "Chevrolet", "Ford", "Tesla"]
+const BODY_TYPE_ORDER = ["Supercar", "Convertible", "SUV", "Sedan", "Coupe"]
 
 function normalizeFilterValue(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "")
+}
+
+function parsePrice(price: string): number {
+  return Number.parseInt(price.replace(/[$,]/g, "")) || 0
+}
+
+function sortByPreferredOrder(values: string[], preferredOrder: string[]): string[] {
+  return [...values].sort((a, b) => {
+    const aIndex = preferredOrder.indexOf(a)
+    const bIndex = preferredOrder.indexOf(b)
+
+    if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex
+    if (aIndex !== -1) return -1
+    if (bIndex !== -1) return 1
+    return a.localeCompare(b)
+  })
 }
 
 function SkeletonCard() {
@@ -79,12 +97,53 @@ interface CarsPageContentProps {
 }
 
 export function CarsPageContent({ initialCars }: CarsPageContentProps) {
+  const priceMax = useMemo(() => {
+    const highestPrice = initialCars.reduce((max, car) => Math.max(max, parsePrice(car.price)), 0)
+    return Math.max(1000, Math.ceil(highestPrice / 100) * 100)
+  }, [initialCars])
+
+  const availableBrands = useMemo(() => {
+    const brands = Array.from(new Set(initialCars.map((car) => car.brand).filter(Boolean)))
+    return sortByPreferredOrder(brands, BRAND_ORDER)
+  }, [initialCars])
+
+  const availableBodyTypes = useMemo(() => {
+    const bodyTypes = Array.from(new Set(initialCars.map((car) => car.bodyType).filter(Boolean)))
+    return sortByPreferredOrder(bodyTypes, BODY_TYPE_ORDER)
+  }, [initialCars])
+
   const [sort, setSort] = useState("price_desc")
   const [filters, setFilters] = useState({
     brands: [] as string[],
     bodyTypes: [] as string[],
-    priceRange: [0, 5000] as [number, number],
+    priceRange: [0, priceMax] as [number, number],
   })
+
+  useEffect(() => {
+    setFilters((prevFilters) => {
+      const validBrands = prevFilters.brands.filter((brand) => availableBrands.includes(brand))
+      const validBodyTypes = prevFilters.bodyTypes.filter((bodyType) => availableBodyTypes.includes(bodyType))
+      const nextPriceRange: [number, number] = [
+        Math.max(0, Math.min(prevFilters.priceRange[0], priceMax)),
+        Math.max(0, Math.min(prevFilters.priceRange[1], priceMax)),
+      ]
+
+      if (
+        validBrands.length === prevFilters.brands.length &&
+        validBodyTypes.length === prevFilters.bodyTypes.length &&
+        nextPriceRange[0] === prevFilters.priceRange[0] &&
+        nextPriceRange[1] === prevFilters.priceRange[1]
+      ) {
+        return prevFilters
+      }
+
+      return {
+        brands: validBrands,
+        bodyTypes: validBodyTypes,
+        priceRange: nextPriceRange,
+      }
+    })
+  }, [availableBrands, availableBodyTypes, priceMax])
 
   const handleFiltersChange = (newFilters: any) => {
     setFilters(prevFilters => ({ ...prevFilters, ...newFilters }))
@@ -94,7 +153,7 @@ export function CarsPageContent({ initialCars }: CarsPageContentProps) {
     setFilters({
       brands: [],
       bodyTypes: [],
-      priceRange: [0, 5000],
+      priceRange: [0, priceMax],
     })
     setSort("price_desc")
   }
@@ -112,7 +171,7 @@ export function CarsPageContent({ initialCars }: CarsPageContentProps) {
         return false
       }
 
-      const price = Number.parseInt(car.price.replace(/[$,]/g, ""))
+      const price = parsePrice(car.price)
       if (price < filters.priceRange[0] || price > filters.priceRange[1]) return false
 
       return true
@@ -121,11 +180,11 @@ export function CarsPageContent({ initialCars }: CarsPageContentProps) {
     switch (sort) {
       case "price_asc":
         return filtered.sort(
-          (a, b) => Number.parseInt(a.price.replace(/[$,]/g, "")) - Number.parseInt(b.price.replace(/[$,]/g, ""))
+          (a, b) => parsePrice(a.price) - parsePrice(b.price)
         )
       case "price_desc":
         return filtered.sort(
-          (a, b) => Number.parseInt(b.price.replace(/[$,]/g, "")) - Number.parseInt(a.price.replace(/[$,]/g, ""))
+          (a, b) => parsePrice(b.price) - parsePrice(a.price)
         )
       case "featured":
       default:
@@ -137,7 +196,13 @@ export function CarsPageContent({ initialCars }: CarsPageContentProps) {
 
   return (
     <>
-      <CarsFilters filters={filters} onFiltersChange={handleFiltersChange} />
+      <CarsFilters
+        filters={filters}
+        onFiltersChange={handleFiltersChange}
+        availableBrands={availableBrands}
+        availableBodyTypes={availableBodyTypes}
+        priceMax={priceMax}
+      />
 
       <div className="section-divider-angled bg-[#ECAC36] mx-4"></div>
 

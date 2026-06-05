@@ -8,22 +8,22 @@ const callouts = [
     key: "animations",
     label: "Animations",
     icon: Sparkles,
-    title: "Monarc-style motion layer",
-    body: "Homepage index motion, magnetic inventory cards, glimmer sweeps, and polished filter interactions are now wired into the Luxx staging build.",
+    title: "Homepage polish is ready",
+    body: "Homepage motion, inventory card polish, and smoother filter interactions are ready for the walkthrough.",
   },
   {
     key: "fixes",
     label: "Fixes",
     icon: Wrench,
-    title: "Visible QA fixes",
-    body: "Brand inventory matching is more forgiving, Bentley-style pages can pull all matching cars, and homepage blog cards now show real thumbnails instead of empty placeholders.",
+    title: "Client demo fixes",
+    body: "Bentley page inventory is fixed. Blog thumbnails are fixed. Fleet filters are cleaned up. Yacht and villa pages load correctly.",
   },
   {
     key: "links",
     label: "Links",
     icon: Link2,
-    title: "Next SEO package",
-    body: "Recommended next pass: repair old internal links, connect brand pages to `/cars`, add cross-links from guides to fleet pages, and standardize canonical destination paths.",
+    title: "Next cleanup pass",
+    body: "Search/internal links will be cleaned up next. Brand pages, guides, and fleet pages will be checked so the right pages connect clearly.",
   },
 ]
 
@@ -42,14 +42,14 @@ export function PresentationCallouts() {
           className="magnetic-hover cut-corner border border-[#ECAC36]/50 bg-black/90 px-4 py-3 text-sm font-bold text-[#ECAC36] shadow-2xl backdrop-blur-md"
           aria-label="Open presentation notes"
         >
-          QA Notes
+          Demo Notes
         </button>
       ) : (
         <aside className="cut-corner w-[min(390px,calc(100vw-2rem))] border border-[#ECAC36]/35 bg-black/90 p-4 text-white shadow-2xl backdrop-blur-md">
           <div className="mb-3 flex items-start justify-between gap-3">
             <div>
-              <p className="text-xs font-bold uppercase text-[#ECAC36]">Tonight staging package</p>
-              <h2 className="mt-1 text-lg font-heading font-black">Luxx Miami upgrade notes</h2>
+              <p className="text-xs font-bold uppercase text-[#ECAC36]">Client demo package</p>
+              <h2 className="mt-1 text-lg font-heading font-black">Luxx Miami demo notes</h2>
             </div>
             <button
               type="button"
@@ -97,7 +97,7 @@ export function PresentationCallouts() {
 
           <div className="mt-3 flex items-center gap-2 text-xs text-gray-400">
             <CheckCircle2 className="h-4 w-4 text-[#ECAC36]" />
-            Build, deploy, QA, then use this panel during the walkthrough.
+            Ready to use during the client walkthrough.
           </div>
         </aside>
       )}

@@ -5,17 +5,9 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: '*',
-        allow: '/',
-        disallow: [
-          '/admin/',
-          '/api/',
-          '/setup-admin',
-          '/cars-listing',
-          '/tours/cars/booking-success',
-        ],
+        disallow: '/',
       },
     ],
-    sitemap: 'https://luxxmiami.com/sitemap.xml',
-    host: 'https://luxxmiami.com',
+    host: 'https://luxx-staging.vercel.app',
   }
 }

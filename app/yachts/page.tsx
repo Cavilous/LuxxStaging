@@ -2,12 +2,13 @@ import { Suspense, cache } from "react"
 import { YachtsPageContent } from "@/components/yachts-page-content"
 import { BreadcrumbSchema } from "@/components/breadcrumb-schema"
 import { db } from "@/lib/db"
-import { eq, and, desc, asc } from "drizzle-orm"
+import { eq, and, sql } from "drizzle-orm"
 import { inventory } from "@/lib/db/schema"
 import type { Metadata } from "next"
 import { getPrimaryImage, getPrimaryLqImage } from "@/lib/media-utils"
 import { getSortSetting } from "@/lib/sort-settings-actions"
 import { getYachtOrderBy } from "@/lib/inventory-sort-utils"
+import { getFallbackYachts } from "@/lib/fallback-yachts"
 
 export const revalidate = 600
 
@@ -41,80 +42,131 @@ function SkeletonCard() {
   )
 }
 
+function getExecuteRows(result: any): any[] {
+  if (Array.isArray(result)) return result
+  if (Array.isArray(result?.rows)) return result.rows
+  return []
+}
+
+function normalizeInventoryRow(row: any) {
+  const item = row?.item || row || {}
+  const make = item.make || ""
+  const model = item.model || ""
+  const title = item.title || [make, model].filter(Boolean).join(" ") || "Luxury Yacht"
+
+  return {
+    id: item.id,
+    slug: item.slug || null,
+    title,
+    subtitle: item.subtitle || item.location || "Miami",
+    images: item.images || [],
+    focalPoint: item.focalPoint ?? item.focal_point ?? null,
+    flipHorizontal: item.flipHorizontal ?? item.flip_horizontal ?? false,
+    flipVertical: item.flipVertical ?? item.flip_vertical ?? false,
+    pricePerHour: item.pricePerHour ?? item.price_per_hour ?? null,
+    pricePer4Hr: item.pricePer4Hr ?? item.price_per_4hr ?? null,
+    pricePer6Hr: item.pricePer6Hr ?? item.price_per_6hr ?? null,
+    pricePer8Hr: item.pricePer8Hr ?? item.price_per_8hr ?? null,
+    isFeatured: item.isFeatured ?? item.is_featured ?? false,
+    specifications: item.specifications || {},
+  }
+}
+
+const fallbackImage = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400"%3E%3Cdefs%3E%3ClinearGradient id="g" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%23000;stop-opacity:1"/%3E%3Cstop offset="100%25" style="stop-color:%23333;stop-opacity:1"/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23g)" width="600" height="400"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" fill="%23ECAC36" font-size="24" font-family="Arial"%3ELuxx Miami%3C/text%3E%3C/svg%3E'
+
+function transformYachts(rows: any[]) {
+  return rows.map(normalizeInventoryRow).map((yacht) => {
+    const specs = (yacht.specifications as any) || {}
+    const length = specs.length ? Number.parseInt(specs.length) : undefined
+    const guests = specs.guests ? Number.parseInt(specs.guests) : undefined
+    const price4hr = yacht.pricePer4Hr ? Number(yacht.pricePer4Hr) : (yacht.pricePerHour ? Number(yacht.pricePerHour) * 4 : 0)
+    const primaryImage = getPrimaryImage(yacht.images as unknown[])
+
+    return {
+      id: yacht.id,
+      slug: yacht.slug,
+      type: "yacht" as const,
+      title: yacht.title,
+      subtitle: yacht.subtitle || "Miami",
+      price: `$${price4hr.toLocaleString()}`,
+      priceUnit: "4h",
+      pricePerHour: yacht.pricePerHour ? Number(yacht.pricePerHour) : undefined,
+      pricePer4Hr: yacht.pricePer4Hr ? Number(yacht.pricePer4Hr) : undefined,
+      pricePer6Hr: yacht.pricePer6Hr ? Number(yacht.pricePer6Hr) : undefined,
+      pricePer8Hr: yacht.pricePer8Hr ? Number(yacht.pricePer8Hr) : undefined,
+      image: primaryImage || fallbackImage,
+      lqImage: getPrimaryLqImage(yacht.images as unknown[]),
+      focalPoint: yacht.focalPoint || '50% 40%',
+      specs: [
+        specs.length ? `${specs.length} length` : "",
+        "Up to 13 guests",
+        specs.crew ? `${specs.crew} crew` : "2 crew",
+        specs.amenities?.[0] || "Premium amenities",
+      ].filter(Boolean),
+      badges: [
+        yacht.isFeatured ? "Featured" : "",
+        length && length >= 100 ? "Ultra Luxury" : "",
+        length && length >= 80 ? "Luxury" : "Popular",
+      ].filter(Boolean),
+      length,
+      guests,
+      flipHorizontal: yacht.flipHorizontal || false,
+      flipVertical: yacht.flipVertical || false,
+    }
+  })
+}
+
 const YachtsData = cache(async () => {
   try {
     const sortMode = await getSortSetting("yacht")
     const orderClauses = getYachtOrderBy(sortMode)
 
-    const yachts = await db
-      .select({
-        id: inventory.id,
-        slug: inventory.slug,
-        title: inventory.title,
-        subtitle: inventory.subtitle,
-        images: inventory.images,
-        focalPoint: inventory.focalPoint,
-        flipHorizontal: inventory.flipHorizontal,
-        flipVertical: inventory.flipVertical,
-        pricePerHour: inventory.pricePerHour,
-        pricePer4Hr: inventory.pricePer4Hr,
-        pricePer6Hr: inventory.pricePer6Hr,
-        pricePer8Hr: inventory.pricePer8Hr,
-        isFeatured: inventory.isFeatured,
-        specifications: inventory.specifications,
-      })
-      .from(inventory)
-      .where(and(eq(inventory.category, "yacht"), eq(inventory.isPublished, true)))
-      .orderBy(...orderClauses)
-
-    const transformedYachts = yachts.map((yacht) => {
-      const specs = (yacht.specifications as any) || {}
-      const length = specs.length ? Number.parseInt(specs.length) : undefined
-      const guests = specs.guests ? Number.parseInt(specs.guests) : undefined
-      
-      const price4hr = yacht.pricePer4Hr ? Number(yacht.pricePer4Hr) : (yacht.pricePerHour ? Number(yacht.pricePerHour) * 4 : 0)
-      // Use shared media utility for intelligent primary image selection
-      const primaryImage = getPrimaryImage(yacht.images as unknown[])
-      // Fallback gradient image (data URI) instead of placeholder.svg
-      const fallbackImage = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400"%3E%3Cdefs%3E%3ClinearGradient id="g" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%23000;stop-opacity:1"/%3E%3Cstop offset="100%25" style="stop-color:%23333;stop-opacity:1"/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23g)" width="600" height="400"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" fill="%23ECAC36" font-size="24" font-family="Arial"%3ELuxx Miami%3C/text%3E%3C/svg%3E'
-      
-      return {
-        id: yacht.id,
-        slug: yacht.slug,
-        type: "yacht" as const,
-        title: yacht.title,
-        subtitle: yacht.subtitle || "Miami",
-        price: `$${price4hr.toLocaleString()}`,
-        priceUnit: "4h",
-        pricePerHour: yacht.pricePerHour ? Number(yacht.pricePerHour) : undefined,
-        pricePer4Hr: yacht.pricePer4Hr ? Number(yacht.pricePer4Hr) : undefined,
-        pricePer6Hr: yacht.pricePer6Hr ? Number(yacht.pricePer6Hr) : undefined,
-        pricePer8Hr: yacht.pricePer8Hr ? Number(yacht.pricePer8Hr) : undefined,
-        image: primaryImage || fallbackImage,
-        lqImage: getPrimaryLqImage(yacht.images as unknown[]),
-        focalPoint: yacht.focalPoint || '50% 40%',
-        specs: [
-          specs.length ? `${specs.length} length` : "",
-          "Up to 13 guests",
-          specs.crew ? `${specs.crew} crew` : "2 crew",
-          specs.amenities?.[0] || "Premium amenities",
-        ].filter(Boolean),
-        badges: [
-          yacht.isFeatured ? "Featured" : "",
-          length && length >= 100 ? "Ultra Luxury" : "",
-          length && length >= 80 ? "Luxury" : "Popular",
-        ].filter(Boolean),
-        length,
-        guests,
-        flipHorizontal: yacht.flipHorizontal || false,
-        flipVertical: yacht.flipVertical || false,
+    let yachts: any[] = []
+    try {
+      yachts = await db
+        .select({
+          id: inventory.id,
+          slug: inventory.slug,
+          title: inventory.title,
+          subtitle: inventory.subtitle,
+          images: inventory.images,
+          focalPoint: inventory.focalPoint,
+          flipHorizontal: inventory.flipHorizontal,
+          flipVertical: inventory.flipVertical,
+          pricePerHour: inventory.pricePerHour,
+          pricePer4Hr: inventory.pricePer4Hr,
+          pricePer6Hr: inventory.pricePer6Hr,
+          pricePer8Hr: inventory.pricePer8Hr,
+          isFeatured: inventory.isFeatured,
+          specifications: inventory.specifications,
+        })
+        .from(inventory)
+        .where(and(eq(inventory.category, "yacht"), eq(inventory.isPublished, true)))
+        .orderBy(...orderClauses)
+    } catch (richQueryError) {
+      console.error("[Yachts page rich query failed, using compatibility query]:", richQueryError)
+      try {
+        const result = await db.execute(sql`
+          SELECT to_jsonb(i) AS item
+          FROM inventory i
+          WHERE i.category = 'yacht'
+            AND i.is_published = true
+          ORDER BY i.id
+        `)
+        yachts = getExecuteRows(result)
+      } catch (compatibilityQueryError) {
+        console.error("[Yachts page compatibility query failed]:", compatibilityQueryError)
       }
-    })
+    }
 
-    return <YachtsPageContent initialYachts={transformedYachts} />
+    if (yachts.length === 0) {
+      yachts = getFallbackYachts()
+    }
+
+    return <YachtsPageContent initialYachts={transformYachts(yachts)} />
   } catch (error) {
     console.error("Error fetching yachts:", error)
-    return <div className="text-center py-8 text-red-400">Error loading yachts</div>
+    return <YachtsPageContent initialYachts={transformYachts(getFallbackYachts())} />
   }
 })
 

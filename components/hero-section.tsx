@@ -42,7 +42,6 @@ export function HeroSection() {
           />
         </div>
         <div className="absolute inset-0 bg-gradient-to-br from-black/95 via-black/70 to-black/40"></div>
-        <div className="luxx-hero-scanline absolute inset-x-0 top-0"></div>
 
         <div
           className="absolute inset-0 opacity-[0.02] mix-blend-overlay"

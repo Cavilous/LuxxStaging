@@ -10,9 +10,48 @@ import { inventory } from "@/lib/db/schema"
 import type { Metadata } from "next"
 import { buildYachtSpecRows, getExplicitFeatures, isPresentString, isPresentNumber } from "@/lib/display-guards"
 import { PhotoGallery } from "@/components/photo-gallery-wrapper"
+import { getFallbackYachts } from "@/lib/fallback-yachts"
 
 export const revalidate = 900
 export const dynamicParams = true
+
+const fallbackImage = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400"%3E%3Cdefs%3E%3ClinearGradient id="g" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%23000;stop-opacity:1"/%3E%3Cstop offset="100%25" style="stop-color:%23333;stop-opacity:1"/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23g)" width="600" height="400"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" fill="%23ECAC36" font-size="24" font-family="Arial"%3ELuxx Miami%3C/text%3E%3C/svg%3E'
+
+function getYachtImages(yacht: { images?: unknown }) {
+  if (!Array.isArray(yacht.images)) return []
+  return (yacht.images as any[])
+    .map((img: any) => typeof img === 'string' ? img : img?.url)
+    .filter(Boolean)
+}
+
+function getFallbackYachtBySlug(slug: string) {
+  return getFallbackYachts().find((yacht) => yacht.slug === slug) || null
+}
+
+function getYachtPrice4Hr(yacht: { pricePerHour?: unknown; pricePer4Hr?: unknown }) {
+  const pricePerHour = yacht.pricePerHour ? Number(yacht.pricePerHour) : 0
+  return yacht.pricePer4Hr ? Number(yacht.pricePer4Hr) : pricePerHour * 4
+}
+
+function mapSimilarYacht(yacht: any) {
+  const price4hr = getYachtPrice4Hr(yacht)
+  const images = getYachtImages(yacht)
+
+  return {
+    id: yacht.slug || yacht.id,
+    type: "yacht" as const,
+    title: yacht.title || "Luxury Yacht",
+    subtitle: yacht.subtitle || "Luxury Yacht",
+    price: `$${price4hr.toLocaleString()}`,
+    priceUnit: "4h",
+    image: images[0] || fallbackImage,
+    specs: [],
+    badges: yacht.isFeatured ? ["Popular"] : [],
+    focalPoint: yacht.focalPoint || '50% 40%',
+    flipHorizontal: yacht.flipHorizontal || false,
+    flipVertical: yacht.flipVertical || false,
+  }
+}
 
 export async function generateStaticParams() {
   try {
@@ -21,7 +60,7 @@ export async function generateStaticParams() {
       .from(inventory)
       .where(and(eq(inventory.category, "yacht"), eq(inventory.isPublished, true)))
       .limit(50)
-    
+
     return yachts
       .filter((yacht) => yacht.slug && typeof yacht.slug === 'string')
       .map((yacht) => ({ slug: String(yacht.slug) }))
@@ -58,14 +97,24 @@ async function getYachtBySlug(slug: string) {
       return yachts[0]
     }
 
-    return null
+    return getFallbackYachtBySlug(slug)
   } catch (error) {
     console.error('Error fetching yacht:', error)
-    return null
+    return getFallbackYachtBySlug(slug)
   }
 }
 
-async function getSimilarYachts(currentYachtId: string, brand: string) {
+async function getSimilarYachts(currentYachtId: string, brand: string, currentSlug?: string | null) {
+  const fallbackSimilarYachts = () => getFallbackYachts()
+    .filter((yacht) => yacht.id !== currentYachtId && yacht.slug !== currentYachtId && yacht.slug !== currentSlug)
+    .sort((a, b) => {
+      const aBrand = a.title?.toLowerCase().startsWith(brand.toLowerCase()) ? 0 : 1
+      const bBrand = b.title?.toLowerCase().startsWith(brand.toLowerCase()) ? 0 : 1
+      return aBrand - bBrand
+    })
+    .slice(0, 3)
+    .map(mapSimilarYacht)
+
   try {
     const allYachts = await db
       .select({
@@ -106,33 +155,12 @@ async function getSimilarYachts(currentYachtId: string, brand: string) {
       !yacht.title?.toLowerCase().startsWith(brand.toLowerCase())
     )
 
-    const sortedYachts = [...sameBrandYachts, ...otherYachts].slice(0, 3)
+    const sortedYachts = [...sameBrandYachts, ...otherYachts].slice(0, 3).map(mapSimilarYacht)
 
-    return sortedYachts.map((yacht) => {
-      const pricePerHour = Number(yacht.pricePerHour || 0)
-      const price4hr = yacht.pricePer4Hr ? Number(yacht.pricePer4Hr) : pricePerHour * 4
-      const images = Array.isArray(yacht.images) 
-        ? (yacht.images as any[]).map((img: any) => typeof img === 'string' ? img : img.url).filter(Boolean)
-        : []
-      
-      return {
-        id: yacht.slug,
-        type: "yacht" as const,
-        title: yacht.title,
-        subtitle: yacht.subtitle || "Luxury Yacht",
-        price: `$${price4hr.toLocaleString()}`,
-        priceUnit: "4h",
-        image: images[0],
-        specs: [],
-        badges: yacht.isFeatured ? ["Popular"] : [],
-        focalPoint: yacht.focalPoint || '50% 40%',
-        flipHorizontal: yacht.flipHorizontal || false,
-        flipVertical: yacht.flipVertical || false,
-      }
-    })
+    return sortedYachts.length > 0 ? sortedYachts : fallbackSimilarYachts()
   } catch (error) {
     console.error('Error fetching similar yachts:', error)
-    return []
+    return fallbackSimilarYachts()
   }
 }
 
@@ -146,13 +174,11 @@ export async function generateMetadata({ params }: YachtDetailPageProps): Promis
     }
   }
 
-  const images = Array.isArray(yacht.images) 
-    ? (yacht.images as any[]).map((img: any) => typeof img === 'string' ? img : img.url).filter(Boolean)
-    : []
+  const images = getYachtImages(yacht)
 
   const specs = (yacht.specifications as any) || {}
   const length = specs.length || "Luxury"
-  const price4hr = Number(yacht.pricePer4Hr || 0)
+  const price4hr = getYachtPrice4Hr(yacht)
   const priceText = price4hr > 0 ? ` Starting at $${price4hr.toLocaleString()} for 4 hours.` : ''
   const defaultDescription = `Charter the ${yacht.title} (${length}) in Miami.${priceText} Up to 13 guests, professional crew included. Book your luxury yacht experience today.`
   const titlePrice = price4hr > 0 ? ` | From $${price4hr.toLocaleString()}` : ''
@@ -190,7 +216,7 @@ export default async function YachtDetailPage({ params }: YachtDetailPageProps) 
 
   const specs = (yacht.specifications as any) || {}
   const brand = yacht.title?.split(' ')[0] || "Luxury"
-  const similarYachts = await getSimilarYachts(yacht.id, brand)
+  const similarYachts = await getSimilarYachts(yacht.id, brand, yacht.slug)
   
   // Calculate hourly price, deriving from 4-hour price if needed
   const pricePerHour = yacht.pricePerHour 
@@ -202,11 +228,9 @@ export default async function YachtDetailPage({ params }: YachtDetailPageProps) 
   const price6hr = yacht.pricePer6Hr ? Number(yacht.pricePer6Hr) : pricePerHour * 6
   const price8hr = yacht.pricePer8Hr ? Number(yacht.pricePer8Hr) : pricePerHour * 8
   
-  // Fallback gradient image (data URI) instead of placeholder.svg
-  const fallbackImage = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400"%3E%3Cdefs%3E%3ClinearGradient id="g" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%23000;stop-opacity:1"/%3E%3Cstop offset="100%25" style="stop-color:%23333;stop-opacity:1"/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23g)" width="600" height="400"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" fill="%23ECAC36" font-size="24" font-family="Arial"%3ELuxx Miami%3C/text%3E%3C/svg%3E'
-  
   const specRows = buildYachtSpecRows(specs)
   const explicitFeatures = getExplicitFeatures(specs)
+  const yachtImages = getYachtImages(yacht)
   
   const yachtData = {
     id: yacht.slug || yacht.id,
@@ -219,9 +243,7 @@ export default async function YachtDetailPage({ params }: YachtDetailPageProps) 
     year: isPresentNumber(specs.year) ? specs.year : null,
     length: isPresentString(specs.length) ? specs.length : null,
     marina: isPresentString(specs.marina) ? specs.marina : null,
-    images: Array.isArray(yacht.images) 
-      ? (yacht.images as any[]).map((img: any) => typeof img === 'string' ? img : img.url).filter(Boolean)
-      : [fallbackImage],
+    images: yachtImages.length > 0 ? yachtImages : [fallbackImage],
     specRows,
     features: explicitFeatures,
     badges: [...(yacht.isFeatured ? ["Featured"] : []), ...(specs.badges || [])],

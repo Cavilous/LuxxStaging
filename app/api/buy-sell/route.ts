@@ -1,16 +1,17 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { forSaleAssets } from "@/lib/db/schema"
-import { eq, desc, and, or, ilike } from "drizzle-orm"
+import { eq, desc, and } from "drizzle-orm"
+import { getFallbackForSaleAssets } from "@/lib/fallback-for-sale-assets"
 
 export const dynamic = "force-dynamic"
 
 export async function GET(request: Request) {
-  try {
-    const { searchParams } = new URL(request.url)
-    const category = searchParams.get("category")
-    const search = searchParams.get("search")
+  const { searchParams } = new URL(request.url)
+  const category = searchParams.get("category")
+  const search = searchParams.get("search")
 
+  try {
     let whereConditions = [eq(forSaleAssets.status, "Live")]
 
     if (category && category !== "all" && category !== "All") {
@@ -68,12 +69,14 @@ export async function GET(request: Request) {
       }
     })
 
+    if (transformedAssets.length === 0) {
+      console.warn("Using fallback buy-sell assets because the live query returned no displayable assets")
+      return NextResponse.json(getFallbackForSaleAssets({ category, search }))
+    }
+
     return NextResponse.json(transformedAssets)
   } catch (error) {
-    console.error("Error fetching buy-sell assets:", error)
-    return NextResponse.json(
-      { error: "Failed to fetch assets" },
-      { status: 500 }
-    )
+    console.warn("Using fallback buy-sell assets because the live query failed:", error)
+    return NextResponse.json(getFallbackForSaleAssets({ category, search }))
   }
 }

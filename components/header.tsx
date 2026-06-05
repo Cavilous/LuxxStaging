@@ -120,7 +120,7 @@ export function Header() {
                 <div key={item.name} className="relative group">
                   <Link
                     href={item.href}
-                    className="flex items-center px-4 py-2 text-sm font-medium text-white/90 hover:text-[#ECAC36] transition-colors duration-200"
+                    className="luxx-nav-hover flex items-center rounded-md border border-white/0 px-4 py-2 text-sm font-medium text-white/90 outline-none hover:border-[#ECAC36]/25 hover:bg-white/[0.04] hover:text-[#ECAC36] focus-visible:border-[#ECAC36]/35 focus-visible:text-[#ECAC36]"
                   >
                     {item.name}
                     {item.hasSubmenu && (
@@ -134,7 +134,7 @@ export function Header() {
                         <div className="p-3">
                           <Link
                             href="/cars"
-                            className="block text-sm text-[#ECAC36] font-medium mb-2 pb-2 border-b border-white/10 hover:text-[#e6c766] transition-colors"
+                            className="luxx-nav-hover mb-2 block rounded-md border-b border-white/10 px-2 py-2 text-sm font-medium text-[#ECAC36] outline-none hover:bg-white/[0.04] hover:text-[#e6c766] focus-visible:text-[#e6c766]"
                           >
                             View All Cars
                           </Link>
@@ -144,7 +144,7 @@ export function Header() {
                               <Link
                                 key={brand.name}
                                 href={brand.href}
-                                className="text-sm text-white/70 hover:text-[#ECAC36] hover:bg-white/5 px-2 py-1.5 rounded transition-colors"
+                                className="luxx-nav-hover block rounded px-2 py-1.5 text-sm text-white/70 outline-none hover:bg-white/5 hover:text-[#ECAC36] focus-visible:text-[#ECAC36]"
                               >
                                 {brand.name}
                               </Link>
@@ -163,7 +163,7 @@ export function Header() {
                             <Link
                               key={service.name}
                               href={service.href}
-                              className="block text-sm text-white/70 hover:text-[#ECAC36] hover:bg-white/5 px-3 py-2.5 rounded transition-colors"
+                              className="luxx-nav-hover block rounded px-3 py-2.5 text-sm text-white/70 outline-none hover:bg-white/5 hover:text-[#ECAC36] focus-visible:text-[#ECAC36]"
                             >
                               {service.name}
                             </Link>

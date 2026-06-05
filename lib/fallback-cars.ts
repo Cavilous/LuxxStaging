@@ -2040,7 +2040,7 @@ export const fallbackCars: FallbackCar[] = [
       "interiorColor": "Tan",
       "bodyType": "Coupe"
     },
-    "focalPoint": "50% 42%",
+    "focalPoint": "50% 64%",
     "flipHorizontal": false,
     "flipVertical": false
   },
@@ -2064,7 +2064,7 @@ export const fallbackCars: FallbackCar[] = [
       "exteriorColor": "BLUE",
       "bodyType": "Coupe"
     },
-    "focalPoint": "50% 42%",
+    "focalPoint": "50% 50%",
     "flipHorizontal": false,
     "flipVertical": false
   },
@@ -2091,7 +2091,7 @@ export const fallbackCars: FallbackCar[] = [
       "exteriorColor": "Dark Blue",
       "bodyType": "Convertible"
     },
-    "focalPoint": "50% 42%",
+    "focalPoint": "50% 54%",
     "flipHorizontal": false,
     "flipVertical": false
   },
@@ -2509,7 +2509,7 @@ export const fallbackCars: FallbackCar[] = [
       "interiorColor": "Carbon Fiber",
       "bodyType": "Coupe"
     },
-    "focalPoint": "50% 42%",
+    "focalPoint": "50% 56%",
     "flipHorizontal": false,
     "flipVertical": false
   }

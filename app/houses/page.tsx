@@ -8,6 +8,7 @@ import type { Metadata } from "next"
 import { getPrimaryImage, getPrimaryLqImage } from "@/lib/media-utils"
 import { getSortSetting } from "@/lib/sort-settings-actions"
 import { getInventoryOrderBy } from "@/lib/inventory-sort-utils"
+import { getFallbackVillas } from "@/lib/fallback-villas"
 
 export const revalidate = 600
 
@@ -41,6 +42,69 @@ function SkeletonCard() {
   )
 }
 
+type VillaListSource = {
+  id: string
+  slug: string | null
+  title: string
+  subtitle: string | null
+  images: unknown
+  thumbnails?: unknown
+  focalPoint?: string | null
+  flipHorizontal?: boolean | null
+  flipVertical?: boolean | null
+  pricePerDay?: string | number | null
+  isFeatured?: boolean | null
+  specifications?: unknown
+}
+
+function mapVillasForContent(villas: VillaListSource[]) {
+  return villas.map((villa) => {
+    const specs = (villa.specifications as any) || {}
+    const specsList = []
+
+    if (specs.bedrooms) specsList.push(`${specs.bedrooms} BR`)
+    if (specs.bathrooms) specsList.push(`${specs.bathrooms} BA`)
+    if (specs.guests) specsList.push(`${specs.guests} guests`)
+    if (specs.location) specsList.push(specs.location)
+
+    const badges = []
+    if (villa.isFeatured) badges.push("Featured")
+    if (specs.amenities) badges.push(...specs.amenities.slice(0, 2))
+
+    // Use shared media utility for intelligent primary image selection
+    // Prefer thumbnails if available, otherwise use main images
+    const thumbnails = Array.isArray(villa.thumbnails)
+      ? (villa.thumbnails as unknown[])
+      : []
+    const images = Array.isArray(villa.images)
+      ? (villa.images as unknown[])
+      : []
+    const primaryThumbnail = thumbnails.length > 0 ? getPrimaryImage(thumbnails) : null
+    const primaryImage = primaryThumbnail || getPrimaryImage(images)
+    // Fallback gradient image (data URI) instead of placeholder.svg
+    const fallbackImage = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400"%3E%3Cdefs%3E%3ClinearGradient id="g" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%23000;stop-opacity:1"/%3E%3Cstop offset="100%25" style="stop-color:%23333;stop-opacity:1"/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23g)" width="600" height="400"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" fill="%23ECAC36" font-size="24" font-family="Arial"%3ELuxx Miami%3C/text%3E%3C/svg%3E'
+
+    return {
+      id: villa.id,
+      slug: villa.slug,
+      type: "villa" as const,
+      title: villa.title,
+      subtitle: specs.location || villa.subtitle || "Miami",
+      price: villa.pricePerDay ? `$${Number(villa.pricePerDay).toLocaleString()}` : "Rate upon request",
+      priceUnit: villa.pricePerDay ? "night" : "",
+      image: primaryImage || fallbackImage,
+      lqImage: getPrimaryLqImage(images),
+      focalPoint: villa.focalPoint || '50% 40%',
+      specs: specsList,
+      badges: badges,
+      bedrooms: specs.bedrooms ? Number.parseInt(specs.bedrooms) : undefined,
+      guests: specs.guests ? Number.parseInt(specs.guests) : undefined,
+      flipHorizontal: villa.flipHorizontal || false,
+      flipVertical: villa.flipVertical || false,
+    }
+  })
+}
+
 const VillasData = cache(async () => {
   try {
     const sortMode = await getSortSetting("villa")
@@ -65,53 +129,12 @@ const VillasData = cache(async () => {
       .where(and(eq(inventory.category, "villa"), eq(inventory.isPublished, true)))
       .orderBy(...orderClauses)
 
-    const transformedVillas = villas.map((villa) => {
-      const specs = (villa.specifications as any) || {}
-      const specsList = []
-
-      if (specs.bedrooms) specsList.push(`${specs.bedrooms} BR`)
-      if (specs.bathrooms) specsList.push(`${specs.bathrooms} BA`)
-      if (specs.guests) specsList.push(`${specs.guests} guests`)
-      if (specs.location) specsList.push(specs.location)
-
-      const badges = []
-      if (villa.isFeatured) badges.push("Featured")
-      if (specs.amenities) badges.push(...specs.amenities.slice(0, 2))
-      
-      // Use shared media utility for intelligent primary image selection
-      // Prefer thumbnails if available, otherwise use main images
-      const thumbnails = Array.isArray(villa.thumbnails) 
-        ? (villa.thumbnails as unknown[])
-        : []
-      const primaryThumbnail = thumbnails.length > 0 ? getPrimaryImage(thumbnails) : null
-      const primaryImage = primaryThumbnail || getPrimaryImage(villa.images as unknown[])
-      // Fallback gradient image (data URI) instead of placeholder.svg
-      const fallbackImage = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400"%3E%3Cdefs%3E%3ClinearGradient id="g" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%23000;stop-opacity:1"/%3E%3Cstop offset="100%25" style="stop-color:%23333;stop-opacity:1"/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23g)" width="600" height="400"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" fill="%23ECAC36" font-size="24" font-family="Arial"%3ELuxx Miami%3C/text%3E%3C/svg%3E'
-
-      return {
-        id: villa.id,
-        slug: villa.slug,
-        type: "villa" as const,
-        title: villa.title,
-        subtitle: specs.location || villa.subtitle || "Miami",
-        price: villa.pricePerDay ? `$${Number(villa.pricePerDay).toLocaleString()}` : "Rate upon request",
-        priceUnit: villa.pricePerDay ? "night" : "",
-        image: primaryImage || fallbackImage,
-        lqImage: getPrimaryLqImage(villa.images as unknown[]),
-        focalPoint: villa.focalPoint || '50% 40%',
-        specs: specsList,
-        badges: badges,
-        bedrooms: specs.bedrooms ? Number.parseInt(specs.bedrooms) : undefined,
-        guests: specs.guests ? Number.parseInt(specs.guests) : undefined,
-        flipHorizontal: villa.flipHorizontal || false,
-        flipVertical: villa.flipVertical || false,
-      }
-    })
+    const transformedVillas = mapVillasForContent(villas.length > 0 ? villas : getFallbackVillas())
 
     return <VillasPageContent initialVillas={transformedVillas} />
   } catch (error) {
     console.error("Error fetching villas:", error)
-    return <div className="text-center py-8 text-red-400">Error loading villas</div>
+    return <VillasPageContent initialVillas={mapVillasForContent(getFallbackVillas())} />
   }
 })
 

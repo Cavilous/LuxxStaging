@@ -398,28 +398,37 @@
 
   .luxx-magnetic-card {
     position: relative;
-    transform-style: preserve-3d;
-    transform:
-      perspective(1000px)
-      rotateX(var(--luxx-rotate-x, 0deg))
-      rotateY(var(--luxx-rotate-y, 0deg))
-      translate3d(0, var(--luxx-lift, 0px), 0);
-    transition:
-      transform 360ms var(--ease-luxury),
-      border-color 280ms var(--ease-luxury),
-      box-shadow 280ms var(--ease-luxury);
-    will-change: transform;
+    isolation: isolate;
   }
 
-  .luxx-magnetic-card:hover,
-  .luxx-magnetic-card:focus-within {
-    --luxx-lift: -8px;
-    border-color: rgba(236, 172, 54, 0.42);
-    box-shadow: 0 18px 55px rgba(0, 0, 0, 0.45), 0 0 32px rgba(236, 172, 54, 0.13);
+  @media (hover: hover) and (pointer: fine) {
+    .luxx-magnetic-card {
+      transition:
+        border-color 280ms var(--ease-luxury),
+        box-shadow 280ms var(--ease-luxury);
+    }
+
+    .luxx-magnetic-card:hover,
+    .luxx-magnetic-card:focus-within {
+      border-color: rgba(236, 172, 54, 0.42);
+      box-shadow: 0 18px 55px rgba(0, 0, 0, 0.45), 0 0 32px rgba(236, 172, 54, 0.13);
+    }
   }
 
   .luxx-card-shine {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    border-radius: inherit;
+    overflow: hidden;
     opacity: 0;
+    pointer-events: none;
+  }
+
+  .luxx-card-shine::before {
+    content: "";
+    position: absolute;
+    inset: -32%;
     background:
       radial-gradient(
         circle at var(--luxx-shine-x, 50%) var(--luxx-shine-y, 50%),
@@ -437,14 +446,29 @@
         transparent 100%
       );
     mix-blend-mode: screen;
-    transform: translateX(-18%);
-    transition: opacity 260ms var(--ease-luxury), transform 700ms var(--ease-luxury);
+    transform: translate3d(-18%, -2%, 0) rotate(0.001deg);
   }
 
-  .luxx-magnetic-card:hover .luxx-card-shine,
-  .luxx-magnetic-card:focus-within .luxx-card-shine {
-    opacity: 1;
-    transform: translateX(18%);
+  @media (hover: hover) and (pointer: fine) {
+    .luxx-card-shine {
+      transition: opacity 260ms var(--ease-luxury);
+      will-change: opacity;
+    }
+
+    .luxx-card-shine::before {
+      transition: transform 700ms var(--ease-luxury);
+      will-change: transform;
+    }
+
+    .luxx-magnetic-card:hover .luxx-card-shine,
+    .luxx-magnetic-card:focus-within .luxx-card-shine {
+      opacity: 1;
+    }
+
+    .luxx-magnetic-card:hover .luxx-card-shine::before,
+    .luxx-magnetic-card:focus-within .luxx-card-shine::before {
+      transform: translate3d(18%, 2%, 0) rotate(0.001deg);
+    }
   }
 
   .luxx-card-edge {
@@ -453,9 +477,11 @@
     transition: opacity 280ms var(--ease-luxury);
   }
 
-  .luxx-magnetic-card:hover .luxx-card-edge,
-  .luxx-magnetic-card:focus-within .luxx-card-edge {
-    opacity: 1;
+  @media (hover: hover) and (pointer: fine) {
+    .luxx-magnetic-card:hover .luxx-card-edge,
+    .luxx-magnetic-card:focus-within .luxx-card-edge {
+      opacity: 1;
+    }
   }
 
   .luxx-glimmer-panel::before {
@@ -485,11 +511,65 @@
     transform: translateY(-2px);
   }
 
-  .luxx-hero-scanline {
-    background: linear-gradient(180deg, transparent, rgba(236, 172, 54, 0.38), transparent);
-    height: 28%;
-    opacity: 0.55;
-    animation: luxxScanline 5.5s ease-in-out infinite;
+  .luxx-nav-hover {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+  }
+
+  .luxx-nav-hover::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(112deg, transparent 0%, transparent 42%, rgba(255, 255, 255, 0.22) 50%, transparent 60%, transparent 100%);
+    opacity: 0;
+    transform: translateX(-45%);
+    mix-blend-mode: screen;
+  }
+
+  @media (hover: hover) and (pointer: fine) and (min-width: 1024px) {
+    .luxx-nav-hover {
+      transition:
+        color 220ms var(--ease-luxury),
+        border-color 260ms var(--ease-luxury),
+        background-color 260ms var(--ease-luxury),
+        transform 260ms var(--ease-luxury);
+      will-change: transform;
+    }
+
+    .luxx-nav-hover::before {
+      transition: opacity 280ms var(--ease-luxury), transform 720ms var(--ease-luxury);
+    }
+
+    .luxx-nav-hover:hover,
+    .luxx-nav-hover:focus-visible {
+      transform: translateY(-2px);
+    }
+
+    .luxx-nav-hover:hover::before,
+    .luxx-nav-hover:focus-visible::before {
+      opacity: 1;
+      transform: translateX(45%);
+    }
+  }
+
+  @media (max-width: 1023px), (hover: none), (pointer: coarse), (prefers-reduced-motion: reduce) {
+    .luxx-nav-hover,
+    .luxx-nav-hover:hover,
+    .luxx-nav-hover:focus-visible {
+      transform: none;
+      transition: color 200ms ease, border-color 200ms ease, background-color 200ms ease;
+      will-change: auto;
+    }
+
+    .luxx-nav-hover::before,
+    .luxx-nav-hover:hover::before,
+    .luxx-nav-hover:focus-visible::before {
+      opacity: 0;
+      transform: translateX(-45%);
+      transition: none;
+    }
   }
 
   .luxx-index-panel {
@@ -510,15 +590,6 @@
 
   .luxx-callout-arrow {
     animation: luxxArrowPulse 1.6s ease-in-out infinite;
-  }
-
-  @keyframes luxxScanline {
-    0%, 100% {
-      transform: translateY(-40%);
-    }
-    50% {
-      transform: translateY(285%);
-    }
   }
 
   @keyframes luxxIndexFloat {
@@ -566,13 +637,33 @@
       will-change: auto;
     }
 
+    .luxx-magnetic-card:hover,
+    .luxx-magnetic-card:focus-within {
+      border-color: rgba(255, 255, 255, 0.1);
+      box-shadow: none;
+    }
+
     .luxx-card-shine,
+    .luxx-card-shine::before,
     .luxx-glimmer-panel::before,
-    .luxx-hero-scanline,
     .luxx-index-panel,
     .luxx-callout-arrow {
       animation: none;
       transition: none;
+    }
+
+    .luxx-card-shine,
+    .luxx-magnetic-card:hover .luxx-card-shine,
+    .luxx-magnetic-card:focus-within .luxx-card-shine {
+      opacity: 0;
+      will-change: auto;
+    }
+
+    .luxx-card-shine::before,
+    .luxx-magnetic-card:hover .luxx-card-shine::before,
+    .luxx-magnetic-card:focus-within .luxx-card-shine::before {
+      transform: none;
+      will-change: auto;
     }
   }
 }

@@ -12,9 +12,61 @@ import type { Metadata } from "next"
 import { buildVillaSpecRows, getExplicitFeatures, getExplicitAmenities, isPresentString, isPresentNumber } from "@/lib/display-guards"
 import { PhotoGallery } from "@/components/photo-gallery-wrapper"
 import { VillaAvailabilityCalendar } from "@/components/villa-availability-calendar"
+import { getFallbackVillas } from "@/lib/fallback-villas"
 
 export const revalidate = 900
 export const dynamicParams = true
+
+const fallbackImage = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400"%3E%3Cdefs%3E%3ClinearGradient id="g" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%23000;stop-opacity:1"/%3E%3Cstop offset="100%25" style="stop-color:%23333;stop-opacity:1"/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23g)" width="600" height="400"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" fill="%23ECAC36" font-size="24" font-family="Arial"%3ELuxx Miami%3C/text%3E%3C/svg%3E'
+
+function getFallbackVillaBySlug(slug: string) {
+  return getFallbackVillas().find((villa) => villa.slug === slug) || null
+}
+
+function getVillaImages(images: unknown) {
+  return Array.isArray(images)
+    ? (images as any[]).map((img: any) => typeof img === 'string' ? img : img?.url).filter(Boolean)
+    : []
+}
+
+function mapSimilarVillas(villas: any[], currentVillaId: string, currentVillaSlug?: string | null, neighborhood?: string | null) {
+  const villasWithPhotos = villas
+    .filter((villa) => villa.id !== currentVillaId && villa.slug !== currentVillaSlug)
+    .filter((villa) => getVillaImages(villa.images).length > 0)
+
+  const normalizedNeighborhood = neighborhood?.toLowerCase() || ''
+
+  const sameNeighborhoodVillas = normalizedNeighborhood ? villasWithPhotos.filter((villa) => {
+    const specs = (villa.specifications as any) || {}
+    const villaNeighborhood = specs.neighborhood?.toLowerCase() || ''
+    return villaNeighborhood === normalizedNeighborhood
+  }) : []
+  const otherVillas = normalizedNeighborhood ? villasWithPhotos.filter((villa) => {
+    const specs = (villa.specifications as any) || {}
+    const villaNeighborhood = specs.neighborhood?.toLowerCase() || ''
+    return villaNeighborhood !== normalizedNeighborhood
+  }) : villasWithPhotos
+
+  const sortedVillas = [...sameNeighborhoodVillas, ...otherVillas].slice(0, 3)
+
+  return sortedVillas.map((villa) => {
+    const images = getVillaImages(villa.images)
+    return {
+      id: villa.slug,
+      type: "villa" as const,
+      title: villa.title,
+      subtitle: villa.subtitle || "Luxury Villa",
+      price: villa.pricePerDay ? `$${Number(villa.pricePerDay).toLocaleString()}` : "Rate upon request",
+      priceUnit: villa.pricePerDay ? "night" : "",
+      image: images[0] || fallbackImage,
+      specs: [],
+      badges: villa.isFeatured ? ["Featured"] : [],
+      focalPoint: villa.focalPoint || '50% 40%',
+      flipHorizontal: villa.flipHorizontal || false,
+      flipVertical: villa.flipVertical || false,
+    }
+  })
+}
 
 export async function generateStaticParams() {
   try {
@@ -57,14 +109,14 @@ async function getVillaBySlug(slug: string) {
       return villas[0]
     }
 
-    return null
+    return getFallbackVillaBySlug(slug)
   } catch (error) {
     console.error('Error fetching villa:', error)
-    return null
+    return getFallbackVillaBySlug(slug)
   }
 }
 
-async function getSimilarVillas(currentVillaId: string, neighborhood?: string | null) {
+async function getSimilarVillas(currentVillaId: string, neighborhood?: string | null, currentVillaSlug?: string | null) {
   try {
     const allVillas = await db
       .select()
@@ -78,51 +130,10 @@ async function getSimilarVillas(currentVillaId: string, neighborhood?: string | 
       )
       .limit(10)
 
-    const villasWithPhotos = allVillas.filter((villa) => {
-      const images = Array.isArray(villa.images) 
-        ? (villa.images as any[]).map((img: any) => typeof img === 'string' ? img : img.url).filter(Boolean)
-        : []
-      return images.length > 0
-    })
-
-    const normalizedNeighborhood = neighborhood?.toLowerCase() || ''
-    
-    const sameNeighborhoodVillas = normalizedNeighborhood ? villasWithPhotos.filter((villa) => {
-      const specs = (villa.specifications as any) || {}
-      const villaNeighborhood = specs.neighborhood?.toLowerCase() || ''
-      return villaNeighborhood === normalizedNeighborhood
-    }) : []
-    const otherVillas = normalizedNeighborhood ? villasWithPhotos.filter((villa) => {
-      const specs = (villa.specifications as any) || {}
-      const villaNeighborhood = specs.neighborhood?.toLowerCase() || ''
-      return villaNeighborhood !== normalizedNeighborhood
-    }) : villasWithPhotos
-
-    const sortedVillas = [...sameNeighborhoodVillas, ...otherVillas].slice(0, 3)
-
-    return sortedVillas.map((villa) => {
-      const specs = (villa.specifications as any) || {}
-      const images = Array.isArray(villa.images) 
-        ? (villa.images as any[]).map((img: any) => typeof img === 'string' ? img : img.url).filter(Boolean)
-        : []
-      return {
-        id: villa.slug,
-        type: "villa" as const,
-        title: villa.title,
-        subtitle: villa.subtitle || "Luxury Villa",
-        price: `$${Number(villa.pricePerDay || 0).toLocaleString()}`,
-        priceUnit: "night",
-        image: images[0],
-        specs: [],
-        badges: villa.isFeatured ? ["Featured"] : [],
-        focalPoint: villa.focalPoint || '50% 40%',
-        flipHorizontal: villa.flipHorizontal || false,
-        flipVertical: villa.flipVertical || false,
-      }
-    })
+    return mapSimilarVillas(allVillas.length > 0 ? allVillas : getFallbackVillas(), currentVillaId, currentVillaSlug, neighborhood)
   } catch (error) {
     console.error('Error fetching similar villas:', error)
-    return []
+    return mapSimilarVillas(getFallbackVillas(), currentVillaId, currentVillaSlug, neighborhood)
   }
 }
 
@@ -182,9 +193,7 @@ export default async function VillaDetailPage({ params }: VillaDetailPageProps) 
   const specs = (villa.specifications as any) || {}
   const neighborhood = specs.neighborhood || "Miami"
   
-  const similarVillas = await getSimilarVillas(villa.id, neighborhood)
-  // Fallback gradient image (data URI) instead of placeholder.svg
-  const fallbackImage = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400"%3E%3Cdefs%3E%3ClinearGradient id="g" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%23000;stop-opacity:1"/%3E%3Cstop offset="100%25" style="stop-color:%23333;stop-opacity:1"/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23g)" width="600" height="400"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" fill="%23ECAC36" font-size="24" font-family="Arial"%3ELuxx Miami%3C/text%3E%3C/svg%3E'
+  const similarVillas = await getSimilarVillas(villa.id, neighborhood, villa.slug)
   const specRows = buildVillaSpecRows(specs)
   const explicitFeatures = getExplicitFeatures(specs)
   const explicitAmenities = getExplicitAmenities(specs)
@@ -201,7 +210,7 @@ export default async function VillaDetailPage({ params }: VillaDetailPageProps) 
     year: isPresentNumber(specs.year) ? specs.year : null,
     sqft: isPresentString(specs.sqft) ? specs.sqft : null,
     images: Array.isArray(villa.images) 
-      ? (villa.images as any[]).map((img: any) => typeof img === 'string' ? img : img.url).filter(Boolean)
+      ? getVillaImages(villa.images)
       : [fallbackImage],
     specRows,
     amenities: allAmenities,

@@ -3,14 +3,15 @@ import { db } from "@/lib/db"
 import { forSaleAssets } from "@/lib/db/schema"
 import { eq, and } from "drizzle-orm"
 import { normalizeImageUrl } from "@/lib/image-url-utils"
+import { getFallbackForSaleAssetBySlug } from "@/lib/fallback-for-sale-assets"
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ slug: string }> }
 ) {
-  try {
-    const { slug } = await params
+  const { slug } = await params
 
+  try {
     const assets = await db
       .select()
       .from(forSaleAssets)
@@ -23,6 +24,12 @@ export async function GET(
       .limit(1)
 
     if (assets.length === 0) {
+      const fallbackAsset = getFallbackForSaleAssetBySlug(slug)
+      if (fallbackAsset) {
+        console.warn(`Using fallback buy-sell asset for slug "${slug}" because the live query returned no asset`)
+        return NextResponse.json(fallbackAsset)
+      }
+
       return NextResponse.json(
         { error: "Asset not found" },
         { status: 404 }
@@ -61,6 +68,12 @@ export async function GET(
 
     return NextResponse.json(transformedAsset)
   } catch (error) {
+    const fallbackAsset = getFallbackForSaleAssetBySlug(slug)
+    if (fallbackAsset) {
+      console.warn(`Using fallback buy-sell asset for slug "${slug}" because the live query failed:`, error)
+      return NextResponse.json(fallbackAsset)
+    }
+
     console.error("Error fetching asset:", error)
     return NextResponse.json(
       { error: "Failed to fetch asset" },

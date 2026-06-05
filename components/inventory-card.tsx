@@ -31,6 +31,17 @@ interface InventoryCardProps {
   }
 }
 
+function isExteriorNoteSubtitle(subtitle: string): boolean {
+  const normalizedSubtitle = subtitle.trim().replace(/\s+/g, " ").toLowerCase()
+  return /\bexterior\b/.test(normalizedSubtitle) && normalizedSubtitle.length <= 80
+}
+
+function shouldShowSubtitle(type: InventoryCardProps["type"], subtitle: string): boolean {
+  if (!subtitle) return false
+  if (type === "yacht" || type === "villa") return true
+  return !isExteriorNoteSubtitle(subtitle)
+}
+
 export function InventoryCard({
   type,
   title,
@@ -102,12 +113,12 @@ export function InventoryCard({
   const badgeToShow = getBadgeToShow()
 
   const hasValidPrice = price && price !== "$0" && price !== "0" && price.trim() !== ""
+  const displaySubtitle = subtitle.trim()
+  const showSubtitle = shouldShowSubtitle(type, displaySubtitle)
 
   const cardStyle = {
     "--luxx-shine-x": "50%",
     "--luxx-shine-y": "50%",
-    "--luxx-rotate-x": "0deg",
-    "--luxx-rotate-y": "0deg",
   } as CSSProperties
 
   const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
@@ -121,15 +132,16 @@ export function InventoryCard({
     const { clientX, clientY } = event
     animationFrame.current = window.requestAnimationFrame(() => {
       const rect = card.getBoundingClientRect()
+      if (rect.width <= 0 || rect.height <= 0) {
+        animationFrame.current = null
+        return
+      }
+
       const x = clientX - rect.left
       const y = clientY - rect.top
-      const rotateX = ((y - rect.height / 2) / (rect.height / 2)) * -4.5
-      const rotateY = ((x - rect.width / 2) / (rect.width / 2)) * 4.5
 
       card.style.setProperty("--luxx-shine-x", `${Math.max(0, Math.min(100, (x / rect.width) * 100))}%`)
       card.style.setProperty("--luxx-shine-y", `${Math.max(0, Math.min(100, (y / rect.height) * 100))}%`)
-      card.style.setProperty("--luxx-rotate-x", `${rotateX.toFixed(2)}deg`)
-      card.style.setProperty("--luxx-rotate-y", `${rotateY.toFixed(2)}deg`)
       animationFrame.current = null
     })
   }
@@ -144,8 +156,6 @@ export function InventoryCard({
     if (!card) return
     card.style.setProperty("--luxx-shine-x", "50%")
     card.style.setProperty("--luxx-shine-y", "50%")
-    card.style.setProperty("--luxx-rotate-x", "0deg")
-    card.style.setProperty("--luxx-rotate-y", "0deg")
   }
 
   return (
@@ -156,7 +166,7 @@ export function InventoryCard({
       onPointerMove={handlePointerMove}
       onPointerLeave={resetPointerEffect}
     >
-      <Link href={getDetailUrl()} className="block cursor-pointer">
+      <Link href={getDetailUrl()} className="relative z-[1] block cursor-pointer">
         <div className="relative aspect-[3/2] overflow-hidden">
           <ProgressiveImage
             src={getPlaceholderImage()}
@@ -172,7 +182,6 @@ export function InventoryCard({
           />
 
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
-          <div className="luxx-card-shine absolute inset-0 pointer-events-none"></div>
 
           {badgeToShow !== null && (
             <div className="absolute top-3 left-3 z-10">
@@ -199,11 +208,12 @@ export function InventoryCard({
           <h3 className="text-lg font-semibold text-white truncate leading-tight group-hover:text-[#ECAC36] transition-colors duration-300">
             {title || "Luxury Vehicle"}
           </h3>
-          {subtitle && (
-            <p className="text-sm truncate text-gray-500">{subtitle}</p>
+          {showSubtitle && (
+            <p className="text-sm truncate text-gray-500">{displaySubtitle}</p>
           )}
         </div>
       </Link>
+      <div className="luxx-card-shine pointer-events-none" aria-hidden="true"></div>
     </div>
   )
 }

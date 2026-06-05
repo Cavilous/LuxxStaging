@@ -12,16 +12,22 @@ interface CarsFiltersProps {
     priceRange: [number, number]
   }
   onFiltersChange: (filters: any) => void
+  availableBrands: string[]
+  availableBodyTypes: string[]
+  priceMax: number
 }
-
-const BRANDS = ["Ferrari", "Lamborghini", "Rolls-Royce", "McLaren", "Porsche", "Mercedes", "BMW", "Audi", "Bentley", "Aston Martin", "Maserati", "Bugatti", "Koenigsegg", "Pagani"]
-const BODY_TYPES = ["Supercar", "Convertible", "SUV", "Sedan", "Coupe"]
 
 function formatPrice(value: number): string {
   return `$${value.toLocaleString()}`
 }
 
-export function CarsFilters({ filters, onFiltersChange }: CarsFiltersProps) {
+export function CarsFilters({
+  filters,
+  onFiltersChange,
+  availableBrands,
+  availableBodyTypes,
+  priceMax,
+}: CarsFiltersProps) {
   const toggleBrand = (brand: string) => {
     const newBrands = filters.brands.includes(brand)
       ? filters.brands.filter((b) => b !== brand)
@@ -40,13 +46,13 @@ export function CarsFilters({ filters, onFiltersChange }: CarsFiltersProps) {
     onFiltersChange({
       brands: [],
       bodyTypes: [],
-      priceRange: [0, 5000],
+      priceRange: [0, priceMax],
     })
   }
 
   const activeCount = filters.brands.length + 
     filters.bodyTypes.length +
-    (filters.priceRange[0] > 0 || filters.priceRange[1] < 5000 ? 1 : 0)
+    (filters.priceRange[0] > 0 || filters.priceRange[1] < priceMax ? 1 : 0)
 
   return (
     <div className="bg-[#0A0A0A]/95 border-b border-[#ECAC36]/20 sticky top-0 z-40 backdrop-blur-md">
@@ -69,7 +75,7 @@ export function CarsFilters({ filters, onFiltersChange }: CarsFiltersProps) {
               <div className="space-y-3">
                 <h4 className="font-medium text-white">Select Brands</h4>
                 <div className="grid grid-cols-2 gap-2">
-                  {BRANDS.map((brand) => (
+                  {availableBrands.map((brand) => (
                     <button
                       key={brand}
                       onClick={() => toggleBrand(brand)}
@@ -99,7 +105,7 @@ export function CarsFilters({ filters, onFiltersChange }: CarsFiltersProps) {
               <div className="space-y-3">
                 <h4 className="font-medium text-white">Select Body Types</h4>
                 <div className="grid grid-cols-2 gap-2">
-                  {BODY_TYPES.map((bodyType) => (
+                  {availableBodyTypes.map((bodyType) => (
                     <button
                       key={bodyType}
                       onClick={() => toggleBodyType(bodyType)}
@@ -131,7 +137,7 @@ export function CarsFilters({ filters, onFiltersChange }: CarsFiltersProps) {
                 <Slider
                   value={filters.priceRange}
                   onValueChange={(value) => onFiltersChange({ priceRange: value })}
-                  max={5000}
+                  max={priceMax}
                   min={0}
                   step={100}
                   className="w-full"
@@ -170,9 +176,9 @@ export function CarsFilters({ filters, onFiltersChange }: CarsFiltersProps) {
                 <X className="h-3 w-3" />
               </button>
             ))}
-            {(filters.priceRange[0] > 0 || filters.priceRange[1] < 5000) && (
+            {(filters.priceRange[0] > 0 || filters.priceRange[1] < priceMax) && (
               <button
-                onClick={() => onFiltersChange({ priceRange: [0, 5000] })}
+                onClick={() => onFiltersChange({ priceRange: [0, priceMax] })}
                 className="luxx-filter-chip inline-flex items-center gap-2 cut-corner border border-[#ECAC36]/35 bg-[#ECAC36]/10 px-3 py-1.5 text-xs font-semibold text-[#ECAC36] hover:bg-[#ECAC36]/20"
               >
                 {formatPrice(filters.priceRange[0])} - {formatPrice(filters.priceRange[1])}
