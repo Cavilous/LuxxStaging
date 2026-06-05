@@ -3,7 +3,6 @@ import { InventoryRow } from "@/components/inventory-row"
 import { LatestBlogs } from "@/components/latest-blogs"
 import { LocalBusinessSchema } from "@/components/local-business-schema"
 import { HomepageSeoSection } from "@/components/homepage-seo-section"
-import { PresentationCallouts } from "@/components/presentation-callouts"
 import { HomepageSectionNav } from "@/components/homepage-section-nav"
 import { db, withRetry } from "@/lib/db"
 import { inventory, homePageSections } from "@/lib/db/schema"
@@ -284,7 +283,6 @@ export default async function HomePage() {
       <LocalBusinessSchema />
       <HomepageSectionNav />
       <HeroSection />
-      <PresentationCallouts />
 
       <main>
         <InventoryRow 

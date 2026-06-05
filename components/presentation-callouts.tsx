@@ -244,8 +244,10 @@ export function PresentationCallouts() {
     0,
   )
   const ActiveIcon = active.icon
+  const isAdminPath = pathname.startsWith("/admin")
 
   useEffect(() => {
+    if (isAdminPath) return
     if (!pendingScroll) return
     if (pathname !== pendingScroll.href) return
 
@@ -260,10 +262,10 @@ export function PresentationCallouts() {
     }, 120)
 
     return () => window.clearTimeout(timeout)
-  }, [pathname, pendingScroll])
+  }, [isAdminPath, pathname, pendingScroll])
 
   useEffect(() => {
-    if (!isOpen || !active.spotlightSelectors?.length) {
+    if (isAdminPath || !isOpen || !active.spotlightSelectors?.length) {
       setSpotlight(null)
       return
     }
@@ -332,7 +334,7 @@ export function PresentationCallouts() {
       window.removeEventListener("scroll", requestUpdate)
       window.removeEventListener("resize", requestUpdate)
     }
-  }, [active, isOpen, pathname])
+  }, [active, isAdminPath, isOpen, pathname])
 
   function goToStep(step: DemoStep) {
     setOpenInfoKey(null)
@@ -373,6 +375,10 @@ export function PresentationCallouts() {
 
   function toggleInfoTip(key: string) {
     setOpenInfoKey((currentKey) => currentKey === key ? null : key)
+  }
+
+  if (isAdminPath) {
+    return null
   }
 
   return (
