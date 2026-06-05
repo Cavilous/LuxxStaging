@@ -470,7 +470,7 @@ export async function importYachts(
     const yacht = yachts[i]
     
     try {
-      // Handle SmugMug URLs - extract images from gallery
+      // Handle SmugMug and Google Drive URLs - extract images from galleries/folders
       let images: string[] = []
       if (yacht.imageUrl && yacht.imageUrl.includes('smugmug.com')) {
         try {
@@ -481,6 +481,20 @@ export async function importYachts(
         } catch (smugmugError) {
           console.error(`[Import] SmugMug scraping failed for ${yacht.title}:`, smugmugError)
           images = yacht.imageUrl ? [yacht.imageUrl] : []
+        }
+      } else if (yacht.imageUrl && isGoogleDriveUrl(yacht.imageUrl)) {
+        try {
+          console.log(`[Import] Extracting images from Google Drive folder for ${yacht.title}:`, yacht.imageUrl)
+          const driveImages = await extractImagesFromGoogleDrive(yacht.imageUrl.trim())
+          images = driveImages.map(img => img.url)
+          console.log(`[Import] Successfully extracted ${images.length} images for ${yacht.title}`)
+        } catch (driveError) {
+          console.error(`[Import] Google Drive extraction failed for ${yacht.title}:`, driveError)
+          result.errors.push({
+            row: i + 1,
+            message: `Google Drive extraction failed: ${driveError instanceof Error ? driveError.message : 'Unknown error'}`
+          })
+          images = []
         }
       } else {
         images = yacht.imageUrl ? [yacht.imageUrl] : []

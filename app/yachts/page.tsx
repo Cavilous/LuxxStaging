@@ -8,7 +8,7 @@ import type { Metadata } from "next"
 import { getPrimaryImage, getPrimaryLqImage } from "@/lib/media-utils"
 import { getSortSetting } from "@/lib/sort-settings-actions"
 import { getYachtOrderBy } from "@/lib/inventory-sort-utils"
-import { getFallbackYachts } from "@/lib/fallback-yachts"
+import { getFallbackYachtImages, getFallbackYachts } from "@/lib/fallback-yachts"
 
 export const revalidate = 600
 
@@ -81,6 +81,8 @@ function transformYachts(rows: any[]) {
     const guests = specs.guests ? Number.parseInt(specs.guests) : undefined
     const price4hr = yacht.pricePer4Hr ? Number(yacht.pricePer4Hr) : (yacht.pricePerHour ? Number(yacht.pricePerHour) * 4 : 0)
     const primaryImage = getPrimaryImage(yacht.images as unknown[])
+    const fallbackImages = getFallbackYachtImages(yacht.slug || yacht.id, yacht.title)
+    const fallbackPrimaryImage = getPrimaryImage(fallbackImages)
 
     return {
       id: yacht.id,
@@ -94,7 +96,7 @@ function transformYachts(rows: any[]) {
       pricePer4Hr: yacht.pricePer4Hr ? Number(yacht.pricePer4Hr) : undefined,
       pricePer6Hr: yacht.pricePer6Hr ? Number(yacht.pricePer6Hr) : undefined,
       pricePer8Hr: yacht.pricePer8Hr ? Number(yacht.pricePer8Hr) : undefined,
-      image: primaryImage || fallbackImage,
+      image: primaryImage || fallbackPrimaryImage || fallbackImage,
       lqImage: getPrimaryLqImage(yacht.images as unknown[]),
       focalPoint: yacht.focalPoint || '50% 40%',
       specs: [
