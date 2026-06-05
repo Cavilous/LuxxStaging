@@ -26,7 +26,7 @@ const categories = [
 
 export function HeroSection() {
   return (
-    <section className="relative min-h-screen overflow-hidden hero-mask">
+    <section className="relative min-h-[calc(100svh-5rem)] overflow-hidden bg-black hero-mask">
       <div className="absolute inset-0 z-0">
         <div className="relative h-full w-full">
           <Image
@@ -67,7 +67,7 @@ export function HeroSection() {
         </div>
       </div>
 
-      <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 min-h-screen flex items-center py-20 md:py-24">
+      <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 min-h-[calc(100svh-5rem)] flex items-center py-16 md:py-20">
         <div className="w-full max-w-6xl page-reveal overflow-hidden">
           <div className="mb-4 sm:mb-6 md:mb-8 animate-fade-in">
             <p className="mb-4 inline-flex items-center gap-2 cut-corner border border-[#ECAC36]/35 bg-black/35 px-4 py-2 text-xs font-bold uppercase text-[#ECAC36] backdrop-blur-md">

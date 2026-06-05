@@ -2040,7 +2040,7 @@ export const fallbackCars: FallbackCar[] = [
       "interiorColor": "Tan",
       "bodyType": "Coupe"
     },
-    "focalPoint": "50% 64%",
+    "focalPoint": "50% 72%",
     "flipHorizontal": false,
     "flipVertical": false
   },

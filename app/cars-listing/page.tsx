@@ -7,6 +7,7 @@ import { inventory } from "@/lib/db/schema"
 import type { Metadata } from "next"
 import { getPrimaryImage } from "@/lib/media-utils"
 import { getFallbackCars } from "@/lib/fallback-cars"
+import { normalizeFleetBodyType, resolveFleetBrand } from "@/lib/car-filter-utils"
 
 export const metadata: Metadata = {
   title: "Luxury Exotic Car Rentals Miami | Lamborghini, Ferrari, Rolls Royce",
@@ -109,45 +110,12 @@ const CarsData = cache(async () => {
 
     const transformedCars = cars.map(normalizeInventoryRow).map((car) => {
       const specs = (car.specifications as any) || {}
-
-      const normalizeBodyType = (type: string) => {
-        if (!type) return "Coupe"
-        const typeMap: Record<string, string> = {
-          coupe: "Coupe",
-          convertible: "Convertible",
-          suv: "SUV",
-          sedan: "Sedan",
-          supercar: "Supercar",
-        }
-        return typeMap[type.toLowerCase()] || "Coupe"
-      }
-
-      const normalizeBrand = (title: string, fallbackBrand?: string | null) => {
-        const rawBrand = fallbackBrand || title
-        if (!rawBrand) return "Luxury"
-        const firstWord = rawBrand.split(" ")[0] || "Luxury"
-        const brandMap: Record<string, string> = {
-          "Ferrari": "Ferrari",
-          "Lamborghini": "Lamborghini",
-          "Rolls-Royce": "Rolls-Royce",
-          "McLaren": "McLaren",
-          "Mercedes": "Mercedes",
-          "Mercedes-Benz": "Mercedes",
-          "Mercedes-AMG": "Mercedes",
-          "Porsche": "Porsche",
-          "BMW": "BMW",
-          "Audi": "Audi",
-          "Bentley": "Bentley",
-          "Land": "Land Rover",
-          "Range": "Land Rover",
-          "Maserati": "Maserati",
-          "Cadillac": "Cadillac",
-          "Chevrolet": "Chevrolet",
-          "Ford": "Ford",
-          "Tesla": "Tesla",
-        }
-        return brandMap[firstWord] || firstWord
-      }
+      const bodyType = normalizeFleetBodyType(specs.bodyType)
+      const brand = resolveFleetBrand({
+        brand: car.brand,
+        make: specs.make || specs.brand,
+        title: car.title,
+      })
 
       // Use shared media utility for intelligent primary image selection
       const primaryImage = getPrimaryImage(car.images as unknown[])
@@ -172,10 +140,10 @@ const CarsData = cache(async () => {
         ].filter(Boolean),
         badges: [
           ...(car.isFeatured ? ["Featured"] : []),
-          ...(specs.bodyType === "convertible" ? ["Convertible"] : []),
+          ...(bodyType === "Convertible" ? ["Convertible"] : []),
         ],
-        brand: car.brand || normalizeBrand(car.title, specs.make),
-        bodyType: normalizeBodyType(specs.bodyType),
+        brand: brand || "Luxury",
+        bodyType,
         seats: specs.seats?.toString() || "2",
         transmission: specs.transmission || "Auto",
         color: car.subtitle?.split(" / ")[0] || "Black",

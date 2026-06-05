@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, type CSSProperties, type PointerEvent } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -8,6 +8,34 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Menu, Phone, ChevronDown, Home, Car, Anchor, Building, Briefcase, Instagram } from "lucide-react"
 import { SOCIAL_LINKS } from "@/lib/social-config"
 import { TrackedPhoneLink } from "@/components/tracked-phone-link"
+
+const desktopMagneticQuery = "(min-width: 1024px) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)"
+
+type HeaderStyleVars = CSSProperties & {
+  "--luxx-brand-rgb"?: string
+  "--luxx-mobile-delay"?: string
+}
+
+const brandAccentRgb: Record<string, string> = {
+  "Aston Martin": "26, 111, 82",
+  Audi: "190, 194, 201",
+  Bentley: "187, 147, 70",
+  BMW: "28, 105, 212",
+  Cadillac: "191, 169, 105",
+  Ferrari: "255, 40, 0",
+  Lamborghini: "194, 162, 82",
+  "Land Rover": "27, 112, 72",
+  Maserati: "37, 85, 154",
+  McLaren: "255, 135, 0",
+  Mercedes: "198, 198, 198",
+  Porsche: "213, 0, 28",
+  "Rolls-Royce": "192, 192, 192",
+  Tesla: "232, 33, 39",
+}
+
+const getBrandStyle = (brandName: string): HeaderStyleVars => ({
+  "--luxx-brand-rgb": brandAccentRgb[brandName] ?? "236, 172, 54",
+})
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false)
@@ -40,6 +68,25 @@ export function Header() {
       }
     }
   }, [handleScroll])
+
+  const handleMagneticPointerMove = useCallback((event: PointerEvent<HTMLElement>) => {
+    if (event.pointerType !== "mouse" || !window.matchMedia(desktopMagneticQuery).matches) {
+      return
+    }
+
+    const target = event.currentTarget
+    const rect = target.getBoundingClientRect()
+    const x = event.clientX - rect.left - rect.width / 2
+    const y = event.clientY - rect.top - rect.height / 2
+
+    target.style.setProperty("--luxx-menu-magnet-x", `${(x * 0.16).toFixed(2)}px`)
+    target.style.setProperty("--luxx-menu-magnet-y", `${(y * 0.2).toFixed(2)}px`)
+  }, [])
+
+  const handleMagneticPointerLeave = useCallback((event: PointerEvent<HTMLElement>) => {
+    event.currentTarget.style.setProperty("--luxx-menu-magnet-x", "0px")
+    event.currentTarget.style.setProperty("--luxx-menu-magnet-y", "0px")
+  }, [])
 
   const brandItems = [
     { name: "Aston Martin", href: "/miami/aston-martin-rental" },
@@ -103,12 +150,10 @@ export function Header() {
           {/* Logo - Left */}
           <Link
             href="/"
-            className="group relative flex flex-shrink-0 items-center overflow-hidden rounded-md outline-none transition-transform duration-300 focus-visible:ring-1 focus-visible:ring-[#ECAC36]/40 lg:hover:-translate-y-0.5 motion-reduce:transition-none"
+            className="luxx-header-brand luxx-header-magnetic relative flex flex-shrink-0 items-center overflow-hidden rounded-md outline-none focus-visible:ring-1 focus-visible:ring-[#ECAC36]/40"
+            onPointerMove={handleMagneticPointerMove}
+            onPointerLeave={handleMagneticPointerLeave}
           >
-            <span
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-y-1 -left-1 w-8 -translate-x-10 rotate-12 bg-gradient-to-r from-transparent via-[#ECAC36]/30 to-transparent opacity-0 blur-[1px] transition-[opacity,transform] duration-700 group-focus-visible:translate-x-24 group-focus-visible:opacity-100 lg:group-hover:translate-x-24 lg:group-hover:opacity-100 motion-reduce:translate-x-0 motion-reduce:opacity-0 motion-reduce:transition-none"
-            />
             <Image
               src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/profile-pic-logo-transparent-background%20%281%29-NsrnIlw2XUmCf9NaHqCqGNTdzkkgw9.png"
               alt="Luxx Miami"
@@ -116,7 +161,7 @@ export function Header() {
               height={64}
               priority
               sizes="64px"
-              className="relative z-10 h-12 w-auto transition-[filter] duration-300 group-focus-visible:drop-shadow-[0_0_14px_rgba(236,172,54,0.34)] lg:h-16 lg:group-hover:drop-shadow-[0_0_14px_rgba(236,172,54,0.34)] motion-reduce:transition-none"
+              className="luxx-header-brand-image relative z-10 h-12 w-auto lg:h-16"
             />
           </Link>
 
@@ -124,10 +169,12 @@ export function Header() {
           <div className="hidden lg:flex items-center gap-1">
             <nav className="flex items-center">
               {navItems.map((item) => (
-                <div key={item.name} className="relative group">
+                <div key={item.name} className="luxx-header-nav-group relative group">
                   <Link
                     href={item.href}
-                    className="luxx-nav-hover relative flex items-center overflow-hidden rounded-md border border-white/0 px-4 py-2 text-sm font-medium text-white/90 outline-none transition-[box-shadow] duration-200 after:absolute after:inset-x-4 after:bottom-1.5 after:h-px after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-transparent after:via-[#ECAC36]/90 after:to-transparent after:opacity-0 after:transition-all after:duration-300 hover:border-[#ECAC36]/30 hover:bg-white/[0.045] hover:text-[#ECAC36] hover:shadow-[0_10px_24px_rgba(236,172,54,0.12)] hover:after:scale-x-100 hover:after:opacity-100 focus-visible:border-[#ECAC36]/40 focus-visible:text-[#ECAC36] focus-visible:shadow-[0_0_0_1px_rgba(236,172,54,0.18),0_10px_24px_rgba(236,172,54,0.12)] focus-visible:after:scale-x-100 focus-visible:after:opacity-100 group-hover:border-[#ECAC36]/25 group-hover:bg-white/[0.04] group-hover:text-[#ECAC36] group-hover:after:scale-x-100 group-hover:after:opacity-100 motion-reduce:transition-none"
+                    className="luxx-header-menu-link luxx-header-magnetic relative flex items-center overflow-hidden rounded-md border border-white/0 px-4 py-2 text-sm font-medium text-white/90 outline-none"
+                    onPointerMove={handleMagneticPointerMove}
+                    onPointerLeave={handleMagneticPointerLeave}
                   >
                     <span className="relative z-10">{item.name}</span>
                     {item.hasSubmenu && (
@@ -141,7 +188,9 @@ export function Header() {
                         <div className="p-3">
                           <Link
                             href="/cars"
-                            className="luxx-nav-hover relative mb-2 block overflow-hidden rounded-md border border-white/0 border-b-white/10 px-2.5 py-2 text-sm font-medium text-[#ECAC36] outline-none transition-[border-color,background-color,box-shadow,color] duration-200 after:absolute after:inset-x-2.5 after:bottom-1 after:h-px after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-transparent after:via-[#ECAC36]/80 after:to-transparent after:opacity-0 after:transition-all after:duration-300 hover:border-[#ECAC36]/25 hover:bg-[#ECAC36]/[0.06] hover:text-[#e6c766] hover:shadow-[inset_0_0_0_1px_rgba(236,172,54,0.06)] hover:after:scale-x-100 hover:after:opacity-100 focus-visible:border-[#ECAC36]/35 focus-visible:text-[#e6c766] focus-visible:after:scale-x-100 focus-visible:after:opacity-100 motion-reduce:transition-none"
+                            className="luxx-header-submenu-link luxx-header-magnetic relative mb-2 block overflow-hidden rounded-md border border-white/0 border-b-white/10 px-2.5 py-2 text-sm font-medium text-[#ECAC36] outline-none"
+                            onPointerMove={handleMagneticPointerMove}
+                            onPointerLeave={handleMagneticPointerLeave}
                           >
                             View All Cars
                           </Link>
@@ -151,7 +200,10 @@ export function Header() {
                               <Link
                                 key={brand.name}
                                 href={brand.href}
-                                className="luxx-nav-hover relative block overflow-hidden rounded-md border border-white/0 px-2.5 py-1.5 text-sm text-white/70 outline-none transition-[border-color,background-color,box-shadow,color] duration-200 after:absolute after:bottom-1 after:left-2.5 after:h-px after:w-5 after:origin-left after:scale-x-0 after:bg-[#ECAC36]/75 after:opacity-0 after:transition-all after:duration-300 hover:border-[#ECAC36]/20 hover:bg-[#ECAC36]/[0.07] hover:text-[#ECAC36] hover:shadow-[0_8px_18px_rgba(236,172,54,0.08)] hover:after:scale-x-100 hover:after:opacity-100 focus-visible:border-[#ECAC36]/35 focus-visible:bg-[#ECAC36]/[0.08] focus-visible:text-[#ECAC36] focus-visible:after:scale-x-100 focus-visible:after:opacity-100 motion-reduce:transition-none"
+                                className="luxx-header-brand-link luxx-header-magnetic relative block overflow-hidden rounded-md border border-white/0 px-2.5 py-1.5 text-sm text-white/70 outline-none"
+                                style={getBrandStyle(brand.name)}
+                                onPointerMove={handleMagneticPointerMove}
+                                onPointerLeave={handleMagneticPointerLeave}
                               >
                                 {brand.name}
                               </Link>
@@ -170,7 +222,9 @@ export function Header() {
                             <Link
                               key={service.name}
                               href={service.href}
-                              className="luxx-nav-hover relative block overflow-hidden rounded-md border border-white/0 px-3 py-2.5 text-sm text-white/70 outline-none transition-[border-color,background-color,box-shadow,color] duration-200 after:absolute after:bottom-1.5 after:left-3 after:h-px after:w-6 after:origin-left after:scale-x-0 after:bg-[#ECAC36]/75 after:opacity-0 after:transition-all after:duration-300 hover:border-[#ECAC36]/20 hover:bg-[#ECAC36]/[0.07] hover:text-[#ECAC36] hover:shadow-[0_8px_18px_rgba(236,172,54,0.08)] hover:after:scale-x-100 hover:after:opacity-100 focus-visible:border-[#ECAC36]/35 focus-visible:bg-[#ECAC36]/[0.08] focus-visible:text-[#ECAC36] focus-visible:after:scale-x-100 focus-visible:after:opacity-100 motion-reduce:transition-none"
+                              className="luxx-header-submenu-link luxx-header-magnetic relative block overflow-hidden rounded-md border border-white/0 px-3 py-2.5 text-sm text-white/70 outline-none"
+                              onPointerMove={handleMagneticPointerMove}
+                              onPointerLeave={handleMagneticPointerLeave}
                             >
                               {service.name}
                             </Link>
@@ -245,46 +299,68 @@ export function Header() {
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="text-white hover:bg-white/10 w-10 h-10" 
+                  className="luxx-mobile-menu-trigger text-white hover:bg-white/10 w-10 h-10"
                   aria-label="Open navigation menu"
+                  aria-expanded={isOpen}
                 >
                   <Menu className="h-6 w-6" aria-hidden="true" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="bg-black/98 backdrop-blur-md border-l border-white/10 w-full sm:w-full">
-                <div className="flex flex-col mt-8 items-center">
-                  {navItems.map((item) => {
+              <SheetContent side="right" className="luxx-mobile-sheet bg-black/98 backdrop-blur-md border-l border-white/10 w-full sm:w-full sm:max-w-full p-0 overflow-y-auto">
+                <div className="luxx-mobile-menu flex min-h-full flex-col px-5 pb-7 pt-6">
+                  <div className="luxx-mobile-menu-brand">
+                    <Image
+                      src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/profile-pic-logo-transparent-background%20%281%29-NsrnIlw2XUmCf9NaHqCqGNTdzkkgw9.png"
+                      alt="Luxx Miami"
+                      width={58}
+                      height={58}
+                      sizes="58px"
+                      className="h-12 w-auto"
+                    />
+                    <div className="luxx-mobile-menu-brand-copy">
+                      <span>Luxx Miami</span>
+                      <span>Luxury rentals</span>
+                    </div>
+                  </div>
+
+                  <nav className="luxx-mobile-nav" aria-label="Mobile navigation">
+                  {navItems.map((item, index) => {
                     const Icon = item.icon
                     return (
-                      <div key={item.name} className="border-b border-white/10 w-full text-center">
+                      <div
+                        key={item.name}
+                        className="luxx-mobile-nav-section"
+                        style={{ "--luxx-mobile-delay": `${95 + index * 58}ms` } as HeaderStyleVars}
+                      >
                         {!item.hasSubmenu ? (
                           <Link
                             href={item.href}
-                            className="flex items-center justify-center gap-3 text-white hover:text-[#ECAC36] py-4 px-2 transition-colors"
+                            className="luxx-mobile-nav-item"
                             onClick={() => setIsOpen(false)}
                             suppressHydrationWarning
                           >
-                            {Icon && <Icon className="h-5 w-5 text-[#ECAC36]/70" />}
-                            <span className="font-medium text-lg">{item.name}</span>
+                            <span className="luxx-mobile-nav-icon">{Icon && <Icon className="h-5 w-5" />}</span>
+                            <span>{item.name}</span>
                           </Link>
                         ) : (
-                          <div className="py-4 px-2">
+                          <div className="luxx-mobile-nav-block">
                             <Link 
                               href={item.href}
-                              className="flex items-center justify-center gap-3 text-[#ECAC36] font-medium"
+                              className="luxx-mobile-nav-item luxx-mobile-nav-item--primary"
                               onClick={() => setIsOpen(false)}
                               suppressHydrationWarning
                             >
-                              {Icon && <Icon className="h-5 w-5" />}
-                              <span className="text-lg">{item.name}</span>
+                              <span className="luxx-mobile-nav-icon">{Icon && <Icon className="h-5 w-5" />}</span>
+                              <span>{item.name}</span>
                             </Link>
                             {item.submenuType === "brands" && item.brands && (
-                              <div className="mt-3 grid grid-cols-3 gap-2 max-w-md mx-auto">
+                              <div className="luxx-mobile-brand-grid">
                                 {item.brands.map((brand) => (
                                   <Link
                                     key={brand.name}
                                     href={brand.href}
-                                    className="text-sm text-white/60 hover:text-[#ECAC36] py-1.5 transition-colors"
+                                    className="luxx-mobile-brand-chip"
+                                    style={getBrandStyle(brand.name)}
                                     onClick={() => setIsOpen(false)}
                                   >
                                     {brand.name}
@@ -293,12 +369,12 @@ export function Header() {
                               </div>
                             )}
                             {item.submenuType === "services" && item.services && (
-                              <div className="mt-3 space-y-1 max-w-md mx-auto">
+                              <div className="luxx-mobile-service-list">
                                 {item.services.map((service) => (
                                   <Link
                                     key={service.name}
                                     href={service.href}
-                                    className="block text-sm text-white/60 hover:text-[#ECAC36] py-1.5 transition-colors"
+                                    className="luxx-mobile-service-link"
                                     onClick={() => setIsOpen(false)}
                                   >
                                     {service.name}
@@ -311,13 +387,14 @@ export function Header() {
                       </div>
                     )
                   })}
+                  </nav>
                   
                   {/* Mobile CTA */}
-                  <div className="mt-8 px-4 w-full max-w-sm">
-                    <div className="text-center text-white/60 text-sm mb-3">Call us directly</div>
+                  <div className="luxx-mobile-cta-wrap">
+                    <div className="luxx-mobile-cta-label">Call us directly</div>
                     <Link 
                       href="tel:+13056055899"
-                      className="flex items-center justify-center gap-2 w-full py-4 bg-[#ECAC36] hover:bg-[#d49c2e] text-black font-semibold text-lg rounded transition-colors"
+                      className="luxx-mobile-cta"
                       suppressHydrationWarning
                     >
                       <Phone className="h-5 w-5" />

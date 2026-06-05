@@ -1,8 +1,11 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect, useRef } from "react"
-import type { CSSProperties, PointerEvent } from "react"
+import { useEffect, useId, useRef, useState } from "react"
+import type {
+  CSSProperties,
+  PointerEvent as ReactPointerEvent,
+} from "react"
 import { normalizeImageUrl } from "@/lib/media-utils"
 import { ProgressiveImage } from "@/components/progressive-image"
 import { CAR_DISCOUNT_TIERS, getDiscountHref, getTieredDailyRate, parseDailyRate } from "@/lib/car-discount-tiers"
@@ -52,6 +55,46 @@ function supportsDesktopMotion(): boolean {
   )
 }
 
+function getBrandMark(brand?: string): string | null {
+  if (!brand) return null
+
+  const normalizedBrand = brand.trim()
+  if (!normalizedBrand) return null
+
+  const brandMarks: Record<string, string> = {
+    "aston martin": "AM",
+    audi: "A",
+    bentley: "B",
+    bmw: "BMW",
+    bugatti: "B",
+    cadillac: "C",
+    ferrari: "F",
+    lamborghini: "LB",
+    "land rover": "LR",
+    lexus: "L",
+    maserati: "M",
+    mclaren: "MC",
+    "mercedes-benz": "MB",
+    mercedes: "MB",
+    porsche: "P",
+    "range rover": "RR",
+    "rolls-royce": "RR",
+    rolls: "RR",
+  }
+
+  const key = normalizedBrand.toLowerCase().replace(/\s+/g, " ")
+  if (brandMarks[key]) return brandMarks[key]
+
+  const initials = normalizedBrand
+    .split(/[\s-]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word[0])
+    .join("")
+
+  return initials || normalizedBrand.slice(0, 2)
+}
+
 export function InventoryCard({
   type,
   title,
@@ -61,6 +104,7 @@ export function InventoryCard({
   image,
   lqImage,
   specs,
+  brand,
   badges = [],
   featured = false,
   slug,
@@ -72,8 +116,11 @@ export function InventoryCard({
   yachtPricing,
 }: InventoryCardProps) {
   const cardRef = useRef<HTMLDivElement>(null)
+  const rateGuideRef = useRef<HTMLDivElement>(null)
   const animationFrame = useRef<number | null>(null)
   const latestPointer = useRef<{ clientX: number; clientY: number } | null>(null)
+  const [isRateGuideOpen, setIsRateGuideOpen] = useState(false)
+  const rateGuidePanelId = useId()
   const normalizedImage = normalizeImageUrl(image)
 
   useEffect(() => {
@@ -83,7 +130,7 @@ export function InventoryCard({
       }
     }
   }, [])
-  
+
   const getFlipTransform = () => {
     const transforms: string[] = []
     if (flipHorizontal) transforms.push('scaleX(-1)')
@@ -137,13 +184,37 @@ export function InventoryCard({
   const detailUrl = getDetailUrl()
   const dailyRate = type === "car" ? parseDailyRate(price) : 0
   const showDiscountTiers = type === "car" && dailyRate > 0
+  const brandMark = type === "car" ? getBrandMark(brand) : null
+
+  useEffect(() => {
+    if (!showDiscountTiers) return
+
+    const closeOnOutsidePointer = (event: Event) => {
+      const guide = rateGuideRef.current
+      if (!guide || !(event.target instanceof Node) || guide.contains(event.target)) return
+      setIsRateGuideOpen(false)
+    }
+
+    const closeOnEscape = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== "Escape") return
+      setIsRateGuideOpen(false)
+    }
+
+    document.addEventListener("pointerdown", closeOnOutsidePointer)
+    document.addEventListener("keydown", closeOnEscape)
+
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsidePointer)
+      document.removeEventListener("keydown", closeOnEscape)
+    }
+  }, [showDiscountTiers])
 
   const cardStyle = {
     "--luxx-shine-x": "50%",
     "--luxx-shine-y": "50%",
   } as CSSProperties
 
-  const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
+  const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (event.pointerType !== "mouse" || !supportsDesktopMotion()) return
 
     const card = cardRef.current
@@ -189,8 +260,12 @@ export function InventoryCard({
 
     card.style.setProperty("--luxx-shine-x", "50%")
     card.style.setProperty("--luxx-shine-y", "50%")
-    card.style.transition = "all 0.4s ease"
+    card.style.transition = "transform 280ms cubic-bezier(0.2, 0.8, 0.2, 1), border-color 220ms ease, box-shadow 220ms ease, background 220ms ease"
     card.style.transform = "perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(0)"
+  }
+
+  const handleRateGuideTriggerClick = () => {
+    setIsRateGuideOpen((isOpen) => !isOpen)
   }
 
   return (
@@ -215,6 +290,14 @@ export function InventoryCard({
             style={{ transform: getFlipTransform() }}
             priority={priority}
           />
+
+          {brandMark && (
+            <div
+              className="luxx-car-brand-glow"
+              data-brand-mark={brandMark}
+              aria-hidden="true"
+            />
+          )}
 
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
 
@@ -249,31 +332,63 @@ export function InventoryCard({
         </div>
       </Link>
       {showDiscountTiers && (
-        <div className="relative z-[3] px-4 pb-4 pt-1">
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <span className="text-[0.68rem] font-semibold uppercase tracking-normal text-[#ECAC36]">
-              Multi-Day Savings
-            </span>
-            <span className="text-[0.68rem] text-gray-500">selected on detail page</span>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
+        <div
+          ref={rateGuideRef}
+          className={`luxx-rate-guide relative z-[4] mx-4 mb-4 mt-1 ${
+            isRateGuideOpen ? "is-open" : ""
+          }`}
+        >
+          <button
+            type="button"
+            className="luxx-rate-guide-trigger flex min-h-10 w-full items-center justify-between gap-3 border border-[#ECAC36]/25 bg-white/[0.035] px-3 py-2 text-left text-inherit cut-corner-button"
+            aria-controls={rateGuidePanelId}
+            aria-expanded={isRateGuideOpen}
+            aria-label={`View multi-day rate tiers for ${title}`}
+            onClick={handleRateGuideTriggerClick}
+          >
+            <div>
+              <span className="block text-[0.68rem] font-semibold uppercase tracking-normal text-[#ECAC36]">
+                Multi-Day Rates
+              </span>
+              <span className="block text-[0.68rem] text-gray-500">
+                Lower daily rates by trip length
+              </span>
+            </div>
+            <span className="text-xs font-semibold text-white/80">View</span>
+          </button>
+          <div id={rateGuidePanelId} className="luxx-rate-guide-panel">
+            <div className="luxx-rate-guide-header">Multi-Day Rate Tiers</div>
             {CAR_DISCOUNT_TIERS.map((tier) => {
               const rate = getTieredDailyRate(dailyRate, tier.days)
+              const tierHref = getDiscountHref(detailUrl, tier, dailyRate)
 
               return (
                 <Link
                   key={tier.slug}
-                  href={getDiscountHref(detailUrl, tier, dailyRate)}
-                  className={`rounded-md border px-2.5 py-2 text-left transition-colors duration-200 focus-angular ${
+                  href={tierHref}
+                  className={`luxx-rate-guide-row focus-angular ${
                     tier.emphasis === "best"
-                      ? "border-[#ECAC36]/60 bg-[#ECAC36]/15 text-white hover:border-[#ECAC36] hover:bg-[#ECAC36]/25"
-                      : "border-white/10 bg-white/[0.035] text-white/85 hover:border-[#ECAC36]/50 hover:bg-[#ECAC36]/10 hover:text-white"
+                      ? "luxx-rate-guide-row--best"
+                      : ""
                   }`}
                   aria-label={`${tier.label} rate for ${title}: $${rate.toLocaleString()} per day`}
+                  onClick={() => setIsRateGuideOpen(false)}
                 >
-                  <span className="block text-xs font-semibold leading-tight">{tier.label}</span>
-                  <span className="mt-0.5 block text-[0.7rem] text-[#ECAC36]">
-                    ${rate.toLocaleString()}/day
+                  <span className="luxx-rate-guide-duration">{tier.label}</span>
+                  <span className="flex items-baseline gap-1">
+                    <span className="text-sm font-bold text-[#ECAC36]">${rate.toLocaleString()}</span>
+                    <span className="text-[0.7rem] text-gray-500">/day</span>
+                    <span
+                      className={`luxx-rate-guide-save ${
+                        tier.emphasis === "best"
+                          ? "luxx-rate-guide-save--best"
+                          : tier.emphasis === "mid"
+                            ? "luxx-rate-guide-save--mid"
+                            : ""
+                      }`}
+                    >
+                      -{tier.percent}%
+                    </span>
                   </span>
                 </Link>
               )

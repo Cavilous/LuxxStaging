@@ -23,9 +23,10 @@ interface InventoryRowProps {
   }>
   viewAllHref?: string
   priorityCount?: number
+  showSectionDivider?: boolean
 }
 
-export function InventoryRow({ title, description, items, viewAllHref, priorityCount = 4 }: InventoryRowProps) {
+export function InventoryRow({ title, description, items, viewAllHref, priorityCount = 4, showSectionDivider = true }: InventoryRowProps) {
   const isEmpty = items.length === 0
 
   return (
@@ -98,14 +99,16 @@ export function InventoryRow({ title, description, items, viewAllHref, priorityC
           </div>
         )}
 
-        <div className="mt-20 flex justify-center">
-          <div
-            className="w-48 h-1 bg-gradient-to-r from-transparent via-[#ECAC36] to-transparent relative"
-            style={{ transform: "skewX(-6deg)" }}
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#ECAC36]/30 to-transparent blur-sm" />
+        {showSectionDivider && (
+          <div className="mt-20 flex justify-center" aria-hidden="true">
+            <div
+              className="w-48 h-1 bg-gradient-to-r from-transparent via-[#ECAC36] to-transparent relative"
+              style={{ transform: "skewX(-6deg)" }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#ECAC36]/30 to-transparent blur-sm" />
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </section>
   )

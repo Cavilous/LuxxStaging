@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
+import { usePathname, useRouter } from "next/navigation"
 import {
   ArrowRight,
   Car,
@@ -34,68 +34,74 @@ type DemoStep = {
   secondaryActions?: DemoAction[]
 }
 
+type PendingScroll = (Pick<DemoStep, "scrollTarget" | "scrollTop"> & { href: string }) | null
+
 const demoSteps: DemoStep[] = [
   {
     key: "homepage",
-    label: "Homepage polish",
+    label: "Homepage",
     icon: Home,
-    title: "Homepage polish",
-    body: "Hero motion, card polish, and blog thumbnails are ready for tonight's walkthrough.",
-    callout: "Start here. The homepage is ready for the first look.",
+    title: "Homepage ready",
+    body: "The homepage hero, featured sections, and visual polish are ready for the client walkthrough.",
+    callout: "Start with the homepage for the first client pass.",
     href: "/",
-    actionLabel: "Show homepage",
+    actionLabel: "Open homepage",
     scrollTop: true,
   },
   {
     key: "fleet",
     label: "Fleet cards",
     icon: Car,
-    title: "Fleet cards",
-    body: "The fleet cards now feel smoother, with cleaner browsing for the client preview.",
-    callout: "Show the card motion and cleaner fleet browsing.",
-    href: "/cars",
-    actionLabel: "Open fleet",
+    title: "Fleet cards ready",
+    body: "The featured fleet cards are ready to show with polished motion, cleaner images, and simple browsing.",
+    callout: "Scroll to the featured fleet cards and show the browsing polish.",
+    href: "/",
+    actionLabel: "Show cards",
     scrollTarget: ["Featured Exotics"],
-  },
-  {
-    key: "card-design",
-    label: "Card design language",
-    icon: Sparkles,
-    title: "Card design language",
-    body: "Cards now carry smoother desktop motion, a restrained cursor glimmer, cleaner image behavior, and faster comparison. The full package can add richer vehicle specs once content is finalized.",
-    callout: "Use this while showing how the card style carries across the site.",
-    scrollTarget: ["Featured Exotics"],
+    secondaryActions: [{ label: "Open full fleet", href: "/cars" }],
   },
   {
     key: "bentley",
-    label: "Bentley brand page",
+    label: "Bentley page",
     icon: Sparkles,
-    title: "Bentley brand page",
-    body: "Bentley now shows the right vehicles and keeps the page filled for the demo.",
-    callout: "Use Bentley to show brand inventory working clearly.",
+    title: "Bentley brand page ready",
+    body: "The Bentley page is ready to show a focused brand path with matching vehicles for the preview.",
+    callout: "Use Bentley to show the brand page and inventory path.",
     href: "/car-brand/bentley",
     actionLabel: "Open Bentley",
   },
   {
     key: "listings",
-    label: "Yachts/Villas loading",
+    label: "Yachts & villas",
     icon: Ship,
-    title: "Yachts and villas load",
-    body: "Yacht and villa listings show safe preview items if live inventory is unavailable.",
-    callout: "Open yachts first, then villas. Both views are ready to review.",
+    title: "Yachts and villas ready",
+    body: "Yacht and villa listing pages load with safe preview inventory while final live listings are reconciled.",
+    callout: "Open yachts first, then villas. Both listing views are ready to review.",
     href: "/yachts",
     actionLabel: "Open yachts",
     secondaryActions: [{ label: "Open villas", href: "/houses" }],
   },
   {
     key: "private",
-    label: "Noindex preview",
+    label: "Private preview",
     icon: EyeOff,
-    title: "Private preview is on",
-    body: "Search engines are told not to list this staging site while the team reviews it.",
-    callout: "This stays private until the launch package is approved.",
+    title: "Private preview ready",
+    body: "The staging preview is marked private for review, with public visibility handled in the launch checklist.",
+    callout: "Share that the preview stays private while the team reviews it.",
+    secondaryActions: [{ label: "Open preview rules", href: "/robots.txt" }],
+  },
+  {
+    key: "inventory-sync",
+    label: "Inventory sync notes",
+    icon: CheckCircle2,
+    title: "Items for the existing dev team",
+    body: "Included in the package: a short handoff list to reconcile inventory fields, publish rules, and final source timing.",
+    callout: "Frame this as normal handoff alignment for production parity.",
   },
 ]
+
+const readySteps = demoSteps.slice(0, 5)
+const packageSteps = demoSteps.slice(5)
 
 function scrollToHeading(targets: string[]) {
   const normalizedTargets = targets.map((target) => target.toLowerCase())
@@ -110,13 +116,41 @@ function scrollToHeading(targets: string[]) {
 
 export function PresentationCallouts() {
   const router = useRouter()
+  const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(true)
   const [activeKey, setActiveKey] = useState(demoSteps[0].key)
+  const [pendingScroll, setPendingScroll] = useState<PendingScroll>(null)
   const active = demoSteps.find((step) => step.key === activeKey) || demoSteps[0]
   const ActiveIcon = active.icon
 
+  useEffect(() => {
+    if (!pendingScroll) return
+    if (pathname !== pendingScroll.href) return
+
+    const timeout = window.setTimeout(() => {
+      if (pendingScroll.scrollTop) {
+        window.scrollTo({ top: 0, behavior: "smooth" })
+      } else if (pendingScroll.scrollTarget) {
+        scrollToHeading(pendingScroll.scrollTarget)
+      }
+
+      setPendingScroll(null)
+    }, 120)
+
+    return () => window.clearTimeout(timeout)
+  }, [pathname, pendingScroll])
+
   function goToStep(step: DemoStep) {
     setActiveKey(step.key)
+    const shouldScroll = step.scrollTop || step.scrollTarget
+
+    if (step.href && step.href !== pathname) {
+      if (shouldScroll) {
+        setPendingScroll({ href: step.href, scrollTop: step.scrollTop, scrollTarget: step.scrollTarget })
+      }
+      router.push(step.href)
+      return
+    }
 
     if (step.scrollTop) {
       window.scrollTo({ top: 0, behavior: "smooth" })
@@ -159,7 +193,7 @@ export function PresentationCallouts() {
             <div className="mb-3 flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-bold uppercase text-[#ECAC36]">Client walkthrough</p>
-                <h2 className="mt-1 text-lg font-heading font-black">Guided demo</h2>
+                <h2 className="mt-1 text-lg font-heading font-black">Ready checklist</h2>
               </div>
               <button
                 type="button"
@@ -171,30 +205,44 @@ export function PresentationCallouts() {
               </button>
             </div>
 
-            <div className="mb-4 grid gap-2">
-              {demoSteps.map((step) => {
-                const Icon = step.icon
-                const isActive = step.key === activeKey
+            <div className="mb-4 space-y-3">
+              {[
+                { title: "Ready now", steps: readySteps },
+                { title: "Coming in package", steps: packageSteps },
+              ].map((group) => (
+                <div key={group.title}>
+                  <p className="mb-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-gray-500">
+                    {group.title}
+                  </p>
+                  <div className="grid gap-2">
+                    {group.steps.map((step) => {
+                      const Icon = step.icon
+                      const isActive = step.key === activeKey
 
-                return (
-                  <button
-                    key={step.key}
-                    type="button"
-                    onClick={() => goToStep(step)}
-                    className={`magnetic-hover cut-corner flex items-center justify-between gap-3 px-3 py-2.5 text-left text-sm font-bold ${
-                      isActive
-                        ? "bg-[#ECAC36] text-black"
-                        : "border border-white/15 bg-white/5 text-gray-200 hover:border-[#ECAC36]/40"
-                    }`}
-                  >
-                    <span className="flex min-w-0 items-center gap-2">
-                      <Icon className="h-4 w-4 shrink-0" />
-                      <span className="truncate">{step.label}</span>
-                    </span>
-                    {step.href ? <ExternalLink className="h-3.5 w-3.5 shrink-0 opacity-75" /> : null}
-                  </button>
-                )
-              })}
+                      return (
+                        <button
+                          key={step.key}
+                          type="button"
+                          onClick={() => goToStep(step)}
+                          className={`magnetic-hover cut-corner flex items-center justify-between gap-3 px-3 py-2.5 text-left text-sm font-bold ${
+                            isActive
+                              ? "bg-[#ECAC36] text-black"
+                              : "border border-white/15 bg-white/5 text-gray-200 hover:border-[#ECAC36]/40"
+                          }`}
+                        >
+                          <span className="flex min-w-0 items-center gap-2">
+                            <Icon className="h-4 w-4 shrink-0" />
+                            <span className="truncate">{step.label}</span>
+                          </span>
+                          {step.href || step.scrollTarget || step.scrollTop ? (
+                            <ExternalLink className="h-3.5 w-3.5 shrink-0 opacity-75" />
+                          ) : null}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
 
             <div className="relative overflow-hidden cut-corner border border-white/10 bg-white/[0.04] p-4">
@@ -204,6 +252,9 @@ export function PresentationCallouts() {
               <div className="mb-3 inline-flex h-8 w-8 items-center justify-center cut-corner bg-[#ECAC36] text-black">
                 <ActiveIcon className="h-4 w-4" />
               </div>
+              <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[#ECAC36]">
+                {readySteps.some((step) => step.key === active.key) ? "Ready now" : "Coming in package"}
+              </p>
               <h3 className="mb-2 pr-10 text-base font-bold">{active.title}</h3>
               <p className="text-sm leading-relaxed text-gray-300">{active.body}</p>
 
@@ -212,7 +263,7 @@ export function PresentationCallouts() {
                   <button
                     type="button"
                     onClick={() => {
-                      if (active.scrollTop) {
+                      if (active.scrollTop || active.scrollTarget) {
                         goToStep(active)
                         return
                       }
@@ -257,7 +308,7 @@ export function PresentationCallouts() {
 
             <div className="mt-3 flex items-center gap-2 text-xs text-gray-400">
               <CheckCircle2 className="h-4 w-4 text-[#ECAC36]" />
-              Ready for tonight's client walkthrough.
+              Ready items and package notes are organized for the walkthrough.
             </div>
           </aside>
         </>

@@ -396,12 +396,6 @@
     box-shadow: var(--shadow-rest);
   }
 
-  @keyframes luxxCardBorderRotate {
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
   .luxx-magnetic-card {
     position: relative;
     isolation: isolate;
@@ -415,40 +409,18 @@
     will-change: transform;
   }
 
-  .luxx-magnetic-card::before {
-    content: "";
-    position: absolute;
-    inset: -2px;
-    z-index: 0;
-    border-radius: calc(0.5rem + 2px);
-    padding: 2px;
-    background: conic-gradient(
-      from 0deg at 50% 50%,
-      transparent 42%,
-      rgba(236, 172, 54, 0.95),
-      transparent 60%
-    );
-    opacity: 0;
-    transform: rotate(0deg);
-    transform-origin: center;
-    pointer-events: none;
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    mask-composite: exclude;
-  }
-
   @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
     .luxx-magnetic-card {
       transition:
-        border-color 280ms var(--ease-luxury),
-        background 280ms var(--ease-luxury),
-        box-shadow 280ms var(--ease-luxury),
-        transform 400ms ease;
+        border-color 220ms var(--ease-luxury),
+        background 220ms var(--ease-luxury),
+        box-shadow 220ms var(--ease-luxury),
+        transform 220ms var(--ease-luxury);
     }
 
     .luxx-magnetic-card:hover,
     .luxx-magnetic-card:focus-within {
+      transform: translateY(-8px) scale(1.01);
       border-color: rgba(236, 172, 54, 0.42);
       background:
         linear-gradient(180deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.024) 46%, rgba(11, 10, 9, 0.96)),
@@ -460,11 +432,6 @@
         inset 0 1px 0 rgba(255, 255, 255, 0.08);
     }
 
-    .luxx-magnetic-card:hover::before,
-    .luxx-magnetic-card:focus-within::before {
-      opacity: 1;
-      animation: luxxCardBorderRotate 3s linear infinite;
-    }
   }
 
   .luxx-card-shine {
@@ -501,6 +468,67 @@
     transform: translate3d(-18%, -2%, 0) rotate(0.001deg);
   }
 
+  .luxx-car-brand-glow {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.44;
+    overflow: hidden;
+    mix-blend-mode: screen;
+  }
+
+  .luxx-car-brand-glow::before {
+    content: "";
+    position: absolute;
+    right: -14%;
+    top: -22%;
+    width: 58%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle, rgba(255, 247, 219, 0.28), rgba(236, 172, 54, 0.15) 34%, transparent 70%),
+      linear-gradient(112deg, transparent 26%, rgba(255, 255, 255, 0.2) 48%, rgba(236, 172, 54, 0.18) 55%, transparent 72%);
+    filter: blur(2px);
+    opacity: 0.72;
+    transform: translate3d(-6%, 3%, 0) rotate(0.001deg);
+    -webkit-mask-image: radial-gradient(circle at 58% 44%, #000 0 48%, transparent 74%);
+    mask-image: radial-gradient(circle at 58% 44%, #000 0 48%, transparent 74%);
+  }
+
+  .luxx-car-brand-glow::after {
+    content: attr(data-brand-mark);
+    position: absolute;
+    right: clamp(0.85rem, 4vw, 1.25rem);
+    top: clamp(0.65rem, 2.5vw, 1rem);
+    display: grid;
+    width: clamp(3rem, 18%, 4.8rem);
+    aspect-ratio: 1;
+    place-items: center;
+    border: 1px solid rgba(236, 172, 54, 0.2);
+    border-radius: 50%;
+    background:
+      linear-gradient(112deg, rgba(236, 172, 54, 0.2), rgba(255, 255, 255, 0.28), rgba(236, 172, 54, 0.16)),
+      radial-gradient(circle at 50% 42%, rgba(255, 246, 219, 0.22), rgba(236, 172, 54, 0.08) 52%, transparent 74%);
+    background-size: 220% 100%, 100% 100%;
+    background-position: 100% 0, center;
+    color: transparent;
+    font-size: clamp(1.05rem, 4vw, 1.75rem);
+    font-weight: 800;
+    letter-spacing: 0;
+    line-height: 1;
+    text-shadow: 0 0 18px rgba(236, 172, 54, 0.18);
+    box-shadow:
+      0 0 18px rgba(236, 172, 54, 0.14),
+      inset 0 0 18px rgba(236, 172, 54, 0.08);
+    opacity: 0.58;
+    transform: translate3d(0, 0, 0) scale(0.96);
+    -webkit-background-clip: text, border-box;
+    background-clip: text, border-box;
+    -webkit-mask-image: linear-gradient(135deg, transparent 0%, #000 22%, #000 72%, transparent 100%);
+    mask-image: linear-gradient(135deg, transparent 0%, #000 22%, #000 72%, transparent 100%);
+  }
+
   @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
     .luxx-card-shine {
       transition: opacity 260ms var(--ease-luxury);
@@ -521,12 +549,932 @@
     .luxx-magnetic-card:focus-within .luxx-card-shine::before {
       transform: translate3d(18%, 2%, 0) rotate(0.001deg);
     }
+
+    .luxx-car-brand-glow {
+      transition: opacity 280ms var(--ease-luxury), filter 280ms var(--ease-luxury);
+      will-change: opacity, filter;
+    }
+
+    .luxx-car-brand-glow::before {
+      transition: opacity 280ms var(--ease-luxury), transform 760ms var(--ease-luxury);
+      will-change: opacity, transform;
+    }
+
+    .luxx-car-brand-glow::after {
+      transition:
+        background-position 820ms var(--ease-luxury),
+        border-color 280ms var(--ease-luxury),
+        box-shadow 280ms var(--ease-luxury),
+        opacity 280ms var(--ease-luxury),
+        transform 280ms var(--ease-luxury);
+      will-change: background-position, opacity, transform;
+    }
+
+    .luxx-magnetic-card:hover .luxx-car-brand-glow,
+    .luxx-magnetic-card:focus-within .luxx-car-brand-glow {
+      opacity: 0.82;
+      filter: saturate(1.08);
+    }
+
+    .luxx-magnetic-card:hover .luxx-car-brand-glow::before,
+    .luxx-magnetic-card:focus-within .luxx-car-brand-glow::before {
+      opacity: 1;
+      transform: translate3d(-17%, 10%, 0) rotate(0.001deg);
+    }
+
+    .luxx-magnetic-card:hover .luxx-car-brand-glow::after,
+    .luxx-magnetic-card:focus-within .luxx-car-brand-glow::after {
+      border-color: rgba(236, 172, 54, 0.38);
+      background-position: 0% 0, center;
+      box-shadow:
+        0 0 26px rgba(236, 172, 54, 0.22),
+        inset 0 0 24px rgba(236, 172, 54, 0.13);
+      opacity: 0.88;
+      transform: translate3d(-2px, 2px, 0) scale(1);
+    }
   }
 
   .luxx-card-edge {
     background: linear-gradient(90deg, transparent, rgba(236, 172, 54, 0.55), transparent);
     opacity: 0;
     transition: opacity 280ms var(--ease-luxury);
+  }
+
+  .luxx-header-magnetic {
+    --luxx-menu-magnet-x: 0px;
+    --luxx-menu-magnet-y: 0px;
+    --luxx-menu-lift-y: 0px;
+  }
+
+  .luxx-header-brand,
+  .luxx-header-menu-link,
+  .luxx-header-submenu-link,
+  .luxx-header-brand-link {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    transform: translate3d(0, 0, 0);
+    transition:
+      color 200ms var(--ease-luxury),
+      border-color 220ms var(--ease-luxury),
+      background-color 220ms var(--ease-luxury),
+      box-shadow 240ms var(--ease-luxury);
+  }
+
+  .luxx-header-brand::before,
+  .luxx-header-menu-link::before,
+  .luxx-header-submenu-link::before,
+  .luxx-header-brand-link::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background: linear-gradient(
+      112deg,
+      transparent 0%,
+      transparent 40%,
+      rgba(255, 246, 219, 0.2) 49%,
+      rgba(236, 172, 54, 0.18) 54%,
+      transparent 66%,
+      transparent 100%
+    );
+    opacity: 0;
+    transform: translate3d(-72%, 0, 0) skewX(-10deg);
+    mix-blend-mode: screen;
+  }
+
+  .luxx-header-brand::after {
+    content: "";
+    position: absolute;
+    inset: 8px 2px;
+    z-index: 0;
+    border-radius: inherit;
+    background: radial-gradient(ellipse at center, rgba(236, 172, 54, 0.22), transparent 68%);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .luxx-header-brand-image {
+    transition: filter 260ms var(--ease-luxury);
+  }
+
+  .luxx-header-menu-link::after {
+    content: "";
+    position: absolute;
+    right: 1rem;
+    bottom: 0.375rem;
+    left: 1rem;
+    z-index: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(236, 172, 54, 0.9), transparent);
+    opacity: 0;
+    transform: scaleX(0);
+    transform-origin: left center;
+    pointer-events: none;
+  }
+
+  .luxx-header-submenu-link::after {
+    content: "";
+    position: absolute;
+    bottom: 0.3rem;
+    left: 0.65rem;
+    z-index: 0;
+    width: 1.65rem;
+    height: 1px;
+    background: rgba(236, 172, 54, 0.78);
+    opacity: 0;
+    transform: scaleX(0);
+    transform-origin: left center;
+    pointer-events: none;
+  }
+
+  .luxx-header-brand-link {
+    --luxx-brand-rgb: 236, 172, 54;
+    text-shadow: 0 1px 14px rgba(0, 0, 0, 0.5);
+  }
+
+  .luxx-header-brand-link::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    opacity: 0;
+    background:
+      linear-gradient(
+        90deg,
+        rgba(var(--luxx-brand-rgb), 0.22),
+        rgba(236, 172, 54, 0.08) 58%,
+        transparent 100%
+      );
+    pointer-events: none;
+  }
+
+  @media (hover: hover) and (pointer: fine) and (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+    .luxx-header-magnetic {
+      transform: translate3d(
+        var(--luxx-menu-magnet-x),
+        calc(var(--luxx-menu-magnet-y) + var(--luxx-menu-lift-y)),
+        0
+      );
+      transition:
+        transform 120ms linear,
+        color 200ms var(--ease-luxury),
+        border-color 220ms var(--ease-luxury),
+        background-color 220ms var(--ease-luxury),
+        box-shadow 240ms var(--ease-luxury);
+      will-change: transform;
+    }
+
+    .luxx-header-brand:hover,
+    .luxx-header-brand:focus-visible,
+    .luxx-header-menu-link:hover,
+    .luxx-header-menu-link:focus-visible,
+    .luxx-header-submenu-link:hover,
+    .luxx-header-submenu-link:focus-visible,
+    .luxx-header-brand-link:hover,
+    .luxx-header-brand-link:focus-visible {
+      --luxx-menu-lift-y: -2px;
+    }
+
+    .luxx-header-nav-group:hover > .luxx-header-menu-link,
+    .luxx-header-nav-group:focus-within > .luxx-header-menu-link,
+    .luxx-header-menu-link:hover,
+    .luxx-header-menu-link:focus-visible {
+      border-color: rgba(236, 172, 54, 0.3);
+      background-color: rgba(255, 255, 255, 0.045);
+      color: #ECAC36;
+      box-shadow: 0 10px 24px rgba(236, 172, 54, 0.12);
+    }
+
+    .luxx-header-brand:hover::before,
+    .luxx-header-brand:focus-visible::before,
+    .luxx-header-menu-link:hover::before,
+    .luxx-header-menu-link:focus-visible::before,
+    .luxx-header-submenu-link:hover::before,
+    .luxx-header-submenu-link:focus-visible::before,
+    .luxx-header-brand-link:hover::after,
+    .luxx-header-brand-link:focus-visible::after {
+      opacity: 1;
+      transform: translate3d(72%, 0, 0) skewX(-10deg);
+      transition:
+        opacity 260ms var(--ease-luxury),
+        transform 720ms var(--ease-luxury);
+    }
+
+    .luxx-header-brand:hover::after,
+    .luxx-header-brand:focus-visible::after {
+      opacity: 1;
+      transition: opacity 260ms var(--ease-luxury);
+    }
+
+    .luxx-header-brand:hover .luxx-header-brand-image,
+    .luxx-header-brand:focus-visible .luxx-header-brand-image {
+      filter: drop-shadow(0 0 15px rgba(236, 172, 54, 0.36));
+    }
+
+    .luxx-header-nav-group:hover > .luxx-header-menu-link::before,
+    .luxx-header-nav-group:focus-within > .luxx-header-menu-link::before {
+      opacity: 1;
+      transform: translate3d(72%, 0, 0) skewX(-10deg);
+      transition:
+        opacity 260ms var(--ease-luxury),
+        transform 720ms var(--ease-luxury);
+    }
+
+    .luxx-header-nav-group:hover > .luxx-header-menu-link::after,
+    .luxx-header-nav-group:focus-within > .luxx-header-menu-link::after,
+    .luxx-header-menu-link:hover::after,
+    .luxx-header-menu-link:focus-visible::after,
+    .luxx-header-submenu-link:hover::after,
+    .luxx-header-submenu-link:focus-visible::after {
+      opacity: 1;
+      transform: scaleX(1);
+      transition:
+        opacity 220ms var(--ease-luxury),
+        transform 300ms var(--ease-luxury);
+    }
+
+    .luxx-header-submenu-link:hover,
+    .luxx-header-submenu-link:focus-visible {
+      border-color: rgba(236, 172, 54, 0.26);
+      background-color: rgba(236, 172, 54, 0.07);
+      color: #e6c766;
+      box-shadow: inset 0 0 0 1px rgba(236, 172, 54, 0.06), 0 8px 18px rgba(236, 172, 54, 0.08);
+    }
+
+    .luxx-header-brand-link:hover,
+    .luxx-header-brand-link:focus-visible {
+      border-color: rgba(var(--luxx-brand-rgb), 0.34);
+      background-color: rgba(236, 172, 54, 0.06);
+      color: #fff;
+      box-shadow:
+        inset 0 0 0 1px rgba(var(--luxx-brand-rgb), 0.12),
+        inset 3px 0 0 rgba(var(--luxx-brand-rgb), 0.52),
+        0 8px 18px rgba(var(--luxx-brand-rgb), 0.1);
+    }
+
+    .luxx-header-brand-link:hover::before,
+    .luxx-header-brand-link:focus-visible::before {
+      opacity: 1;
+      transition: opacity 220ms var(--ease-luxury);
+    }
+  }
+
+  @media (max-width: 1023px), (hover: none), (pointer: coarse), (prefers-reduced-motion: reduce) {
+    .luxx-header-magnetic,
+    .luxx-header-magnetic:hover,
+    .luxx-header-magnetic:focus-visible {
+      transform: none;
+      transition:
+        color 180ms ease,
+        border-color 180ms ease,
+        background-color 180ms ease,
+        box-shadow 180ms ease;
+      will-change: auto;
+    }
+
+    .luxx-header-brand::before,
+    .luxx-header-brand::after,
+    .luxx-header-menu-link::before,
+    .luxx-header-menu-link::after,
+    .luxx-header-submenu-link::before,
+    .luxx-header-submenu-link::after,
+    .luxx-header-brand-link::before,
+    .luxx-header-brand-link::after {
+      opacity: 0;
+      transform: none;
+      transition: none;
+    }
+
+    .luxx-header-brand-image {
+      filter: none;
+      transition: none;
+    }
+  }
+
+  .luxx-mobile-menu-trigger {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    border: 1px solid rgba(236, 172, 54, 0.24);
+    background: rgba(255, 255, 255, 0.035);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 8px 22px rgba(0, 0, 0, 0.28);
+  }
+
+  .luxx-mobile-menu-trigger::before {
+    content: "";
+    position: absolute;
+    inset: -30%;
+    z-index: -1;
+    background: linear-gradient(115deg, transparent 0%, rgba(236, 172, 54, 0.2) 48%, transparent 62%);
+    opacity: 0;
+    transform: translateX(-52%);
+    transition: opacity 220ms var(--ease-luxury), transform 620ms var(--ease-luxury);
+  }
+
+  .luxx-mobile-menu-trigger:hover::before,
+  .luxx-mobile-menu-trigger:focus-visible::before,
+  .luxx-mobile-menu-trigger[aria-expanded="true"]::before {
+    opacity: 1;
+    transform: translateX(52%);
+  }
+
+  .luxx-mobile-menu-trigger[aria-expanded="true"] {
+    border-color: rgba(236, 172, 54, 0.52);
+    background: rgba(236, 172, 54, 0.12);
+    color: #ECAC36;
+  }
+
+  .luxx-mobile-sheet {
+    gap: 0;
+    color: #fff;
+    background:
+      linear-gradient(145deg, rgba(10, 10, 10, 0.98), rgba(2, 2, 2, 0.985) 55%, rgba(16, 12, 5, 0.98)),
+      #050505;
+    box-shadow:
+      -24px 0 70px rgba(0, 0, 0, 0.72),
+      -1px 0 0 rgba(236, 172, 54, 0.28),
+      inset 1px 0 0 rgba(255, 255, 255, 0.06);
+  }
+
+  .luxx-mobile-sheet::before,
+  .luxx-mobile-sheet::after {
+    content: "";
+    position: absolute;
+    pointer-events: none;
+  }
+
+  .luxx-mobile-sheet::before {
+    inset: 0 auto 0 0;
+    width: 1px;
+    background: linear-gradient(180deg, transparent, rgba(236, 172, 54, 0.86) 18%, rgba(236, 172, 54, 0.18) 52%, transparent);
+  }
+
+  .luxx-mobile-sheet::after {
+    top: 0;
+    right: -22%;
+    width: 68%;
+    height: 100%;
+    background: linear-gradient(112deg, transparent 0%, rgba(236, 172, 54, 0.08) 44%, rgba(255, 255, 255, 0.08) 49%, transparent 62%);
+    opacity: 0;
+    transform: translateX(-32%);
+  }
+
+  .luxx-mobile-sheet[data-state="open"]::after {
+    animation: luxxMobileSheetSweep 900ms var(--ease-luxury) 80ms both;
+  }
+
+  .luxx-mobile-sheet [data-slot="sheet-close"] {
+    top: 1.15rem;
+    right: 1.15rem;
+    display: inline-flex;
+    height: 2.5rem;
+    width: 2.5rem;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(236, 172, 54, 0.24);
+    border-radius: 0.5rem;
+    background: rgba(255, 255, 255, 0.045);
+    color: rgba(255, 255, 255, 0.78);
+    opacity: 1;
+    transition: border-color 180ms var(--ease-luxury), background 180ms var(--ease-luxury), color 180ms var(--ease-luxury);
+  }
+
+  .luxx-mobile-sheet [data-slot="sheet-close"]:hover,
+  .luxx-mobile-sheet [data-slot="sheet-close"]:focus-visible {
+    border-color: rgba(236, 172, 54, 0.55);
+    background: rgba(236, 172, 54, 0.12);
+    color: #ECAC36;
+  }
+
+  .luxx-mobile-menu {
+    position: relative;
+    z-index: 1;
+  }
+
+  .luxx-mobile-menu-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    min-height: 4rem;
+    padding-right: 3.3rem;
+  }
+
+  .luxx-mobile-menu-brand img {
+    filter: drop-shadow(0 0 14px rgba(236, 172, 54, 0.25));
+  }
+
+  .luxx-mobile-menu-brand-copy {
+    display: grid;
+    gap: 0.15rem;
+    line-height: 1;
+  }
+
+  .luxx-mobile-menu-brand-copy span:first-child {
+    color: #fff;
+    font-size: 0.98rem;
+    font-weight: 750;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .luxx-mobile-menu-brand-copy span:last-child {
+    color: rgba(236, 172, 54, 0.78);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .luxx-mobile-nav {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 1.35rem;
+  }
+
+  .luxx-mobile-nav-section,
+  .luxx-mobile-cta-wrap {
+    opacity: 0;
+    transform: translate3d(18px, 10px, 0);
+  }
+
+  .luxx-mobile-sheet[data-state="open"] .luxx-mobile-nav-section {
+    animation: luxxMobileMenuItemIn 480ms var(--ease-luxury) both;
+    animation-delay: var(--luxx-mobile-delay, 95ms);
+  }
+
+  .luxx-mobile-sheet[data-state="open"] .luxx-mobile-cta-wrap {
+    animation: luxxMobileMenuItemIn 480ms var(--ease-luxury) 430ms both;
+  }
+
+  .luxx-mobile-nav-block {
+    display: grid;
+    gap: 0.65rem;
+  }
+
+  .luxx-mobile-nav-item,
+  .luxx-mobile-brand-chip,
+  .luxx-mobile-service-link {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    text-decoration: none;
+  }
+
+  .luxx-mobile-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    min-height: 3.35rem;
+    border: 1px solid rgba(255, 255, 255, 0.095);
+    border-radius: 0.5rem;
+    background: rgba(255, 255, 255, 0.035);
+    padding: 0.75rem 0.85rem;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1rem;
+    font-weight: 700;
+    transition: border-color 190ms var(--ease-luxury), background 190ms var(--ease-luxury), color 190ms var(--ease-luxury), transform 190ms var(--ease-luxury);
+  }
+
+  .luxx-mobile-nav-item::before,
+  .luxx-mobile-brand-chip::after,
+  .luxx-mobile-service-link::after,
+  .luxx-mobile-cta::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(112deg, transparent 0%, transparent 38%, rgba(255, 246, 219, 0.16) 48%, rgba(236, 172, 54, 0.16) 54%, transparent 68%);
+    opacity: 0;
+    transform: translateX(-58%);
+    transition: opacity 220ms var(--ease-luxury), transform 640ms var(--ease-luxury);
+    pointer-events: none;
+  }
+
+  .luxx-mobile-nav-item--primary {
+    border-color: rgba(236, 172, 54, 0.28);
+    background: rgba(236, 172, 54, 0.08);
+    color: #ECAC36;
+  }
+
+  .luxx-mobile-nav-icon {
+    display: inline-flex;
+    height: 2rem;
+    width: 2rem;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(236, 172, 54, 0.2);
+    border-radius: 0.45rem;
+    background: rgba(236, 172, 54, 0.08);
+    color: rgba(236, 172, 54, 0.82);
+  }
+
+  .luxx-mobile-nav-item:hover,
+  .luxx-mobile-nav-item:focus-visible,
+  .luxx-mobile-nav-item:active {
+    border-color: rgba(236, 172, 54, 0.46);
+    background: rgba(236, 172, 54, 0.11);
+    color: #fff;
+    transform: translateX(2px);
+  }
+
+  .luxx-mobile-nav-item:hover::before,
+  .luxx-mobile-nav-item:focus-visible::before,
+  .luxx-mobile-nav-item:active::before,
+  .luxx-mobile-brand-chip:hover::after,
+  .luxx-mobile-brand-chip:focus-visible::after,
+  .luxx-mobile-brand-chip:active::after,
+  .luxx-mobile-service-link:hover::after,
+  .luxx-mobile-service-link:focus-visible::after,
+  .luxx-mobile-service-link:active::after,
+  .luxx-mobile-cta:hover::before,
+  .luxx-mobile-cta:focus-visible::before,
+  .luxx-mobile-cta:active::before {
+    opacity: 1;
+    transform: translateX(58%);
+  }
+
+  .luxx-mobile-brand-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.45rem;
+    padding: 0 0.1rem;
+  }
+
+  .luxx-mobile-brand-chip {
+    --luxx-brand-rgb: 236, 172, 54;
+    min-height: 2.45rem;
+    border: 1px solid rgba(var(--luxx-brand-rgb), 0.2);
+    border-radius: 0.45rem;
+    background:
+      linear-gradient(90deg, rgba(var(--luxx-brand-rgb), 0.095), transparent 88%),
+      rgba(255, 255, 255, 0.032);
+    padding: 0.7rem 0.7rem;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 0.82rem;
+    font-weight: 700;
+    line-height: 1.1;
+    text-align: left;
+    transition: border-color 180ms var(--ease-luxury), background 180ms var(--ease-luxury), color 180ms var(--ease-luxury), transform 180ms var(--ease-luxury), box-shadow 180ms var(--ease-luxury);
+  }
+
+  .luxx-mobile-brand-chip::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 3px;
+    background: rgb(var(--luxx-brand-rgb));
+    opacity: 0.55;
+    pointer-events: none;
+  }
+
+  .luxx-mobile-brand-chip:hover,
+  .luxx-mobile-brand-chip:focus-visible,
+  .luxx-mobile-brand-chip:active {
+    border-color: rgba(var(--luxx-brand-rgb), 0.48);
+    background:
+      linear-gradient(90deg, rgba(var(--luxx-brand-rgb), 0.2), rgba(236, 172, 54, 0.07) 62%, transparent),
+      rgba(255, 255, 255, 0.04);
+    color: #fff;
+    box-shadow: inset 0 0 0 1px rgba(var(--luxx-brand-rgb), 0.1), 0 10px 22px rgba(var(--luxx-brand-rgb), 0.08);
+    transform: translateX(2px);
+  }
+
+  .luxx-mobile-service-list {
+    display: grid;
+    gap: 0.4rem;
+    padding: 0 0.1rem;
+  }
+
+  .luxx-mobile-service-link {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0.45rem;
+    background: rgba(255, 255, 255, 0.028);
+    padding: 0.78rem 0.85rem;
+    color: rgba(255, 255, 255, 0.68);
+    font-size: 0.9rem;
+    font-weight: 650;
+    transition: border-color 180ms var(--ease-luxury), background 180ms var(--ease-luxury), color 180ms var(--ease-luxury), transform 180ms var(--ease-luxury);
+  }
+
+  .luxx-mobile-service-link:hover,
+  .luxx-mobile-service-link:focus-visible,
+  .luxx-mobile-service-link:active {
+    border-color: rgba(236, 172, 54, 0.36);
+    background: rgba(236, 172, 54, 0.09);
+    color: #ECAC36;
+    transform: translateX(2px);
+  }
+
+  .luxx-mobile-cta-wrap {
+    margin-top: auto;
+    padding-top: 1.45rem;
+  }
+
+  .luxx-mobile-cta-label {
+    margin-bottom: 0.7rem;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.73rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-align: center;
+    text-transform: uppercase;
+  }
+
+  .luxx-mobile-cta {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    overflow: hidden;
+    border: 1px solid rgba(236, 172, 54, 0.86);
+    border-radius: 0.5rem;
+    background: #ECAC36;
+    padding: 1rem;
+    color: #050505;
+    font-size: 1.03rem;
+    font-weight: 800;
+    text-decoration: none;
+    box-shadow: 0 14px 34px rgba(236, 172, 54, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    transition: background 180ms var(--ease-luxury), transform 180ms var(--ease-luxury), box-shadow 180ms var(--ease-luxury);
+  }
+
+  .luxx-mobile-cta:hover,
+  .luxx-mobile-cta:focus-visible,
+  .luxx-mobile-cta:active {
+    background: #f0bd54;
+    box-shadow: 0 16px 38px rgba(236, 172, 54, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    transform: translateY(-1px);
+  }
+
+  @keyframes luxxMobileSheetSweep {
+    from {
+      opacity: 0;
+      transform: translateX(-34%);
+    }
+    38% {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+      transform: translateX(32%);
+    }
+  }
+
+  @keyframes luxxMobileMenuItemIn {
+    from {
+      opacity: 0;
+      transform: translate3d(18px, 10px, 0);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .luxx-mobile-menu-trigger,
+    .luxx-mobile-menu-trigger::before,
+    .luxx-mobile-sheet::after,
+    .luxx-mobile-nav-section,
+    .luxx-mobile-cta-wrap,
+    .luxx-mobile-nav-item,
+    .luxx-mobile-nav-item::before,
+    .luxx-mobile-brand-chip,
+    .luxx-mobile-brand-chip::after,
+    .luxx-mobile-service-link,
+    .luxx-mobile-service-link::after,
+    .luxx-mobile-cta,
+    .luxx-mobile-cta::before {
+      animation: none;
+      transition: none;
+      transform: none;
+    }
+
+    .luxx-mobile-nav-section,
+    .luxx-mobile-cta-wrap {
+      opacity: 1;
+    }
+  }
+
+  .luxx-rate-guide {
+    position: relative;
+  }
+
+  .luxx-rate-guide-trigger {
+    appearance: none;
+    position: relative;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    transition:
+      border-color 220ms var(--ease-luxury),
+      background 220ms var(--ease-luxury),
+      box-shadow 220ms var(--ease-luxury),
+      color 220ms var(--ease-luxury);
+  }
+
+  .luxx-rate-guide-panel {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translate3d(0, -4px, 0);
+    transition:
+      opacity 180ms var(--ease-luxury),
+      visibility 180ms var(--ease-luxury),
+      transform 180ms var(--ease-luxury),
+      max-height 180ms var(--ease-luxury);
+  }
+
+  .luxx-rate-guide-header {
+    grid-column: 1 / -1;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.065);
+    padding-bottom: 0.55rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #ECAC36;
+  }
+
+  .luxx-rate-guide-row {
+    display: flex;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.035);
+    padding: 0.55rem 0.65rem;
+    color: rgba(255, 255, 255, 0.86);
+    text-decoration: none;
+    transition:
+      border-color 180ms var(--ease-luxury),
+      background 180ms var(--ease-luxury),
+      transform 180ms var(--ease-luxury),
+      color 180ms var(--ease-luxury);
+    clip-path: polygon(0 0, calc(100% - 0.55rem) 0, 100% 0.55rem, 100% 100%, 0.55rem 100%, 0 calc(100% - 0.55rem));
+  }
+
+  .luxx-rate-guide-duration {
+    color: rgba(255, 255, 255, 0.76);
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1.15;
+  }
+
+  .luxx-rate-guide-save {
+    margin-left: 0.25rem;
+    border-radius: 999px;
+    background: rgba(236, 172, 54, 0.12);
+    padding: 0.1rem 0.35rem;
+    color: rgba(236, 172, 54, 0.78);
+    font-size: 0.62rem;
+    font-weight: 800;
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+
+  .luxx-rate-guide-save--mid {
+    background: rgba(236, 172, 54, 0.18);
+    color: rgba(236, 172, 54, 0.9);
+  }
+
+  .luxx-rate-guide-save--best {
+    background: rgba(236, 172, 54, 0.26);
+    color: #ECAC36;
+    text-shadow: 0 0 8px rgba(236, 172, 54, 0.28);
+  }
+
+  .luxx-rate-guide-row--best {
+    border-color: rgba(236, 172, 54, 0.58);
+    background: rgba(236, 172, 54, 0.13);
+  }
+
+  .luxx-rate-guide-row:hover,
+  .luxx-rate-guide-row:focus-visible {
+    border-color: rgba(236, 172, 54, 0.72);
+    background: rgba(236, 172, 54, 0.12);
+    color: #fff;
+    transform: translateX(2px);
+  }
+
+  .luxx-rate-guide-row:hover .luxx-rate-guide-duration,
+  .luxx-rate-guide-row:focus-visible .luxx-rate-guide-duration {
+    color: #ECAC36;
+  }
+
+  .luxx-rate-guide.is-open .luxx-rate-guide-trigger {
+    border-color: rgba(236, 172, 54, 0.55);
+    background: rgba(236, 172, 54, 0.09);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 12px 26px rgba(0, 0, 0, 0.28);
+  }
+
+  .luxx-rate-guide.is-open .luxx-rate-guide-panel {
+    max-height: 20rem;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translate3d(0, 0, 0);
+  }
+
+  @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+    .luxx-rate-guide-trigger::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: -0.75rem;
+      height: 0.75rem;
+      background: transparent;
+    }
+
+    .luxx-rate-guide:hover .luxx-rate-guide-trigger,
+    .luxx-rate-guide:focus-within .luxx-rate-guide-trigger,
+    .luxx-rate-guide.is-open .luxx-rate-guide-trigger {
+      border-color: rgba(236, 172, 54, 0.55);
+      background: rgba(236, 172, 54, 0.09);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 12px 26px rgba(0, 0, 0, 0.28);
+    }
+
+    .luxx-rate-guide-panel {
+      position: absolute;
+      right: 0;
+      bottom: calc(100% + 0.65rem);
+      z-index: 8;
+      width: min(19.5rem, calc(100vw - 2rem));
+      grid-template-columns: 1fr;
+      margin-top: 0;
+      max-height: none;
+      overflow: visible;
+      border: 1px solid rgba(236, 172, 54, 0.3);
+      background: rgba(7, 7, 7, 0.96);
+      padding: 0.7rem;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transform: translate3d(0, 8px, 0) scale(0.98);
+      transform-origin: bottom right;
+      box-shadow:
+        0 22px 54px rgba(0, 0, 0, 0.54),
+        0 0 28px rgba(236, 172, 54, 0.16);
+      backdrop-filter: blur(14px);
+      transition:
+        opacity 180ms var(--ease-luxury),
+        visibility 180ms var(--ease-luxury),
+        transform 180ms var(--ease-luxury);
+      clip-path: polygon(0 0, calc(100% - 0.8rem) 0, 100% 0.8rem, 100% 100%, 0.8rem 100%, 0 calc(100% - 0.8rem));
+    }
+
+    .luxx-rate-guide-panel::after {
+      content: "";
+      position: absolute;
+      right: 1.35rem;
+      bottom: -0.42rem;
+      width: 0.85rem;
+      height: 0.85rem;
+      transform: rotate(45deg);
+      border-right: 1px solid rgba(236, 172, 54, 0.3);
+      border-bottom: 1px solid rgba(236, 172, 54, 0.3);
+      background: rgba(7, 7, 7, 0.96);
+    }
+
+    .luxx-rate-guide:hover .luxx-rate-guide-panel,
+    .luxx-rate-guide:focus-within .luxx-rate-guide-panel,
+    .luxx-rate-guide.is-open .luxx-rate-guide-panel {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+  }
+
+  .luxx-rate-guide.is-open > .luxx-rate-guide-panel {
+    max-height: 20rem;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translate3d(0, 0, 0);
+  }
+
+  @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+    .luxx-rate-guide.is-open > .luxx-rate-guide-panel {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transform: translate3d(0, 0, 0) scale(1);
+    }
   }
 
   @media (hover: hover) and (pointer: fine) {
@@ -697,7 +1645,9 @@
 
     .luxx-card-shine,
     .luxx-card-shine::before,
-    .luxx-magnetic-card::before,
+    .luxx-car-brand-glow,
+    .luxx-car-brand-glow::before,
+    .luxx-car-brand-glow::after,
     .luxx-glimmer-panel::before,
     .luxx-index-panel,
     .luxx-callout-arrow {
@@ -707,20 +1657,32 @@
 
     .luxx-card-shine,
     .luxx-magnetic-card:hover .luxx-card-shine,
-    .luxx-magnetic-card:focus-within .luxx-card-shine,
-    .luxx-magnetic-card::before,
-    .luxx-magnetic-card:hover::before,
-    .luxx-magnetic-card:focus-within::before {
+    .luxx-magnetic-card:focus-within .luxx-card-shine {
       opacity: 0;
       will-change: auto;
     }
 
     .luxx-card-shine::before,
     .luxx-magnetic-card:hover .luxx-card-shine::before,
-    .luxx-magnetic-card:focus-within .luxx-card-shine::before,
-    .luxx-magnetic-card::before,
-    .luxx-magnetic-card:hover::before,
-    .luxx-magnetic-card:focus-within::before {
+    .luxx-magnetic-card:focus-within .luxx-card-shine::before {
+      transform: none;
+      will-change: auto;
+    }
+
+    .luxx-car-brand-glow,
+    .luxx-magnetic-card:hover .luxx-car-brand-glow,
+    .luxx-magnetic-card:focus-within .luxx-car-brand-glow {
+      opacity: 0.34;
+      filter: none;
+      will-change: auto;
+    }
+
+    .luxx-car-brand-glow::before,
+    .luxx-magnetic-card:hover .luxx-car-brand-glow::before,
+    .luxx-magnetic-card:focus-within .luxx-car-brand-glow::before,
+    .luxx-car-brand-glow::after,
+    .luxx-magnetic-card:hover .luxx-car-brand-glow::after,
+    .luxx-magnetic-card:focus-within .luxx-car-brand-glow::after {
       transform: none;
       will-change: auto;
     }

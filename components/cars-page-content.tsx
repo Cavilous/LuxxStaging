@@ -1,37 +1,20 @@
 "use client"
 
-import { useDeferredValue, useEffect, useMemo, useState } from "react"
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react"
 import { CarsFilters } from "@/components/cars-filters"
 import { InventoryCard } from "@/components/inventory-card"
 import { LoadMoreGrid } from "@/components/load-more-grid"
+import {
+  buildFleetBrandOptions,
+  canonicalizeFleetBrand,
+  getDailyRateFilterMax,
+  normalizeFilterKey,
+  parseDailyRate,
+} from "@/lib/car-filter-utils"
 
 const INITIAL_ITEMS = 12
 const LOAD_MORE_COUNT = 8
-const BRAND_ORDER = ["Ferrari", "Lamborghini", "Rolls-Royce", "McLaren", "Porsche", "Bentley", "Mercedes", "BMW", "Audi", "Land Rover", "Cadillac", "Maserati", "Chevrolet", "Ford", "Tesla"]
 const BODY_TYPE_ORDER = ["Supercar", "Convertible", "SUV", "Sedan", "Coupe"]
-const DEMO_FILTER_BRAND_EXCLUSIONS = new Set(["bugatti", "koenigsegg", "pagani"])
-const BRAND_ALIASES: Record<string, string> = {
-  chevy: "Chevrolet",
-  mclaren: "McLaren",
-  mercedesamg: "Mercedes",
-  mercedesbenz: "Mercedes",
-  rollsroyce: "Rolls-Royce",
-}
-
-function normalizeFilterValue(value: string): string {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, "")
-}
-
-function canonicalizeBrand(brand: string): string {
-  const trimmedBrand = brand.trim()
-  if (!trimmedBrand) return ""
-
-  return BRAND_ALIASES[normalizeFilterValue(trimmedBrand)] || trimmedBrand
-}
-
-function parsePrice(price: string): number {
-  return Number.parseInt(price.replace(/[$,]/g, "")) || 0
-}
 
 function sortByPreferredOrder(values: string[], preferredOrder: string[]): string[] {
   return [...values].sort((a, b) => {
@@ -112,21 +95,21 @@ interface CarsPageContentProps {
 }
 
 export function CarsPageContent({ initialCars }: CarsPageContentProps) {
+  const priceValues = useMemo(() => initialCars.map((car) => parseDailyRate(car.price)), [initialCars])
+
   const priceMax = useMemo(() => {
-    const highestPrice = initialCars.reduce((max, car) => Math.max(max, parsePrice(car.price)), 0)
-    return Math.max(1000, Math.ceil(highestPrice / 100) * 100)
+    return getDailyRateFilterMax(priceValues)
+  }, [priceValues])
+
+  const hasPricesAboveMax = useMemo(() => {
+    return priceValues.some((price) => price > priceMax)
+  }, [priceMax, priceValues])
+
+  const availableBrandOptions = useMemo(() => {
+    return buildFleetBrandOptions(initialCars)
   }, [initialCars])
 
-  const availableBrands = useMemo(() => {
-    const brands = Array.from(
-      new Set(
-        initialCars
-          .map((car) => canonicalizeBrand(car.brand))
-          .filter((brand) => brand && !DEMO_FILTER_BRAND_EXCLUSIONS.has(normalizeFilterValue(brand))),
-      ),
-    )
-    return sortByPreferredOrder(brands, BRAND_ORDER)
-  }, [initialCars])
+  const availableBrands = useMemo(() => availableBrandOptions.map((brand) => brand.name), [availableBrandOptions])
 
   const availableBodyTypes = useMemo(() => {
     const bodyTypes = Array.from(new Set(initialCars.map((car) => car.bodyType).filter(Boolean)))
@@ -139,14 +122,21 @@ export function CarsPageContent({ initialCars }: CarsPageContentProps) {
     bodyTypes: [] as string[],
     priceRange: [0, priceMax] as [number, number],
   })
+  const previousPriceMaxRef = useRef(priceMax)
 
   useEffect(() => {
+    const previousPriceMax = previousPriceMaxRef.current
+
     setFilters((prevFilters) => {
       const validBrands = prevFilters.brands.filter((brand) => availableBrands.includes(brand))
       const validBodyTypes = prevFilters.bodyTypes.filter((bodyType) => availableBodyTypes.includes(bodyType))
+      const nextUpper =
+        prevFilters.priceRange[1] >= previousPriceMax
+          ? priceMax
+          : Math.max(0, Math.min(prevFilters.priceRange[1], priceMax))
       const nextPriceRange: [number, number] = [
-        Math.max(0, Math.min(prevFilters.priceRange[0], priceMax)),
-        Math.max(0, Math.min(prevFilters.priceRange[1], priceMax)),
+        Math.max(0, Math.min(prevFilters.priceRange[0], nextUpper)),
+        nextUpper,
       ]
 
       if (
@@ -164,6 +154,8 @@ export function CarsPageContent({ initialCars }: CarsPageContentProps) {
         priceRange: nextPriceRange,
       }
     })
+
+    previousPriceMaxRef.current = priceMax
   }, [availableBrands, availableBodyTypes, priceMax])
 
   const handleFiltersChange = (newFilters: any) => {
@@ -184,25 +176,29 @@ export function CarsPageContent({ initialCars }: CarsPageContentProps) {
 
   const filteredAndSortedCars = useMemo(() => {
     const filtered = initialCars.filter((car) => {
-      const carBrand = normalizeFilterValue(canonicalizeBrand(car.brand))
-      const carBodyType = normalizeFilterValue(car.bodyType)
+      const carBrand = normalizeFilterKey(canonicalizeFleetBrand(car.brand, { allowUnknown: true }))
+      const carBodyType = normalizeFilterKey(car.bodyType)
 
       if (
         deferredFilters.brands.length &&
-        !deferredFilters.brands.some((brand) => carBrand === normalizeFilterValue(canonicalizeBrand(brand)))
+        !deferredFilters.brands.some(
+          (brand) => carBrand === normalizeFilterKey(canonicalizeFleetBrand(brand, { allowUnknown: true })),
+        )
       ) {
         return false
       }
 
       if (
         deferredFilters.bodyTypes.length &&
-        !deferredFilters.bodyTypes.some((bodyType) => carBodyType === normalizeFilterValue(bodyType))
+        !deferredFilters.bodyTypes.some((bodyType) => carBodyType === normalizeFilterKey(bodyType))
       ) {
         return false
       }
 
-      const price = parsePrice(car.price)
-      if (price < deferredFilters.priceRange[0] || price > deferredFilters.priceRange[1]) return false
+      const price = parseDailyRate(car.price)
+      const upperRangeIsCeiling = deferredFilters.priceRange[1] >= priceMax
+      if (price < deferredFilters.priceRange[0]) return false
+      if (!upperRangeIsCeiling && price > deferredFilters.priceRange[1]) return false
 
       return true
     })
@@ -210,11 +206,11 @@ export function CarsPageContent({ initialCars }: CarsPageContentProps) {
     switch (sort) {
       case "price_asc":
         return filtered.sort(
-          (a, b) => parsePrice(a.price) - parsePrice(b.price)
+          (a, b) => parseDailyRate(a.price) - parseDailyRate(b.price)
         )
       case "price_desc":
         return filtered.sort(
-          (a, b) => parsePrice(b.price) - parsePrice(a.price)
+          (a, b) => parseDailyRate(b.price) - parseDailyRate(a.price)
         )
       case "featured":
       default:
@@ -222,29 +218,30 @@ export function CarsPageContent({ initialCars }: CarsPageContentProps) {
           (a, b) => (b.badges.includes("Featured") ? 1 : 0) - (a.badges.includes("Featured") ? 1 : 0)
         )
     }
-  }, [initialCars, deferredFilters, sort])
+  }, [initialCars, deferredFilters, priceMax, sort])
 
   return (
     <>
       <CarsFilters
         filters={filters}
         onFiltersChange={handleFiltersChange}
-        availableBrands={availableBrands}
+        availableBrandOptions={availableBrandOptions}
         availableBodyTypes={availableBodyTypes}
         priceMax={priceMax}
+        hasPricesAboveMax={hasPricesAboveMax}
       />
 
       <div className="section-divider-angled bg-[#ECAC36] mx-4"></div>
 
-      <section className="container mx-auto px-4 py-6">
-        <div className="mb-6 flex items-center justify-between gap-3 transition-opacity duration-200">
-          <p className="text-[#B5B5B5] text-sm">
+      <section className="container mx-auto px-4 py-6 md:py-8">
+        <div className="mb-6 flex flex-col gap-3 border-b border-white/[0.07] pb-4 transition-opacity duration-200 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm font-medium text-[#B5B5B5]">
             {filteredAndSortedCars.length} cars available
           </p>
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value)}
-            className="cut-corner-button bg-[#0A0A0A] border border-[#ECAC36] text-white px-4 py-2 text-sm focus-angular"
+            className="h-10 min-w-[12rem] cut-corner-button border border-[#ECAC36]/35 bg-[#080808] px-3 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_10px_24px_rgba(0,0,0,0.22)] focus-angular"
           >
             <option value="featured">Featured</option>
             <option value="price_asc">Price: Low to High</option>

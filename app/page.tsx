@@ -213,6 +213,7 @@ export default async function HomePage() {
           description="Hand-picked exotic and luxury vehicles available for immediate rental. From supercars to luxury SUVs, experience Miami in style."
           items={featuredExotics}
           viewAllHref="/cars"
+          showSectionDivider={false}
         />
 
         <InventoryRow 
@@ -220,12 +221,14 @@ export default async function HomePage() {
           description="Explore Miami's pristine waters aboard our exclusive fleet of luxury yachts. Full crew, premium amenities, and unforgettable experiences included."
           items={featuredYachts}
           viewAllHref="/yachts"
+          showSectionDivider={false}
         />
         <InventoryRow 
           title="Premium Villas" 
           description="Discover Miami's finest waterfront estates and luxury properties. Perfect for extended stays, events, or ultimate relaxation."
           items={featuredVillas}
           viewAllHref="/houses"
+          showSectionDivider={false}
         />
 
         <LatestBlogs />
