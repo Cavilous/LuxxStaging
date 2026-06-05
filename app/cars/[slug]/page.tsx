@@ -331,7 +331,10 @@ export default async function CarDetailPage({ params, searchParams }: CarDetailP
 
             {/* Pricing - Conditionally show price or contact message */}
             {basePricePerDay > 0 ? (
-              <div className="relative overflow-hidden bg-charcoal/50 rounded-2xl p-6 border border-[#ECAC36]/20">
+              <div
+                className="relative overflow-hidden bg-charcoal/50 rounded-2xl p-6 border border-[#ECAC36]/20"
+                data-demo="multi-day-pricing"
+              >
                 <div className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full border border-[#ECAC36]/35 bg-black/70 px-3 py-1 text-[0.68rem] font-black uppercase tracking-[0.12em] text-[#ECAC36] shadow-[0_0_18px_rgba(236,172,54,0.16)]">
                   <Truck className="h-3.5 w-3.5" aria-hidden="true" />
                   Free delivery

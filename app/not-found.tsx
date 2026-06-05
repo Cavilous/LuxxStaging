@@ -301,7 +301,7 @@ export default async function NotFound() {
             return (
               <Link
                 key={brand.slug}
-                href={hasSeoPage ? `/miami/${brand.slug}-rental` : `/cars`}
+                href={hasSeoPage ? `/car-brand/${brand.slug}` : `/cars`}
                 className="px-4 py-2 bg-zinc-900 border border-zinc-800 text-gray-300 rounded-lg hover:border-[#ECAC36] hover:text-[#ECAC36] transition-colors text-sm md:text-base"
               >
                 {brand.name}

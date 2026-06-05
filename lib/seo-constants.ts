@@ -79,7 +79,7 @@ export function parseBrandRentalSeoSlug(seoSlug: string): string | null {
 
 export function getBrandSeoUrl(brandSlug: string): string {
   const normalized = normalizeBrandSeoSlug(brandSlug)
-  return BRAND_SEO_SLUGS.has(normalized) ? `/miami/${normalized}-rental` : '/cars-listing'
+  return BRAND_SEO_SLUGS.has(normalized) ? `/car-brand/${normalized}` : '/cars-listing'
 }
 
 export const SUGGESTED_TAGS = [

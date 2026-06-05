@@ -20,7 +20,7 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith("/brand/")) {
     const brandSlug = pathname.replace("/brand/", "")
     const url = request.nextUrl.clone()
-    url.pathname = `/miami/${brandSlug}-rental`
+    url.pathname = `/car-brand/${brandSlug}`
     url.search = ""
     return NextResponse.redirect(url, 301)
   }
