@@ -900,7 +900,10 @@ export default async function BrandPage({ params }: BrandPageProps) {
             </div>
 
             {cars.length === 0 ? (
-              <div className="text-center py-16 px-6 bg-[#111111] border border-[#222222] cut-corner">
+              <div
+                className="text-center py-16 px-6 bg-[#111111] border border-[#222222] cut-corner"
+                data-demo="brand-page-inventory"
+              >
                 <p className="text-gray-400 text-lg mb-6">
                   No {brand.displayName} vehicles currently available. Contact us for availability
                   or special requests.
@@ -928,6 +931,7 @@ export default async function BrandPage({ params }: BrandPageProps) {
               <div
                 className="fleet-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6 lg:gap-8"
                 data-brand-filter={brandSlug}
+                data-demo="brand-page-inventory"
               >
                 {cars.map((car, index) => {
                   const images = Array.isArray(car.images)

@@ -4,6 +4,7 @@ import { useEffect, useState, type CSSProperties } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import {
   ArrowRight,
+  BookOpen,
   Car,
   ChevronLeft,
   ChevronRight,
@@ -65,7 +66,7 @@ const demoSteps: DemoStep[] = [
     label: "Homepage",
     icon: Home,
     title: "Homepage polish is ready",
-    body: "Hero, featured inventory, blog thumbnails, and the right-side walkthrough panel are ready for review.",
+    body: "Hero, featured inventory, and the right-side walkthrough panel are ready for review.",
     callout: "Start at the hero, then use the right-side walkthrough panel to guide the review.",
     infoTip: "Use this as the opening proof point: the demo now feels complete from hero to inventory instead of looking like a partial staging page.",
     note: "Open with the polished first impression: this is the clearest before-and-after moment.",
@@ -78,16 +79,17 @@ const demoSteps: DemoStep[] = [
     key: "menu-logos",
     label: "Menu motion",
     icon: Sparkles,
-    title: "Menu hover and mobile nav are ready",
-    body: "Desktop brand hovers use logo glow and magnetic motion. Mobile now has a sticky five-action bottom nav plus the full hamburger menu.",
-    callout: "Hover Exotic Cars on desktop, then show the sticky mobile bottom nav.",
-    infoTip: "Show desktop hover first, then the bottom mobile nav. The point is premium navigation polish without changing their core menu structure.",
-    note: "This sells polish without forcing a layout change to their core navigation.",
+    title: "Menu UI improvements are ready",
+    body: "Desktop menu hover, brand-logo motion, magnetic hover, and mobile navigation polish are ready to show.",
+    callout: "Hover Exotic Cars and the brand links so they can see the menu logo motion and magnetic feel.",
+    infoTip: "Show desktop hover first, then the mobile navigation. Keep it simple: the menu now feels premium instead of flat.",
+    note: "This shows the navigation polish directly instead of only describing it.",
     href: "/",
     actionLabel: "Open homepage",
     scrollTop: true,
     spotlightSelectors: [
-      ".luxx-header-nav-group:nth-child(2) > .luxx-header-menu-link",
+      "[data-demo='menu-brand-hover']",
+      "[data-demo='menu-ui']",
       ".luxx-mobile-menu-trigger",
     ],
   },
@@ -100,11 +102,10 @@ const demoSteps: DemoStep[] = [
     callout: "Open the fleet and show one card hover plus the brand buttons/filter area.",
     infoTip: "Call out the improved card feel, brand buttons, and cleaner filters. Keep it visual; no need to explain the code.",
     note: "This is the main product-display upgrade: the fleet should feel smoother and more premium.",
-    href: "/",
+    href: "/cars-listing",
     actionLabel: "Show cards",
-    scrollTarget: ["Featured Exotics"],
-    spotlightSelectors: ["#featured-exotics .fleet-grid", "#featured-exotics"],
-    secondaryActions: [{ label: "Open full fleet", href: "/cars-listing" }],
+    scrollTop: true,
+    spotlightSelectors: ["[data-demo='fleet-filters']", ".luxx-brand-shortcut-rail", ".fleet-grid"],
   },
   {
     key: "pricing",
@@ -115,22 +116,40 @@ const demoSteps: DemoStep[] = [
     callout: "Show the selected-rate detail page and point at the reservation total.",
     infoTip: "Use one example rate. The selected daily rate, total reservation amount, savings, and free delivery are the important selling points.",
     note: "This is a clean upsell moment: lower daily rate, total reservation amount, and savings are visible in one place.",
-    href: "/cars/ferrari-sf-90?tier=3-day&days=3&rate=2445",
+    href: "/cars/ferrari-812-superfast-2?tier=3-day&days=3&rate=2155",
     actionLabel: "Open pricing example",
     spotlightSelectors: ["[data-demo='multi-day-pricing']", "main h1", "h1"],
   },
   {
-    key: "bentley",
+    key: "blog-thumbnails",
+    label: "Blog thumbnails",
+    icon: BookOpen,
+    title: "Blog thumbnails are fixed",
+    body: "Homepage blog cards now show real image thumbnails instead of blank placeholders.",
+    callout: "Scroll to the blog cards and point out that the thumbnails now load.",
+    infoTip: "Use plain language for the client: the homepage blog cards are fixed and no longer show empty image areas.",
+    note: "This is a quick visible proof point on the homepage.",
+    href: "/",
+    actionLabel: "Show blog cards",
+    scrollTarget: ["Latest from the Blog"],
+    spotlightSelectors: ["[data-demo='blog-thumbnails']", "[data-demo='blog-section']"],
+  },
+  {
+    key: "brand-pages",
     label: "Brand pages",
     icon: Sparkles,
-    title: "Brand pages are working",
-    body: "The menu and footer now point to working brand pages with loaded inventory and brand-background logo polish.",
-    callout: "Use Bentley as the quick brand-page proof point.",
-    infoTip: "Keep the language simple: the brand page opens and shows cars. Production inventory count differences can be handled in the next package.",
-    note: "Keep this simple for the client: brand pages now open and show cars.",
+    title: "Brand pages are fixed across brands",
+    body: "Brand pages now open, show matching cars, and include the branded background logo polish.",
+    callout: "Open Bentley, Ferrari, and Rolls-Royce so it is clear this is not only one brand page.",
+    infoTip: "Keep the language simple: the brand pages open and show the right cars. Production inventory count differences belong in the next package.",
+    note: "This is the clean client phrasing: brand pages are fixed across the demo set.",
     href: "/car-brand/bentley",
     actionLabel: "Open Bentley",
-    spotlightSelectors: ["main h1", "h1", ".fleet-grid"],
+    spotlightSelectors: ["[data-demo='brand-page-inventory']", ".fleet-grid", "main h1", "h1"],
+    secondaryActions: [
+      { label: "Open Ferrari", href: "/car-brand/ferrari" },
+      { label: "Open Rolls-Royce", href: "/car-brand/rolls-royce" },
+    ],
   },
   {
     key: "listings",
@@ -169,8 +188,8 @@ const demoSteps: DemoStep[] = [
   },
 ]
 
-const readySteps = demoSteps.slice(0, 7)
-const packageSteps = demoSteps.slice(7)
+const readySteps = demoSteps.slice(0, demoSteps.length - 1)
+const packageSteps = demoSteps.slice(demoSteps.length - 1)
 
 function scrollToHeading(targets: string[]) {
   const normalizedTargets = targets.map((target) => target.toLowerCase())
@@ -289,9 +308,9 @@ export function PresentationCallouts() {
         arrowLeft: clamp(centerX - tooltipLeft, 22, tooltipWidth - 22),
         pointerTop:
           placement === "top"
-            ? Math.max(margin, ringTop - 30)
-            : Math.min(window.innerHeight - margin - 24, ringTop + ringHeight + 6),
-        pointerLeft: clamp(centerX - 11, margin, window.innerWidth - margin - 22),
+            ? Math.max(margin, ringTop - 36)
+            : Math.min(window.innerHeight - margin - 34, ringTop + ringHeight + 6),
+        pointerLeft: clamp(centerX - 17, margin, window.innerWidth - margin - 34),
         placement,
       })
     }

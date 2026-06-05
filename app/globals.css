@@ -2540,15 +2540,16 @@
     position: fixed;
     z-index: 58;
     pointer-events: none;
-    border: 1px solid rgba(236, 172, 54, 0.62);
+    border: 2px solid rgba(255, 59, 48, 0.82);
     background:
-      radial-gradient(circle at 50% 50%, rgba(236, 172, 54, 0.18), rgba(236, 172, 54, 0.05) 44%, transparent 72%),
-      linear-gradient(112deg, rgba(255, 255, 255, 0.1), transparent 38%, rgba(236, 172, 54, 0.13), transparent 70%);
+      radial-gradient(circle at 50% 50%, rgba(255, 59, 48, 0.12), rgba(255, 59, 48, 0.04) 45%, transparent 74%),
+      linear-gradient(112deg, rgba(255, 255, 255, 0.09), transparent 38%, rgba(255, 59, 48, 0.1), transparent 70%);
     box-shadow:
-      0 0 0 1px rgba(236, 172, 54, 0.16),
-      0 0 24px rgba(236, 172, 54, 0.25),
-      0 0 68px rgba(236, 172, 54, 0.14),
-      inset 0 0 24px rgba(236, 172, 54, 0.11);
+      0 0 0 1px rgba(255, 255, 255, 0.08),
+      0 0 0 9999px rgba(0, 0, 0, 0.08),
+      0 0 24px rgba(255, 59, 48, 0.2),
+      0 0 68px rgba(255, 59, 48, 0.12),
+      inset 0 0 24px rgba(255, 59, 48, 0.08);
     clip-path: polygon(0 0, calc(100% - 0.85rem) 0, 100% 0.85rem, 100% 100%, 0.85rem 100%, 0 calc(100% - 0.85rem));
     animation: luxxDemoSpotlightPulse 2.4s ease-in-out infinite;
     transition:
@@ -2610,23 +2611,30 @@
     position: fixed;
     z-index: 60;
     display: grid;
-    width: 1.4rem;
-    height: 1.4rem;
+    width: 2.1rem;
+    height: 2.1rem;
     place-items: center;
     pointer-events: none;
-    color: #ECAC36;
+    color: #ff3b30;
     filter:
-      drop-shadow(0 0 10px rgba(236, 172, 54, 0.55))
+      drop-shadow(0 0 4px rgba(255, 255, 255, 0.78))
+      drop-shadow(0 0 12px rgba(255, 59, 48, 0.72))
       drop-shadow(0 8px 16px rgba(0, 0, 0, 0.45));
     animation: luxxDemoPointer 1.2s ease-in-out infinite;
   }
 
+  .luxx-demo-pointer svg {
+    width: 2.1rem;
+    height: 2.1rem;
+    stroke-width: 3.3;
+  }
+
   .luxx-demo-pointer--top {
-    transform: rotate(90deg);
+    transform: rotate(90deg) translateX(-2px);
   }
 
   .luxx-demo-pointer--bottom {
-    transform: rotate(-90deg);
+    transform: rotate(-90deg) translateX(-2px);
   }
 
   .luxx-demo-tooltip-kicker {
@@ -2845,11 +2853,11 @@
   @keyframes luxxDemoSpotlightPulse {
     0%, 100% {
       opacity: 0.84;
-      filter: drop-shadow(0 0 0 rgba(236, 172, 54, 0));
+      filter: drop-shadow(0 0 0 rgba(255, 59, 48, 0));
     }
     50% {
       opacity: 1;
-      filter: drop-shadow(0 0 12px rgba(236, 172, 54, 0.2));
+      filter: drop-shadow(0 0 12px rgba(255, 59, 48, 0.24));
     }
   }
 

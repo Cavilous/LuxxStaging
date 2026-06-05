@@ -172,9 +172,13 @@ export function Header() {
 
           {/* Desktop Navigation - Right aligned */}
           <div className="hidden lg:flex items-center gap-1">
-            <nav className="flex items-center">
+            <nav className="flex items-center" data-demo="menu-ui">
               {navItems.map((item) => (
-                <div key={item.name} className="luxx-header-nav-group relative group">
+                <div
+                  key={item.name}
+                  className="luxx-header-nav-group relative group"
+                  data-demo={"submenuType" in item && item.submenuType === "brands" ? "menu-brand-hover" : undefined}
+                >
                   <Link
                     href={item.href}
                     className="luxx-header-menu-link luxx-header-magnetic relative flex items-center overflow-hidden rounded-md border border-white/0 px-4 py-2 text-sm font-medium text-white/90 outline-none"

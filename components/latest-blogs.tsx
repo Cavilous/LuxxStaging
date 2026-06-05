@@ -94,7 +94,7 @@ export async function LatestBlogs({ id }: LatestBlogsProps = {}) {
   const visiblePosts = posts.length > 0 ? posts : fallbackBlogPosts
 
   return (
-    <section id={id} className="py-20 bg-gradient-to-b from-black to-[#0A0A0A]">
+    <section id={id} data-demo="blog-section" className="py-20 bg-gradient-to-b from-black to-[#0A0A0A]">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between mb-12">
           <div>
@@ -114,7 +114,7 @@ export async function LatestBlogs({ id }: LatestBlogsProps = {}) {
           </Link>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
+        <div data-demo="blog-thumbnails" className="grid md:grid-cols-3 gap-6 lg:gap-8">
           {visiblePosts.map((post) => {
             const thumbnail = getBlogThumbnail(post)
 

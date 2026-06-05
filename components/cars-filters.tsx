@@ -103,7 +103,7 @@ export function CarsFilters({
   const totalBrandCount = displayBrands.reduce((total, brand) => total + brand.count, 0)
 
   return (
-    <div className="sticky top-0 z-40 border-y border-[#ECAC36]/15 bg-[#050505]/95 backdrop-blur-xl">
+    <div data-demo="fleet-filters" className="sticky top-0 z-40 border-y border-[#ECAC36]/15 bg-[#050505]/95 backdrop-blur-xl">
       <div className="container mx-auto px-4 py-3 md:py-4">
         <div className="border border-white/[0.07] bg-[linear-gradient(180deg,rgba(255,255,255,0.045),rgba(255,255,255,0.018))] px-3 py-3 shadow-[0_18px_44px_rgba(0,0,0,0.28)] cut-corner-card md:px-4">
           <div className="luxx-brand-shortcut-rail" aria-label="Quick brand filters">
