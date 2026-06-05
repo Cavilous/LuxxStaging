@@ -33,11 +33,11 @@ const navItems = [
 ] as const
 
 function isActivePath(pathname: string | null, matches: readonly string[]) {
-  if (!pathname) return false
+  const currentPath = pathname || "/"
 
   return matches.some((match) => {
-    if (match === "/") return pathname === "/"
-    return pathname === match || pathname.startsWith(`${match}/`)
+    if (match === "/") return currentPath === "/"
+    return currentPath === match || currentPath.startsWith(`${match}/`)
   })
 }
 
