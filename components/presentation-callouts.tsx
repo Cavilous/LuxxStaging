@@ -62,7 +62,7 @@ const demoSteps: DemoStep[] = [
     label: "Card design language",
     icon: Sparkles,
     title: "Card design language",
-    body: "Cards now carry smoother motion, a cursor glimmer, brand-colored glow, and cleaner image behavior. The full package can add branded logo glimmers and richer vehicle info once assets and content are finalized.",
+    body: "Cards now carry smoother desktop motion, a restrained cursor glimmer, cleaner image behavior, and faster comparison. The full package can add richer vehicle specs once content is finalized.",
     callout: "Use this while showing how the card style carries across the site.",
     scrollTarget: ["Featured Exotics"],
   },

@@ -31,7 +31,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { name, phone, email, message, itemTitle, itemCategory, startDate, endDate, location } = body
+    const {
+      name,
+      phone,
+      email,
+      message,
+      itemTitle,
+      itemCategory,
+      startDate,
+      endDate,
+      location,
+      pricingNote,
+      selectedRentalDays,
+    } = body
+    const enrichedMessage = [pricingNote, message].filter(Boolean).join("\n\n")
 
     if (!name || !phone) {
       console.error('❌ Missing required fields:', { name: !!name, phone: !!phone })
@@ -47,7 +60,7 @@ export async function POST(request: NextRequest) {
       name,
       phone,
       email,
-      message: message || null,
+      message: enrichedMessage || null,
       submissionType: "request_info",
       metadata: {
         itemTitle,
@@ -55,6 +68,8 @@ export async function POST(request: NextRequest) {
         startDate: startDate || null,
         endDate: endDate || null,
         location: location || null,
+        pricingNote: pricingNote || null,
+        selectedRentalDays: selectedRentalDays || null,
       },
     })
     console.log('✅ Saved to database successfully')
@@ -66,7 +81,7 @@ export async function POST(request: NextRequest) {
       customerName: name,
       customerEmail: email,
       customerPhone: phone,
-      payload: { name, phone, email, message, itemTitle, itemCategory, startDate, endDate, location },
+      payload: { name, phone, email, message: enrichedMessage, itemTitle, itemCategory, startDate, endDate, location, pricingNote, selectedRentalDays },
       inventoryContext: itemTitle ? {
         inventoryId: body.itemId,
         inventorySlug: body.itemSlug,
@@ -86,7 +101,7 @@ export async function POST(request: NextRequest) {
         startDate,
         endDate,
         location,
-        message,
+        message: enrichedMessage,
         source: body.source || 'website',
       })
       console.log('📊 Logged to Google Sheets')
@@ -137,7 +152,7 @@ export async function POST(request: NextRequest) {
         startDate: startDate || undefined,
         endDate: endDate || undefined,
         occasionPurpose: tripType || undefined,
-        specialRequests: message || undefined,
+        specialRequests: enrichedMessage || undefined,
       })
     } catch (ghlError) {
       console.error('⚠️ GHL contact creation failed (non-blocking):', ghlError)
@@ -155,7 +170,8 @@ export async function POST(request: NextRequest) {
         itemCategory,
         startDate,
         endDate,
-        location
+        location,
+        message: enrichedMessage,
       })
       
       console.log('📧 Email send results:', {

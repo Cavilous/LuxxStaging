@@ -12,9 +12,17 @@ import { Turnstile } from "@/components/turnstile"
 interface EmbeddedInquiryFormProps {
   itemTitle: string
   itemCategory: "car" | "yacht" | "villa"
+  pricingNote?: string
+  initialRentalDays?: number
 }
 
-export function EmbeddedInquiryForm({ itemTitle, itemCategory }: EmbeddedInquiryFormProps) {
+function addDays(date: Date, days: number) {
+  const next = new Date(date)
+  next.setDate(next.getDate() + days)
+  return next.toISOString().split("T")[0]
+}
+
+export function EmbeddedInquiryForm({ itemTitle, itemCategory, pricingNote, initialRentalDays }: EmbeddedInquiryFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [turnstileToken, setTurnstileToken] = useState("")
@@ -23,10 +31,10 @@ export function EmbeddedInquiryForm({ itemTitle, itemCategory }: EmbeddedInquiry
     name: "",
     phone: "",
     email: "",
-    startDate: "",
-    endDate: "",
+    startDate: initialRentalDays ? addDays(new Date(), 0) : "",
+    endDate: initialRentalDays ? addDays(new Date(), initialRentalDays) : "",
     location: "",
-    message: "",
+    message: pricingNote || "",
     _website: "",
   })
   const [hasDriversLicense, setHasDriversLicense] = useState(false)
@@ -87,6 +95,8 @@ export function EmbeddedInquiryForm({ itemTitle, itemCategory }: EmbeddedInquiry
           endDate: formData.endDate,
           location: formData.location,
           message: formData.message,
+          pricingNote,
+          selectedRentalDays: initialRentalDays || null,
           itemTitle,
           itemCategory,
           ...(itemCategory === "car" && {
@@ -284,6 +294,11 @@ export function EmbeddedInquiryForm({ itemTitle, itemCategory }: EmbeddedInquiry
         )}
 
         <div className="bg-black/30 rounded-xl p-4 border border-[#ECAC36]/10">
+          {pricingNote && (
+            <div className="mb-4 rounded-lg border border-[#ECAC36]/25 bg-[#ECAC36]/10 p-3 text-sm text-gray-200">
+              <span className="font-semibold text-[#ECAC36]">Selected pricing:</span> {pricingNote}
+            </div>
+          )}
           <DateRangePicker
             category={itemCategory}
             startDate={formData.startDate}

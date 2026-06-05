@@ -12,6 +12,7 @@ import { buildCarSpecRows, getExplicitFeatures, isPresentString, isPresentNumber
 import { getBrandSeoUrl } from "@/lib/seo-constants"
 import { PhotoGallery } from "@/components/photo-gallery-wrapper"
 import { getFallbackCars } from "@/lib/fallback-cars"
+import { CAR_DISCOUNT_TIERS, getDiscountHref, getSelectedCarDiscount, getTieredDailyRate } from "@/lib/car-discount-tiers"
 
 export const revalidate = 900
 export const dynamicParams = true
@@ -37,6 +38,7 @@ interface CarDetailPageProps {
   params: Promise<{
     slug: string
   }>
+  searchParams?: Promise<Record<string, string | string[] | undefined>>
 }
 
 async function getCarBySlug(slug: string) {
@@ -222,8 +224,9 @@ export async function generateMetadata({ params }: CarDetailPageProps): Promise<
   }
 }
 
-export default async function CarDetailPage({ params }: CarDetailPageProps) {
+export default async function CarDetailPage({ params, searchParams }: CarDetailPageProps) {
   const { slug } = await params
+  const resolvedSearchParams = searchParams ? await searchParams : {}
   const car = await getCarBySlug(slug)
 
   if (!car) {
@@ -233,6 +236,13 @@ export default async function CarDetailPage({ params }: CarDetailPageProps) {
   const specs = (car.specifications as any) || {}
   const brand = (car as any).brand || car.title?.split(' ')[0] || "Luxury"
   const similarCars = await getSimilarCars(car.id, brand)
+  const basePricePerDay = Number(car.pricePerDay || 0)
+  const selectedDiscount = getSelectedCarDiscount(resolvedSearchParams, basePricePerDay)
+  const displayedPricePerDay = selectedDiscount?.rate || basePricePerDay
+  const detailPath = `/cars/${slug}`
+  const pricingNote = selectedDiscount
+    ? `${selectedDiscount.label} multi-day rate selected: $${selectedDiscount.rate.toLocaleString()}/day for ${selectedDiscount.days} days. Base rate is $${basePricePerDay.toLocaleString()}/day.`
+    : undefined
   
   // Fallback gradient image (data URI) instead of placeholder.svg
   const fallbackImage = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400"%3E%3Cdefs%3E%3ClinearGradient id="g" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%23000;stop-opacity:1"/%3E%3Cstop offset="100%25" style="stop-color:%23333;stop-opacity:1"/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23g)" width="600" height="400"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" fill="%23ECAC36" font-size="24" font-family="Arial"%3ELuxx Miami%3C/text%3E%3C/svg%3E'
@@ -245,7 +255,7 @@ export default async function CarDetailPage({ params }: CarDetailPageProps) {
     type: "car",
     title: car.title || "Luxury Vehicle",
     subtitle: car.subtitle || "",
-    price: `$${Number(car.pricePerDay || 0).toLocaleString()}`,
+    price: `$${displayedPricePerDay.toLocaleString()}`,
     priceUnit: "day",
     brand: brand,
     year: isPresentNumber(specs.year) ? specs.year : null,
@@ -270,7 +280,7 @@ export default async function CarDetailPage({ params }: CarDetailPageProps) {
         name={carData.title}
         description={carData.description || `${carData.title} available for rental in Miami.`}
         image={carData.images.filter(img => typeof img === 'string')}
-        price={Number(car.pricePerDay || 0)}
+        price={displayedPricePerDay}
         category="car"
         brand={carData.brand}
         year={carData.year || undefined}
@@ -329,11 +339,49 @@ export default async function CarDetailPage({ params }: CarDetailPageProps) {
             </div>
 
             {/* Pricing - Conditionally show price or contact message */}
-            {Number(car.pricePerDay || 0) > 0 ? (
+            {basePricePerDay > 0 ? (
               <div className="bg-charcoal/50 rounded-2xl p-6 border border-[#ECAC36]/20">
-                <div className="flex items-baseline gap-2 mb-4">
+                <div className="mb-4 flex flex-wrap items-baseline gap-2">
                   <span className="text-4xl font-heading font-black text-[#ECAC36]">{carData.price}</span>
                   <span className="text-gray-400">/ {carData.priceUnit}</span>
+                  {selectedDiscount && (
+                    <span className="rounded-md bg-[#ECAC36] px-2 py-1 text-xs font-bold text-black">
+                      {selectedDiscount.label} rate
+                    </span>
+                  )}
+                </div>
+                {selectedDiscount && (
+                  <div className="mb-4 rounded-xl border border-[#ECAC36]/25 bg-[#ECAC36]/10 p-3 text-sm">
+                    <p className="font-medium text-white">
+                      Multi-day discount applied for {selectedDiscount.days} days.
+                    </p>
+                    <p className="mt-1 text-gray-300">
+                      Standard rate: ${basePricePerDay.toLocaleString()}/day. Savings: ${selectedDiscount.savingsPerDay.toLocaleString()}/day, about ${selectedDiscount.totalSavings.toLocaleString()} over {selectedDiscount.days} days.
+                    </p>
+                  </div>
+                )}
+                <div className="mb-4 grid grid-cols-2 gap-2">
+                  {CAR_DISCOUNT_TIERS.map((tier) => {
+                    const rate = getTieredDailyRate(basePricePerDay, tier.days)
+                    const isSelected = selectedDiscount?.days === tier.days
+
+                    return (
+                      <a
+                        key={tier.slug}
+                        href={getDiscountHref(detailPath, tier, basePricePerDay)}
+                        className={`rounded-md border px-3 py-2 text-sm transition-colors duration-200 focus-angular ${
+                          isSelected
+                            ? "border-[#ECAC36] bg-[#ECAC36] text-black"
+                            : "border-white/10 bg-white/[0.035] text-white hover:border-[#ECAC36]/50 hover:bg-[#ECAC36]/10"
+                        }`}
+                      >
+                        <span className="block font-semibold">{tier.label}</span>
+                        <span className={isSelected ? "text-black/80" : "text-[#ECAC36]"}>
+                          ${rate.toLocaleString()}/day
+                        </span>
+                      </a>
+                    )
+                  })}
                 </div>
                 <div className="space-y-2 text-sm text-gray-400">
                   {carData.policies.deposit && <p>• Deposit: {carData.policies.deposit}</p>}
@@ -347,7 +395,12 @@ export default async function CarDetailPage({ params }: CarDetailPageProps) {
             )}
 
             {/* Embedded Inquiry Form */}
-            <EmbeddedInquiryForm itemTitle={carData.title} itemCategory="car" />
+            <EmbeddedInquiryForm
+              itemTitle={carData.title}
+              itemCategory="car"
+              pricingNote={pricingNote}
+              initialRentalDays={selectedDiscount?.days}
+            />
 
             {/* Specifications - Only show if we have explicitly set specs */}
             {carData.specRows.length > 0 && (
