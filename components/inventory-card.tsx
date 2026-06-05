@@ -150,6 +150,80 @@ export function InventoryCard({
   const ratePreviewTiers = showDiscountTiers ? CAR_DISCOUNT_TIERS.slice(0, 3) : []
 
   useEffect(() => {
+    const card = cardRef.current
+    if (!brandLogo || !card || typeof window === "undefined") return
+
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    const mobileLike =
+      window.matchMedia("(hover: none)").matches ||
+      window.matchMedia("(pointer: coarse)").matches ||
+      window.matchMedia("(max-width: 768px)").matches
+
+    if (!mobileLike || reduceMotion || !("IntersectionObserver" in window)) return
+
+    let frame: number | null = null
+
+    const updateMobileLogoGlimmer = () => {
+      frame = null
+      const rect = card.getBoundingClientRect()
+      const viewportHeight = Math.max(window.innerHeight || 1, 1)
+
+      if (rect.bottom < 0 || rect.top > viewportHeight) {
+        card.classList.remove("logo-scroll-visible")
+        return
+      }
+
+      const centerY = rect.top + rect.height * 0.5
+      const progress = Math.max(0, Math.min(1, centerY / viewportHeight))
+      const glimmerX = Math.round((1 - progress) * 100)
+      card.style.setProperty("--mobile-logo-glimmer-x", `${glimmerX}%`)
+    }
+
+    const requestMobileLogoGlimmerUpdate = () => {
+      if (frame !== null) return
+      frame = window.requestAnimationFrame(updateMobileLogoGlimmer)
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting && entry.intersectionRatio >= 0.08) {
+          card.classList.add("logo-scroll-visible")
+        } else {
+          card.classList.remove("logo-scroll-visible")
+        }
+        requestMobileLogoGlimmerUpdate()
+      },
+      {
+        rootMargin: "0px 0px -8% 0px",
+        threshold: [0, 0.08, 0.22, 0.55],
+      }
+    )
+
+    card.dataset.logoScrollBound = "1"
+    card.style.setProperty("--logo-scroll-opacity", "0.42")
+    card.style.setProperty("--logo-scroll-layer-opacity", "0.28")
+    card.style.setProperty("--logo-scroll-scale", "1")
+    card.style.setProperty("--logo-scroll-layer-scale", "1")
+    card.style.setProperty("--mobile-logo-glimmer-x", "50%")
+
+    observer.observe(card)
+    window.addEventListener("scroll", requestMobileLogoGlimmerUpdate, { passive: true })
+    window.addEventListener("resize", requestMobileLogoGlimmerUpdate, { passive: true })
+    requestMobileLogoGlimmerUpdate()
+
+    return () => {
+      if (frame !== null) {
+        window.cancelAnimationFrame(frame)
+      }
+      observer.disconnect()
+      window.removeEventListener("scroll", requestMobileLogoGlimmerUpdate)
+      window.removeEventListener("resize", requestMobileLogoGlimmerUpdate)
+      card.classList.remove("logo-scroll-visible")
+      delete card.dataset.logoScrollBound
+    }
+  }, [brandLogo])
+
+  useEffect(() => {
     if (!showDiscountTiers) return
 
     const closeOnOutsidePointer = (event: Event) => {
@@ -235,13 +309,22 @@ export function InventoryCard({
   return (
     <div
       ref={cardRef}
-      className={`luxx-magnetic-card luxx-inventory-card luxx-inventory-card--${type} group bg-[#0A0A0A] rounded-lg border border-white/10`}
+      className={`car-card luxx-magnetic-card luxx-inventory-card luxx-inventory-card--${type} group bg-[#0A0A0A] rounded-lg border border-white/10`}
+      data-brand={brandLogo?.key || brand}
+      data-brand-logo-key={brandLogo?.key}
+      data-brand-logo={brandLogo?.logo}
       style={cardStyle}
       onPointerMove={handlePointerMove}
       onPointerLeave={resetPointerEffect}
     >
+      {brandLogo && (
+        <span
+          className="car-brand-glow"
+          aria-hidden="true"
+        />
+      )}
       <Link href={detailUrl} className="relative z-[1] block cursor-pointer">
-        <div className="relative aspect-[3/2] overflow-hidden">
+        <div className="car-img-wrap relative aspect-[3/2] overflow-hidden">
           <ProgressiveImage
             src={getPlaceholderImage()}
             lqSrc={lqImage}
@@ -255,22 +338,6 @@ export function InventoryCard({
             priority={priority}
           />
 
-          {brandLogo && (
-            <div
-              className="luxx-car-brand-glow"
-              data-brand-logo-key={brandLogo.key}
-              aria-hidden="true"
-            />
-          )}
-
-          {brandLogo && (
-            <span
-              className="luxx-card-brand-badge"
-              data-brand-logo-key={brandLogo.key}
-              aria-hidden="true"
-            />
-          )}
-
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
 
           {badgeToShow !== null && (
@@ -282,7 +349,7 @@ export function InventoryCard({
           )}
         </div>
 
-        <div className="relative p-4 space-y-2">
+        <div className="car-body relative p-4 space-y-2">
           <div className="luxx-card-edge absolute inset-x-4 top-0 h-px"></div>
           <div className="mb-3">
             {hasValidPrice ? (
