@@ -230,6 +230,13 @@ export default async function CarDetailPage({ params, searchParams }: CarDetailP
   const selectedDiscount = getSelectedCarDiscount(resolvedSearchParams, basePricePerDay)
   const displayedPricePerDay = selectedDiscount?.rate || basePricePerDay
   const selectedReservationTotal = selectedDiscount?.reservationTotal || displayedPricePerDay
+  const selectedStandardReservationTotal = selectedDiscount
+    ? getReservationTotal(basePricePerDay, selectedDiscount.days)
+    : selectedReservationTotal
+  const selectedSavingsPercent =
+    selectedDiscount && selectedStandardReservationTotal > 0
+      ? Math.round((selectedDiscount.totalSavings / selectedStandardReservationTotal) * 100)
+      : 0
   const detailPath = `/cars/${slug}`
   const pricingNote = selectedDiscount
     ? `${selectedDiscount.label} multi-day rate selected: $${selectedDiscount.rate.toLocaleString()}/day for ${selectedDiscount.days} days. Reservation total is $${selectedReservationTotal.toLocaleString()}. Base rate is $${basePricePerDay.toLocaleString()}/day.`
@@ -335,9 +342,9 @@ export default async function CarDetailPage({ params, searchParams }: CarDetailP
                 className="relative overflow-hidden bg-charcoal/50 rounded-2xl p-6 border border-[#ECAC36]/20"
                 data-demo="multi-day-pricing"
               >
-                <div className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full border border-[#ECAC36]/35 bg-black/70 px-3 py-1 text-[0.68rem] font-black uppercase tracking-[0.12em] text-[#ECAC36] shadow-[0_0_18px_rgba(236,172,54,0.16)]">
+                <div className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full border border-[#ECAC36]/50 bg-[#ECAC36]/10 px-3 py-1 text-[0.68rem] font-black uppercase tracking-[0.12em] text-[#ECAC36] shadow-[0_0_24px_rgba(236,172,54,0.22)]">
                   <Truck className="h-3.5 w-3.5" aria-hidden="true" />
-                  Free delivery
+                  Free Miami delivery included
                 </div>
                 <div className="mb-4 flex flex-wrap items-baseline gap-2 pt-8 sm:pt-0 sm:pr-40">
                   <span className="text-4xl font-heading font-black text-[#ECAC36]">
@@ -351,32 +358,57 @@ export default async function CarDetailPage({ params, searchParams }: CarDetailP
                   )}
                 </div>
                 {selectedDiscount && (
-                  <div className="mb-4 rounded-xl border border-[#ECAC36]/25 bg-[#ECAC36]/10 p-4 text-sm">
-                    <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
-                      <div>
-                        <p className="font-medium text-white">
-                          Multi-day discount applied for {selectedDiscount.days} days.
-                        </p>
-                        <p className="mt-1 text-gray-300">
-                          Standard rate: ${basePricePerDay.toLocaleString()}/day. Daily savings:{" "}
-                          <span className="font-bold text-[#ff4d4d] line-through decoration-[#ff4d4d] decoration-2">
-                            ${selectedDiscount.savingsPerDay.toLocaleString()}/day
-                          </span>.
-                        </p>
+                  <div className="mb-4 rounded-xl border border-[#ECAC36]/35 bg-gradient-to-br from-[#ECAC36]/16 via-[#ECAC36]/8 to-black/50 p-4 text-sm shadow-[0_0_40px_rgba(236,172,54,0.10)]">
+                    <div className="grid gap-4 lg:grid-cols-[1fr_0.9fr] lg:items-center">
+                      <div className="space-y-3">
+                        <div className="inline-flex items-center rounded-full border border-[#ECAC36]/45 bg-black/35 px-3 py-1 text-[0.68rem] font-black uppercase tracking-[0.12em] text-[#ECAC36]">
+                          {selectedSavingsPercent}% off the standard total
+                        </div>
+                        <div>
+                          <p className="text-lg font-black text-white">
+                            Multi-day savings locked in for {selectedDiscount.days} days.
+                          </p>
+                          <p className="mt-1 text-gray-300">
+                            Standard rate{" "}
+                            <span className="text-white">${basePricePerDay.toLocaleString()}/day</span>
+                            {" "}drops to{" "}
+                            <span className="font-black text-[#ECAC36]">${selectedDiscount.rate.toLocaleString()}/day</span>.
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <span className="inline-flex items-center gap-1.5 rounded-full border border-[#ECAC36]/40 bg-black/35 px-3 py-1 text-[0.68rem] font-black uppercase tracking-[0.12em] text-[#ECAC36]">
+                            <Truck className="h-3.5 w-3.5" aria-hidden="true" />
+                            Delivery fee waived
+                          </span>
+                          <span className="inline-flex rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[0.68rem] font-bold uppercase tracking-[0.12em] text-gray-200">
+                            Concierge handoff included
+                          </span>
+                        </div>
                       </div>
-                      <div className="rounded-lg border border-[#ECAC36]/30 bg-black/30 px-4 py-3 text-left sm:text-right">
-                        <span className="block text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-[#B5B5B5]">
+                      <div className="rounded-xl border border-[#ECAC36]/40 bg-black/45 px-4 py-4 text-left shadow-[inset_0_0_0_1px_rgba(236,172,54,0.08)] sm:text-right">
+                        <span className="block text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-[#B5B5B5]">
                           Reservation total
                         </span>
-                        <strong className="block text-2xl font-black leading-none text-[#ECAC36]">
+                        <span className="mt-2 block text-sm font-bold uppercase tracking-[0.12em] text-gray-500">
+                          Was{" "}
+                          <span className="text-[#ff4d4d] line-through decoration-[#ff4d4d] decoration-2">
+                            ${selectedStandardReservationTotal.toLocaleString()}
+                          </span>
+                        </span>
+                        <strong className="mt-1 block text-3xl font-black leading-none text-[#ECAC36] md:text-4xl">
                           ${selectedReservationTotal.toLocaleString()}
                         </strong>
-                        <span className="mt-1 block text-[0.72rem] text-gray-400">
+                        <span className="mt-1 block text-[0.78rem] text-gray-400">
                           {selectedDiscount.days} days at ${selectedDiscount.rate.toLocaleString()}/day
                         </span>
-                        <span className="mt-2 block border-t border-white/10 pt-2 text-[0.72rem] text-gray-400">
-                          You save <span className="font-bold text-[#ECAC36]">${selectedDiscount.totalSavings.toLocaleString()}</span>
-                        </span>
+                        <div className="mt-3 border-t border-white/10 pt-3">
+                          <span className="block text-[0.68rem] font-black uppercase tracking-[0.14em] text-gray-400">
+                            You save today
+                          </span>
+                          <span className="mt-0.5 block text-2xl font-black text-[#ECAC36]">
+                            ${selectedDiscount.totalSavings.toLocaleString()}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -387,6 +419,8 @@ export default async function CarDetailPage({ params, searchParams }: CarDetailP
                     const isSelected = selectedDiscount?.days === tier.days
                     const tierSavingsPerDay = Math.max(0, basePricePerDay - rate)
                     const reservationTotal = getReservationTotal(rate, tier.days)
+                    const standardReservationTotal = getReservationTotal(basePricePerDay, tier.days)
+                    const tierTotalSavings = standardReservationTotal - reservationTotal
 
                     return (
                       <a
@@ -406,9 +440,15 @@ export default async function CarDetailPage({ params, searchParams }: CarDetailP
                           Total ${reservationTotal.toLocaleString()}
                         </span>
                         <span className={isSelected ? "mt-0.5 block text-[0.68rem] text-black/70" : "mt-0.5 block text-[0.68rem] text-gray-500"}>
-                          Save{" "}
+                          Was{" "}
                           <span className={isSelected ? "font-bold text-red-700 line-through decoration-red-700 decoration-2" : "font-bold text-[#ff4d4d] line-through decoration-[#ff4d4d] decoration-2"}>
-                            ${tierSavingsPerDay.toLocaleString()}/day
+                            ${standardReservationTotal.toLocaleString()}
+                          </span>
+                        </span>
+                        <span className={isSelected ? "mt-0.5 block text-[0.68rem] font-black text-black" : "mt-0.5 block text-[0.68rem] font-black text-[#ECAC36]"}>
+                          Save ${tierTotalSavings.toLocaleString()} total
+                          <span className={isSelected ? "ml-1 text-black/60" : "ml-1 text-gray-500"}>
+                            (${tierSavingsPerDay.toLocaleString()}/day)
                           </span>
                         </span>
                       </a>
