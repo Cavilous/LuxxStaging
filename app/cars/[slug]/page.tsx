@@ -14,25 +14,9 @@ import { PhotoGallery } from "@/components/photo-gallery-wrapper"
 import { getFallbackCars } from "@/lib/fallback-cars"
 import { CAR_DISCOUNT_TIERS, getDiscountHref, getSelectedCarDiscount, getTieredDailyRate } from "@/lib/car-discount-tiers"
 
-export const revalidate = 900
+export const revalidate = 0
+export const dynamic = "force-dynamic"
 export const dynamicParams = true
-
-export async function generateStaticParams() {
-  try {
-    const cars = await db
-      .select({ slug: inventory.slug })
-      .from(inventory)
-      .where(and(eq(inventory.category, "car"), eq(inventory.isPublished, true)))
-      .limit(50)
-    
-    return cars
-      .filter((car) => car.slug && typeof car.slug === 'string')
-      .map((car) => ({ slug: String(car.slug) }))
-  } catch (error) {
-    console.error('Error generating static params for cars:', error)
-    return []
-  }
-}
 
 interface CarDetailPageProps {
   params: Promise<{
