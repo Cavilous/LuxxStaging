@@ -1475,6 +1475,126 @@
     animation: luxxMobileMenuItemIn 480ms var(--ease-luxury) 430ms both;
   }
 
+  .luxx-mobile-bottom-nav {
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 45;
+    padding:
+      0.48rem
+      max(0.62rem, calc(env(safe-area-inset-right, 0px) + 0.62rem))
+      max(0.52rem, calc(env(safe-area-inset-bottom, 0px) + 0.52rem))
+      max(0.62rem, calc(env(safe-area-inset-left, 0px) + 0.62rem));
+    pointer-events: none;
+  }
+
+  .luxx-mobile-bottom-nav::before {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    height: calc(100% + 1.4rem);
+    background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.8) 38%, rgba(0, 0, 0, 0.96));
+    pointer-events: none;
+  }
+
+  .luxx-mobile-bottom-nav-shell {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.24rem;
+    width: min(100%, 27rem);
+    min-height: 4.35rem;
+    margin-inline: auto;
+    overflow: hidden;
+    border: 1px solid rgba(236, 172, 54, 0.26);
+    background:
+      radial-gradient(circle at 50% 0%, rgba(236, 172, 54, 0.18), transparent 42%),
+      rgba(8, 8, 8, 0.94);
+    box-shadow:
+      0 -16px 44px rgba(0, 0, 0, 0.56),
+      0 0 30px rgba(236, 172, 54, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    pointer-events: auto;
+    clip-path: polygon(0.8rem 0, calc(100% - 0.8rem) 0, 100% 0.8rem, 100% 100%, 0 100%, 0 0.8rem);
+    backdrop-filter: blur(18px) saturate(150%);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
+  }
+
+  .luxx-mobile-bottom-nav-item {
+    position: relative;
+    display: flex;
+    min-width: 0;
+    min-height: 4.1rem;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.28rem;
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 0.64rem;
+    font-weight: 800;
+    line-height: 1;
+    text-align: center;
+    text-decoration: none;
+    transition:
+      color 180ms var(--ease-luxury),
+      background 180ms var(--ease-luxury),
+      transform 180ms var(--ease-luxury);
+    -webkit-tap-highlight-color: rgba(236, 172, 54, 0.18);
+  }
+
+  .luxx-mobile-bottom-nav-item::before {
+    content: "";
+    position: absolute;
+    inset: 0.34rem 0.16rem;
+    opacity: 0;
+    background:
+      linear-gradient(135deg, rgba(236, 172, 54, 0.18), rgba(255, 255, 255, 0.04)),
+      rgba(255, 255, 255, 0.035);
+    clip-path: polygon(0 0, calc(100% - 0.42rem) 0, 100% 0.42rem, 100% 100%, 0.42rem 100%, 0 calc(100% - 0.42rem));
+    transition: opacity 180ms var(--ease-luxury);
+  }
+
+  .luxx-mobile-bottom-nav-icon,
+  .luxx-mobile-bottom-nav-item > span:last-child {
+    position: relative;
+    z-index: 1;
+  }
+
+  .luxx-mobile-bottom-nav-icon {
+    display: grid;
+    width: 1.75rem;
+    height: 1.75rem;
+    place-items: center;
+    color: currentColor;
+  }
+
+  .luxx-mobile-bottom-nav-item.is-active,
+  .luxx-mobile-bottom-nav-item:active,
+  .luxx-mobile-bottom-nav-item:focus-visible {
+    color: #ECAC36;
+  }
+
+  .luxx-mobile-bottom-nav-item.is-active::before,
+  .luxx-mobile-bottom-nav-item:active::before,
+  .luxx-mobile-bottom-nav-item:focus-visible::before {
+    opacity: 1;
+  }
+
+  .luxx-mobile-bottom-nav-item--call {
+    color: #090909;
+  }
+
+  .luxx-mobile-bottom-nav-item--call::before {
+    opacity: 1;
+    background: linear-gradient(135deg, #ECAC36, #f2cf78);
+    box-shadow: 0 0 20px rgba(236, 172, 54, 0.2);
+  }
+
+  .luxx-mobile-bottom-nav-item--call .luxx-mobile-bottom-nav-icon {
+    color: #090909;
+  }
+
   .luxx-mobile-nav-block {
     display: grid;
     gap: 0.65rem;
@@ -2663,12 +2783,12 @@
     .luxx-demo-callouts {
       z-index: 40 !important;
       right: calc(env(safe-area-inset-right, 0px) + 0.75rem);
-      bottom: calc(env(safe-area-inset-bottom, 0px) + 0.75rem);
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 6rem);
       left: calc(env(safe-area-inset-left, 0px) + 0.75rem);
     }
 
     .luxx-demo-panel {
-      max-height: min(62svh, calc(100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 6rem));
+      max-height: min(54svh, calc(100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 11rem));
     }
 
     .luxx-demo-banner {
@@ -2687,6 +2807,12 @@
     .luxx-demo-tooltip,
     .luxx-demo-pointer {
       display: none;
+    }
+  }
+
+  @media (max-width: 1023px) {
+    body {
+      padding-bottom: calc(5.75rem + env(safe-area-inset-bottom, 0px));
     }
   }
 

@@ -30,7 +30,7 @@ export function FloatingContact() {
   return (
     <>
       {/* Main floating button - responsive positioning with safe area */}
-      <div className="fixed bottom-6 right-4 md:bottom-8 md:right-8 z-40 pb-safe">
+      <div className="fixed bottom-6 right-4 z-40 hidden pb-safe md:bottom-8 md:right-8 md:block">
         {isOpen && (
           <div className="mb-4 space-y-3 animate-fade-in">
             {/* WhatsApp Button */}

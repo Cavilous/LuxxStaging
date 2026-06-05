@@ -53,6 +53,13 @@ function shouldShowSubtitle(type: InventoryCardProps["type"], subtitle: string):
   return !isExteriorNoteSubtitle(subtitle)
 }
 
+function getCardActionLabel(type: InventoryCardProps["type"]) {
+  if (type === "yacht") return "View yacht"
+  if (type === "villa") return "View property"
+  if (type === "jet") return "View jet"
+  return "View vehicle"
+}
+
 function supportsDesktopMotion(): boolean {
   if (typeof window === "undefined") return false
   return (
@@ -148,6 +155,7 @@ export function InventoryCard({
   const displaySubtitle = subtitle.trim()
   const showSubtitle = shouldShowSubtitle(type, displaySubtitle)
   const detailUrl = getDetailUrl()
+  const cardActionLabel = getCardActionLabel(type)
   const dailyRate = type === "car" ? parseDailyRate(price) : 0
   const showDiscountTiers = type === "car" && dailyRate > 0
   const brandLogo = type === "car" ? getFleetBrandLogo(brand, title) : null
@@ -376,7 +384,7 @@ export function InventoryCard({
             <p className="text-sm truncate text-gray-500">{displaySubtitle}</p>
           )}
           <span className="mt-3 inline-flex min-h-9 items-center justify-center border border-[#ECAC36]/30 bg-[#ECAC36]/10 px-3 text-xs font-bold uppercase tracking-normal text-[#ECAC36] transition-colors duration-200 cut-corner-button group-hover:border-[#ECAC36]/70 group-hover:bg-[#ECAC36]/15">
-            View vehicle
+            {cardActionLabel}
           </span>
         </div>
       </a>

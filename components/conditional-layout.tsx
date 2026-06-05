@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
+import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 
 // Import FloatingContact lazily to avoid SSR hydration issues
 import { FloatingContact } from "@/components/floating-contact"
@@ -28,6 +29,7 @@ export function ConditionalLayout({ children }: { children: React.ReactNode }) {
       <Header />
       {children}
       <Footer />
+      <MobileBottomNav />
       {showFloating && <FloatingContact />}
     </>
   )
