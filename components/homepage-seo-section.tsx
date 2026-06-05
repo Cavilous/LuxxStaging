@@ -63,7 +63,7 @@ export function HomepageSeoSection({ id }: HomepageSeoSectionProps = {}) {
                 Exotic Car Rentals
               </h3>
               <p className="mb-4">
-                Miami's exotic car scene is legendary, and our fleet captures its essence. We specialize in the marques that turn heads along Ocean Drive and command attention at every valet - <Link href="/miami/ferrari-rental" className="text-[#ECAC36] hover:text-[#e6c766] transition-colors">Ferrari</Link>, <Link href="/miami/lamborghini-rental" className="text-[#ECAC36] hover:text-[#e6c766] transition-colors">Lamborghini</Link>, <Link href="/miami/mclaren-rental" className="text-[#ECAC36] hover:text-[#e6c766] transition-colors">McLaren</Link>, Rolls-Royce, Bentley, and more.
+                Miami's exotic car scene is legendary, and our fleet captures its essence. We specialize in the marques that turn heads along Ocean Drive and command attention at every valet - <Link href="/car-brand/ferrari" className="text-[#ECAC36] hover:text-[#e6c766] transition-colors">Ferrari</Link>, <Link href="/car-brand/lamborghini" className="text-[#ECAC36] hover:text-[#e6c766] transition-colors">Lamborghini</Link>, <Link href="/car-brand/mclaren" className="text-[#ECAC36] hover:text-[#e6c766] transition-colors">McLaren</Link>, Rolls-Royce, Bentley, and more.
               </p>
               <p className="mb-4">
                 Our <Link href="/cars" className="text-[#ECAC36] hover:text-[#e6c766] transition-colors">exotic car collection</Link> includes everything from the Lamborghini Urus for family adventures to the Ferrari SF90 Stradale for those seeking pure performance. Every vehicle is meticulously detailed before each rental and equipped with the latest technology.

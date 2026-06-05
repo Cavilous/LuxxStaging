@@ -97,20 +97,17 @@ export function Header() {
   }, [])
 
   const brandItems = [
-    { name: "Aston Martin", href: "/miami/aston-martin-rental" },
-    { name: "Audi", href: "/miami/audi-rental" },
-    { name: "Bentley", href: "/miami/bentley-rental" },
-    { name: "BMW", href: "/miami/bmw-rental" },
-    { name: "Cadillac", href: "/miami/cadillac-rental" },
-    { name: "Ferrari", href: "/miami/ferrari-rental" },
-    { name: "Lamborghini", href: "/miami/lamborghini-rental" },
-    { name: "Land Rover", href: "/miami/land-rover-rental" },
-    { name: "Maserati", href: "/miami/maserati-rental" },
-    { name: "McLaren", href: "/miami/mclaren-rental" },
-    { name: "Mercedes", href: "/miami/mercedes-rental" },
-    { name: "Porsche", href: "/miami/porsche-rental" },
-    { name: "Rolls-Royce", href: "/miami/rolls-royce-rental" },
-    { name: "Tesla", href: "/miami/tesla-rental" },
+    { name: "Audi", href: "/car-brand/audi" },
+    { name: "Bentley", href: "/car-brand/bentley" },
+    { name: "BMW", href: "/car-brand/bmw" },
+    { name: "Cadillac", href: "/car-brand/cadillac" },
+    { name: "Ferrari", href: "/car-brand/ferrari" },
+    { name: "Lamborghini", href: "/car-brand/lamborghini" },
+    { name: "McLaren", href: "/car-brand/mclaren" },
+    { name: "Mercedes", href: "/car-brand/mercedes" },
+    { name: "Porsche", href: "/car-brand/porsche" },
+    { name: "Rolls-Royce", href: "/car-brand/rolls-royce" },
+    { name: "Tesla", href: "/car-brand/tesla" },
   ]
 
   const navItems = [
