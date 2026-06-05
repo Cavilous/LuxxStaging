@@ -468,53 +468,6 @@
     transform: translate3d(-18%, -2%, 0) rotate(0.001deg);
   }
 
-  .luxx-card-rate-strip {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.35rem;
-    margin-top: 0.75rem;
-  }
-
-  .luxx-card-rate-pill {
-    min-width: 0;
-    border: 1px solid rgba(236, 172, 54, 0.16);
-    background: rgba(255, 255, 255, 0.035);
-    padding: 0.4rem 0.45rem;
-    clip-path: polygon(0 0, calc(100% - 0.42rem) 0, 100% 0.42rem, 100% 100%, 0.42rem 100%, 0 calc(100% - 0.42rem));
-  }
-
-  .luxx-card-rate-pill span,
-  .luxx-card-rate-pill em {
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .luxx-card-rate-pill span {
-    color: #b5b5b5;
-    font-size: 0.62rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  .luxx-card-rate-pill strong {
-    display: block;
-    margin-top: 0.05rem;
-    color: rgba(255, 255, 255, 0.94);
-    font-size: 0.8rem;
-    line-height: 1.1;
-  }
-
-  .luxx-card-rate-pill em {
-    margin-top: 0.05rem;
-    color: rgba(236, 172, 54, 0.84);
-    font-size: 0.58rem;
-    font-style: normal;
-    line-height: 1.1;
-  }
-
   .fleet-grid .car-card {
     --brand-glow-rgb: 232, 137, 12;
     --card-shine-x: var(--luxx-shine-x, 50%);
@@ -1606,12 +1559,16 @@
     line-height: 1.15;
   }
 
+  .luxx-rate-guide-price-group {
+    display: grid;
+    min-width: max-content;
+    justify-items: end;
+    gap: 0.16rem;
+  }
+
   .luxx-rate-guide-save {
     margin-left: 0.25rem;
-    border-radius: 999px;
-    background: rgba(236, 172, 54, 0.12);
-    padding: 0.1rem 0.35rem;
-    color: rgba(236, 172, 54, 0.78);
+    color: rgba(181, 181, 181, 0.76);
     font-size: 0.62rem;
     font-weight: 800;
     line-height: 1.1;
@@ -1619,14 +1576,20 @@
   }
 
   .luxx-rate-guide-save--mid {
-    background: rgba(236, 172, 54, 0.18);
     color: rgba(236, 172, 54, 0.9);
   }
 
   .luxx-rate-guide-save--best {
-    background: rgba(236, 172, 54, 0.26);
     color: #ECAC36;
     text-shadow: 0 0 8px rgba(236, 172, 54, 0.28);
+  }
+
+  .luxx-rate-guide-save-value {
+    color: #ff4d4d;
+    text-decoration: line-through;
+    text-decoration-color: rgba(255, 77, 77, 0.86);
+    text-decoration-thickness: 1.5px;
+    text-underline-offset: 0.12em;
   }
 
   .luxx-rate-guide-row--best {

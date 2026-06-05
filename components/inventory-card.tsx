@@ -147,7 +147,9 @@ export function InventoryCard({
   const showDiscountTiers = type === "car" && dailyRate > 0
   const brandLogo = type === "car" ? getFleetBrandLogo(brand, title) : null
   const brandLogoStyle = type === "car" ? getFleetBrandLogoStyle(brand, title) : null
-  const ratePreviewTiers = showDiscountTiers ? CAR_DISCOUNT_TIERS.slice(0, 3) : []
+  const lowestRateTier = CAR_DISCOUNT_TIERS[CAR_DISCOUNT_TIERS.length - 1]
+  const lowestDailyRate =
+    showDiscountTiers && lowestRateTier ? getTieredDailyRate(dailyRate, lowestRateTier.days) : 0
 
   useEffect(() => {
     const card = cardRef.current
@@ -361,22 +363,6 @@ export function InventoryCard({
                 Call for pricing
               </div>
             )}
-            {ratePreviewTiers.length > 0 && (
-              <div className="luxx-card-rate-strip" aria-label={`Multi-day rate preview for ${title}`}>
-                {ratePreviewTiers.map((tier) => {
-                  const rate = getTieredDailyRate(dailyRate, tier.days)
-                  const savingsPerDay = Math.max(0, dailyRate - rate)
-
-                  return (
-                    <span key={tier.slug} className="luxx-card-rate-pill">
-                      <span>{tier.label}</span>
-                      <strong>${rate.toLocaleString()}</strong>
-                      <em>save ${savingsPerDay.toLocaleString()}/day</em>
-                    </span>
-                  )
-                })}
-              </div>
-            )}
           </div>
           <h3 className="text-lg font-semibold text-white truncate leading-tight group-hover:text-[#ECAC36] transition-colors duration-300">
             {title || "Luxury Vehicle"}
@@ -403,19 +389,20 @@ export function InventoryCard({
           >
             <div>
               <span className="block text-[0.68rem] font-semibold uppercase tracking-normal text-[#ECAC36]">
-                Multi-Day Rates
+                Prices as low as
               </span>
-              <span className="block text-[0.68rem] text-gray-500">
-                Lower daily rates by trip length
+              <span className="block text-sm font-black leading-tight text-white">
+                ${lowestDailyRate.toLocaleString()}<span className="text-[0.7rem] font-semibold text-gray-500">/day</span>
               </span>
             </div>
-            <span className="text-xs font-semibold text-white/80">View</span>
+            <span className="text-xs font-semibold text-white/80">View rates</span>
           </button>
           <div id={rateGuidePanelId} className="luxx-rate-guide-panel">
             <div className="luxx-rate-guide-header">Multi-Day Rate Tiers</div>
             {CAR_DISCOUNT_TIERS.map((tier) => {
               const rate = getTieredDailyRate(dailyRate, tier.days)
               const tierHref = getDiscountHref(detailUrl, tier, dailyRate)
+              const savingsPerDay = Math.max(0, dailyRate - rate)
 
               return (
                 <Link
@@ -430,9 +417,11 @@ export function InventoryCard({
                   onClick={() => setIsRateGuideOpen(false)}
                 >
                   <span className="luxx-rate-guide-duration">{tier.label}</span>
-                  <span className="flex items-baseline gap-1">
-                    <span className="text-sm font-bold text-[#ECAC36]">${rate.toLocaleString()}</span>
-                    <span className="text-[0.7rem] text-gray-500">/day</span>
+                  <span className="luxx-rate-guide-price-group">
+                    <span className="flex items-baseline justify-end gap-1">
+                      <span className="text-sm font-bold text-[#ECAC36]">${rate.toLocaleString()}</span>
+                      <span className="text-[0.7rem] text-gray-500">/day</span>
+                    </span>
                     <span
                       className={`luxx-rate-guide-save ${
                         tier.emphasis === "best"
@@ -442,7 +431,7 @@ export function InventoryCard({
                             : ""
                       }`}
                     >
-                      -{tier.percent}%
+                      Save <span className="luxx-rate-guide-save-value">${savingsPerDay.toLocaleString()}/day</span>
                     </span>
                   </span>
                 </Link>

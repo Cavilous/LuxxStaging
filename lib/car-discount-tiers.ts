@@ -2,7 +2,8 @@ export type CarDiscountTier = {
   label: string
   slug: string
   days: number
-  percent: number
+  savingsPerDay: number
+  floorPercent: number
   emphasis?: "mid" | "best"
 }
 
@@ -13,10 +14,10 @@ export type SelectedCarDiscount = CarDiscountTier & {
 }
 
 export const CAR_DISCOUNT_TIERS: CarDiscountTier[] = [
-  { label: "3-Day", slug: "3-day", days: 3, percent: 10 },
-  { label: "7-Day", slug: "7-day", days: 7, percent: 15, emphasis: "mid" },
-  { label: "14-Day", slug: "14-day", days: 14, percent: 20, emphasis: "mid" },
-  { label: "Monthly", slug: "monthly", days: 30, percent: 30, emphasis: "best" },
+  { label: "3-Day", slug: "3-day", days: 3, savingsPerDay: 150, floorPercent: 80 },
+  { label: "7-Day", slug: "7-day", days: 7, savingsPerDay: 300, floorPercent: 65, emphasis: "mid" },
+  { label: "14-Day", slug: "14-day", days: 14, savingsPerDay: 450, floorPercent: 58, emphasis: "mid" },
+  { label: "Monthly", slug: "monthly", days: 30, savingsPerDay: 600, floorPercent: 55, emphasis: "best" },
 ]
 
 export function roundRateToFive(value: number) {
@@ -26,7 +27,10 @@ export function roundRateToFive(value: number) {
 export function getTieredDailyRate(baseRate: number, days: number) {
   const tier = [...CAR_DISCOUNT_TIERS].reverse().find((candidate) => days >= candidate.days)
   if (!tier) return baseRate
-  return roundRateToFive(baseRate * (1 - tier.percent / 100))
+
+  const fixedSavingsRate = baseRate - tier.savingsPerDay
+  const floorRate = baseRate * (tier.floorPercent / 100)
+  return roundRateToFive(Math.max(fixedSavingsRate, floorRate))
 }
 
 export function getDiscountHref(detailUrl: string, tier: CarDiscountTier, baseRate: number) {

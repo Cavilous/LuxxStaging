@@ -326,8 +326,10 @@ export default async function CarDetailPage({ params, searchParams }: CarDetailP
             {basePricePerDay > 0 ? (
               <div className="bg-charcoal/50 rounded-2xl p-6 border border-[#ECAC36]/20">
                 <div className="mb-4 flex flex-wrap items-baseline gap-2">
-                  <span className="text-4xl font-heading font-black text-[#ECAC36]">{carData.price}</span>
-                  <span className="text-gray-400">/ {carData.priceUnit}</span>
+                  <span className="text-4xl font-heading font-black text-[#ECAC36]">
+                    ${displayedPricePerDay.toLocaleString()}
+                  </span>
+                  <span className="text-gray-400">/ day</span>
                   {selectedDiscount && (
                     <span className="rounded-md bg-[#ECAC36] px-2 py-1 text-xs font-bold text-black">
                       {selectedDiscount.label} rate
@@ -342,7 +344,10 @@ export default async function CarDetailPage({ params, searchParams }: CarDetailP
                           Multi-day discount applied for {selectedDiscount.days} days.
                         </p>
                         <p className="mt-1 text-gray-300">
-                          Standard rate: ${basePricePerDay.toLocaleString()}/day. Daily savings: ${selectedDiscount.savingsPerDay.toLocaleString()}.
+                          Standard rate: ${basePricePerDay.toLocaleString()}/day. Daily savings:{" "}
+                          <span className="font-bold text-[#ff4d4d] line-through decoration-[#ff4d4d] decoration-2">
+                            ${selectedDiscount.savingsPerDay.toLocaleString()}/day
+                          </span>.
                         </p>
                       </div>
                       <div className="rounded-lg border border-[#ECAC36]/30 bg-black/30 px-4 py-3 text-left sm:text-right">
@@ -364,7 +369,6 @@ export default async function CarDetailPage({ params, searchParams }: CarDetailP
                     const rate = getTieredDailyRate(basePricePerDay, tier.days)
                     const isSelected = selectedDiscount?.days === tier.days
                     const tierSavingsPerDay = Math.max(0, basePricePerDay - rate)
-                    const tierSavingsTotal = tierSavingsPerDay * tier.days
 
                     return (
                       <a
@@ -381,7 +385,10 @@ export default async function CarDetailPage({ params, searchParams }: CarDetailP
                           ${rate.toLocaleString()}/day
                         </span>
                         <span className={isSelected ? "mt-0.5 block text-[0.68rem] text-black/70" : "mt-0.5 block text-[0.68rem] text-gray-500"}>
-                          Save ${tierSavingsTotal.toLocaleString()}
+                          Save{" "}
+                          <span className={isSelected ? "font-bold text-red-700 line-through decoration-red-700 decoration-2" : "font-bold text-[#ff4d4d] line-through decoration-[#ff4d4d] decoration-2"}>
+                            ${tierSavingsPerDay.toLocaleString()}/day
+                          </span>
                         </span>
                       </a>
                     )
