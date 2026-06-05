@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useDeferredValue, useEffect, useMemo, useState } from "react"
 import { CarsFilters } from "@/components/cars-filters"
 import { InventoryCard } from "@/components/inventory-card"
 import { LoadMoreGrid } from "@/components/load-more-grid"
@@ -9,9 +9,24 @@ const INITIAL_ITEMS = 12
 const LOAD_MORE_COUNT = 8
 const BRAND_ORDER = ["Ferrari", "Lamborghini", "Rolls-Royce", "McLaren", "Porsche", "Bentley", "Mercedes", "BMW", "Audi", "Land Rover", "Cadillac", "Maserati", "Chevrolet", "Ford", "Tesla"]
 const BODY_TYPE_ORDER = ["Supercar", "Convertible", "SUV", "Sedan", "Coupe"]
+const DEMO_FILTER_BRAND_EXCLUSIONS = new Set(["bugatti", "koenigsegg", "pagani"])
+const BRAND_ALIASES: Record<string, string> = {
+  chevy: "Chevrolet",
+  mclaren: "McLaren",
+  mercedesamg: "Mercedes",
+  mercedesbenz: "Mercedes",
+  rollsroyce: "Rolls-Royce",
+}
 
 function normalizeFilterValue(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "")
+}
+
+function canonicalizeBrand(brand: string): string {
+  const trimmedBrand = brand.trim()
+  if (!trimmedBrand) return ""
+
+  return BRAND_ALIASES[normalizeFilterValue(trimmedBrand)] || trimmedBrand
 }
 
 function parsePrice(price: string): number {
@@ -103,7 +118,13 @@ export function CarsPageContent({ initialCars }: CarsPageContentProps) {
   }, [initialCars])
 
   const availableBrands = useMemo(() => {
-    const brands = Array.from(new Set(initialCars.map((car) => car.brand).filter(Boolean)))
+    const brands = Array.from(
+      new Set(
+        initialCars
+          .map((car) => canonicalizeBrand(car.brand))
+          .filter((brand) => brand && !DEMO_FILTER_BRAND_EXCLUSIONS.has(normalizeFilterValue(brand))),
+      ),
+    )
     return sortByPreferredOrder(brands, BRAND_ORDER)
   }, [initialCars])
 
@@ -158,21 +179,30 @@ export function CarsPageContent({ initialCars }: CarsPageContentProps) {
     setSort("price_desc")
   }
 
+  const deferredFilters = useDeferredValue(filters)
+  const isFilterTransitioning = deferredFilters !== filters
+
   const filteredAndSortedCars = useMemo(() => {
     const filtered = initialCars.filter((car) => {
-      const carBrand = normalizeFilterValue(`${car.brand} ${car.title}`)
+      const carBrand = normalizeFilterValue(canonicalizeBrand(car.brand))
       const carBodyType = normalizeFilterValue(car.bodyType)
 
-      if (filters.brands.length && !filters.brands.some((brand) => carBrand.includes(normalizeFilterValue(brand)))) {
+      if (
+        deferredFilters.brands.length &&
+        !deferredFilters.brands.some((brand) => carBrand === normalizeFilterValue(canonicalizeBrand(brand)))
+      ) {
         return false
       }
 
-      if (filters.bodyTypes.length && !filters.bodyTypes.some((bodyType) => carBodyType === normalizeFilterValue(bodyType))) {
+      if (
+        deferredFilters.bodyTypes.length &&
+        !deferredFilters.bodyTypes.some((bodyType) => carBodyType === normalizeFilterValue(bodyType))
+      ) {
         return false
       }
 
       const price = parsePrice(car.price)
-      if (price < filters.priceRange[0] || price > filters.priceRange[1]) return false
+      if (price < deferredFilters.priceRange[0] || price > deferredFilters.priceRange[1]) return false
 
       return true
     })
@@ -192,7 +222,7 @@ export function CarsPageContent({ initialCars }: CarsPageContentProps) {
           (a, b) => (b.badges.includes("Featured") ? 1 : 0) - (a.badges.includes("Featured") ? 1 : 0)
         )
     }
-  }, [initialCars, filters, sort])
+  }, [initialCars, deferredFilters, sort])
 
   return (
     <>
@@ -207,7 +237,7 @@ export function CarsPageContent({ initialCars }: CarsPageContentProps) {
       <div className="section-divider-angled bg-[#ECAC36] mx-4"></div>
 
       <section className="container mx-auto px-4 py-6">
-        <div className="flex justify-between items-center mb-6">
+        <div className="mb-6 flex items-center justify-between gap-3 transition-opacity duration-200">
           <p className="text-[#B5B5B5] text-sm">
             {filteredAndSortedCars.length} cars available
           </p>
@@ -222,33 +252,40 @@ export function CarsPageContent({ initialCars }: CarsPageContentProps) {
           </select>
         </div>
 
-        <LoadMoreGrid
-          items={filteredAndSortedCars}
-          initialCount={INITIAL_ITEMS}
-          incrementCount={LOAD_MORE_COUNT}
-          renderItem={(car, index) => (
-            <InventoryCard
-              key={car.id}
-              id={car.id}
-              slug={car.slug || undefined}
-              type={car.type}
-              title={car.title}
-              subtitle={car.subtitle}
-              price={car.price}
-              priceUnit={car.priceUnit}
-              image={car.image}
-              lqImage={car.lqImage}
-              focalPoint={car.focalPoint}
-              flipHorizontal={car.flipHorizontal}
-              flipVertical={car.flipVertical}
-              specs={car.specs}
-              badges={car.badges}
-              priority={index < 4}
-            />
-          )}
-          renderSkeleton={() => <SkeletonCard />}
-          emptyState={<EmptyState onClearFilters={clearAllFilters} />}
-        />
+        <div
+          className={`transition-all duration-200 ease-out ${
+            isFilterTransitioning ? "translate-y-1 opacity-80" : "translate-y-0 opacity-100"
+          }`}
+        >
+          <LoadMoreGrid
+            items={filteredAndSortedCars}
+            initialCount={INITIAL_ITEMS}
+            incrementCount={LOAD_MORE_COUNT}
+            renderItem={(car, index) => (
+              <InventoryCard
+                key={car.id}
+                id={car.id}
+                slug={car.slug || undefined}
+                type={car.type}
+                title={car.title}
+                subtitle={car.subtitle}
+                price={car.price}
+                priceUnit={car.priceUnit}
+                image={car.image}
+                lqImage={car.lqImage}
+                brand={car.brand}
+                focalPoint={car.focalPoint}
+                flipHorizontal={car.flipHorizontal}
+                flipVertical={car.flipVertical}
+                specs={car.specs}
+                badges={car.badges}
+                priority={index < 4}
+              />
+            )}
+            renderSkeleton={() => <SkeletonCard />}
+            emptyState={<EmptyState onClearFilters={clearAllFilters} />}
+          />
+        </div>
       </section>
     </>
   )

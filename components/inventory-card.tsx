@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useRef } from "react"
+import { useEffect, useRef } from "react"
 import type { CSSProperties, PointerEvent } from "react"
 import { normalizeImageUrl } from "@/lib/media-utils"
 import { ProgressiveImage } from "@/components/progressive-image"
@@ -15,6 +15,7 @@ interface InventoryCardProps {
   image: string
   lqImage?: string | null
   specs: string[]
+  brand?: string
   badges?: string[]
   featured?: boolean
   slug?: string
@@ -42,6 +43,84 @@ function shouldShowSubtitle(type: InventoryCardProps["type"], subtitle: string):
   return !isExteriorNoteSubtitle(subtitle)
 }
 
+type BrandTreatment = {
+  label: string
+  rgb: string
+}
+
+const DEFAULT_BRAND_TREATMENT: BrandTreatment = {
+  label: "Luxx",
+  rgb: "236, 172, 54",
+}
+
+const BRAND_TREATMENTS: Record<string, BrandTreatment> = {
+  "aston martin": { label: "Aston Martin", rgb: "72, 168, 134" },
+  audi: { label: "Audi", rgb: "220, 220, 220" },
+  bentley: { label: "Bentley", rgb: "58, 133, 94" },
+  bmw: { label: "BMW", rgb: "0, 102, 177" },
+  cadillac: { label: "Cadillac", rgb: "210, 54, 70" },
+  chevrolet: { label: "Chevrolet", rgb: "238, 185, 53" },
+  ferrari: { label: "Ferrari", rgb: "255, 40, 0" },
+  ford: { label: "Ford", rgb: "40, 112, 205" },
+  lamborghini: { label: "Lamborghini", rgb: "182, 162, 114" },
+  "land rover": { label: "Land Rover", rgb: "28, 95, 72" },
+  maserati: { label: "Maserati", rgb: "30, 80, 160" },
+  mclaren: { label: "McLaren", rgb: "255, 135, 0" },
+  mercedes: { label: "Mercedes-Benz", rgb: "0, 173, 239" },
+  "mercedes benz": { label: "Mercedes-Benz", rgb: "0, 173, 239" },
+  porsche: { label: "Porsche", rgb: "210, 180, 120" },
+  "range rover": { label: "Range Rover", rgb: "28, 95, 72" },
+  "rolls royce": { label: "Rolls-Royce", rgb: "180, 165, 145" },
+  tesla: { label: "Tesla", rgb: "210, 24, 45" },
+}
+
+const BRAND_NAMES = Object.keys(BRAND_TREATMENTS).sort((a, b) => b.length - a.length)
+
+function normalizeBrandName(value: string): string {
+  return value.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, " ").trim()
+}
+
+function formatFallbackBrand(value: string): string {
+  return value
+    .trim()
+    .replace(/\s+/g, " ")
+    .split(" ")
+    .map((word) => {
+      const normalized = word.toLowerCase()
+      if (normalized.length <= 3) return normalized.toUpperCase()
+      return normalized.charAt(0).toUpperCase() + normalized.slice(1)
+    })
+    .join(" ")
+}
+
+function getBrandTreatment(brand: string | undefined, title: string): BrandTreatment {
+  const normalizedBrand = normalizeBrandName(brand || "")
+  if (normalizedBrand && BRAND_TREATMENTS[normalizedBrand]) {
+    return BRAND_TREATMENTS[normalizedBrand]
+  }
+
+  const normalizedTitle = normalizeBrandName(title)
+  const inferredBrand = BRAND_NAMES.find((name) => normalizedTitle.includes(name))
+  if (inferredBrand) return BRAND_TREATMENTS[inferredBrand]
+
+  if (brand && brand.trim()) {
+    return {
+      label: formatFallbackBrand(brand),
+      rgb: DEFAULT_BRAND_TREATMENT.rgb,
+    }
+  }
+
+  return DEFAULT_BRAND_TREATMENT
+}
+
+function supportsDesktopMotion(): boolean {
+  if (typeof window === "undefined") return false
+  return (
+    window.matchMedia("(hover: hover) and (pointer: fine)").matches &&
+    !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  )
+}
+
 export function InventoryCard({
   type,
   title,
@@ -51,6 +130,7 @@ export function InventoryCard({
   image,
   lqImage,
   specs,
+  brand,
   badges = [],
   featured = false,
   slug,
@@ -63,7 +143,20 @@ export function InventoryCard({
 }: InventoryCardProps) {
   const cardRef = useRef<HTMLDivElement>(null)
   const animationFrame = useRef<number | null>(null)
+  const latestPointer = useRef<{ clientX: number; clientY: number } | null>(null)
+  const logoFadeTimer = useRef<number | null>(null)
   const normalizedImage = normalizeImageUrl(image)
+
+  useEffect(() => {
+    return () => {
+      if (animationFrame.current !== null) {
+        window.cancelAnimationFrame(animationFrame.current)
+      }
+      if (logoFadeTimer.current !== null) {
+        window.clearTimeout(logoFadeTimer.current)
+      }
+    }
+  }, [])
   
   const getFlipTransform = () => {
     const transforms: string[] = []
@@ -115,33 +208,59 @@ export function InventoryCard({
   const hasValidPrice = price && price !== "$0" && price !== "0" && price.trim() !== ""
   const displaySubtitle = subtitle.trim()
   const showSubtitle = shouldShowSubtitle(type, displaySubtitle)
+  const brandTreatment = getBrandTreatment(brand, title)
 
   const cardStyle = {
     "--luxx-shine-x": "50%",
     "--luxx-shine-y": "50%",
+    "--luxx-brand-rgb": brandTreatment.rgb,
   } as CSSProperties
 
-  const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
-    if (event.pointerType !== "mouse" || typeof window === "undefined") return
-    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
+  const handlePointerEnter = () => {
+    if (!supportsDesktopMotion()) return
 
     const card = cardRef.current
-    if (!card || animationFrame.current !== null) return
+    if (!card || type !== "car") return
 
-    const { clientX, clientY } = event
+    if (logoFadeTimer.current !== null) {
+      window.clearTimeout(logoFadeTimer.current)
+      logoFadeTimer.current = null
+    }
+
+    card.classList.remove("logo-fade-ready", "logo-fading")
+    card.classList.add("logo-cooldown")
+  }
+
+  const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType !== "mouse" || !supportsDesktopMotion()) return
+
+    const card = cardRef.current
+    if (!card) return
+
+    latestPointer.current = { clientX: event.clientX, clientY: event.clientY }
+    if (animationFrame.current !== null) return
+
     animationFrame.current = window.requestAnimationFrame(() => {
+      const pointer = latestPointer.current
       const rect = card.getBoundingClientRect()
-      if (rect.width <= 0 || rect.height <= 0) {
+      if (!pointer || rect.width <= 0 || rect.height <= 0) {
         animationFrame.current = null
         return
       }
 
-      const x = clientX - rect.left
-      const y = clientY - rect.top
+      const x = pointer.clientX - rect.left
+      const y = pointer.clientY - rect.top
+      const centerX = rect.width / 2
+      const centerY = rect.height / 2
+      const rotateX = ((y - centerY) / centerY) * -5
+      const rotateY = ((x - centerX) / centerX) * 5
+      const shineX = Math.max(0, Math.min(100, (x / rect.width) * 100))
+      const shineY = Math.max(0, Math.min(100, (y / rect.height) * 100))
 
-      card.style.setProperty("--luxx-shine-x", `${Math.max(0, Math.min(100, (x / rect.width) * 100))}%`)
-      card.style.setProperty("--luxx-shine-y", `${Math.max(0, Math.min(100, (y / rect.height) * 100))}%`)
+      card.style.setProperty("--luxx-shine-x", `${shineX.toFixed(1)}%`)
+      card.style.setProperty("--luxx-shine-y", `${shineY.toFixed(1)}%`)
+      card.style.transition = "none"
+      card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-8px)`
       animationFrame.current = null
     })
   }
@@ -151,21 +270,40 @@ export function InventoryCard({
       window.cancelAnimationFrame(animationFrame.current)
       animationFrame.current = null
     }
+    latestPointer.current = null
 
     const card = cardRef.current
     if (!card) return
+
+    if (type === "car") {
+      if (logoFadeTimer.current !== null) {
+        window.clearTimeout(logoFadeTimer.current)
+      }
+      card.classList.add("logo-fade-ready")
+      void card.offsetWidth
+      card.classList.add("logo-fading")
+      logoFadeTimer.current = window.setTimeout(() => {
+        card.classList.remove("logo-cooldown", "logo-fade-ready", "logo-fading")
+        logoFadeTimer.current = null
+      }, 4050)
+    }
+
     card.style.setProperty("--luxx-shine-x", "50%")
     card.style.setProperty("--luxx-shine-y", "50%")
+    card.style.transition = "all 0.4s ease"
+    card.style.transform = "perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(0)"
   }
 
   return (
     <div
       ref={cardRef}
-      className="luxx-magnetic-card group bg-[#0A0A0A] overflow-hidden rounded-lg border border-white/10"
+      className={`luxx-magnetic-card luxx-inventory-card luxx-inventory-card--${type} group bg-[#0A0A0A] overflow-hidden rounded-lg border border-white/10`}
       style={cardStyle}
+      onPointerEnter={handlePointerEnter}
       onPointerMove={handlePointerMove}
       onPointerLeave={resetPointerEffect}
     >
+      {type === "car" && <span className="luxx-car-brand-glow" aria-hidden="true"></span>}
       <Link href={getDetailUrl()} className="relative z-[1] block cursor-pointer">
         <div className="relative aspect-[3/2] overflow-hidden">
           <ProgressiveImage
@@ -175,13 +313,19 @@ export function InventoryCard({
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 50vw, 25vw"
             quality={70}
-            className="object-cover transition-all duration-500 group-hover:scale-105 group-hover:brightness-110"
+            className="luxx-card-image object-cover"
             objectPosition={focalPoint}
             style={{ transform: getFlipTransform() }}
             priority={priority}
           />
 
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
+
+          {type === "car" && brandTreatment.label && (
+            <div className="luxx-card-brand-mark" aria-hidden="true">
+              <span>{brandTreatment.label}</span>
+            </div>
+          )}
 
           {badgeToShow !== null && (
             <div className="absolute top-3 left-3 z-10">

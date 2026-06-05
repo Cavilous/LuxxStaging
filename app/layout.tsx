@@ -4,6 +4,7 @@ import Script from "next/script"
 import { Montserrat, Open_Sans } from "next/font/google"
 import "./globals.css"
 import { ConditionalLayout } from "@/components/conditional-layout"
+import { DemoAcknowledgementGate } from "@/components/demo-acknowledgement-gate"
 import { Toaster } from "sonner"
 
 const montserrat = Montserrat({
@@ -136,6 +137,7 @@ export default function RootLayout({
           `}
         </Script>
         <ConditionalLayout>{children}</ConditionalLayout>
+        <DemoAcknowledgementGate />
         <Toaster position="top-right" richColors theme="dark" />
         <Script
           src="https://link.msgsndr.com/js/external-tracking.js"

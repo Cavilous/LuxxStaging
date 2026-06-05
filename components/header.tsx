@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo } from "react"
+import { useState, useEffect, useCallback } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -101,7 +101,14 @@ export function Header() {
         <div className="flex items-center justify-between h-16 lg:h-20">
           
           {/* Logo - Left */}
-          <Link href="/" className="flex-shrink-0">
+          <Link
+            href="/"
+            className="group relative flex flex-shrink-0 items-center overflow-hidden rounded-md outline-none transition-transform duration-300 focus-visible:ring-1 focus-visible:ring-[#ECAC36]/40 lg:hover:-translate-y-0.5 motion-reduce:transition-none"
+          >
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-1 -left-1 w-8 -translate-x-10 rotate-12 bg-gradient-to-r from-transparent via-[#ECAC36]/30 to-transparent opacity-0 blur-[1px] transition-[opacity,transform] duration-700 group-focus-visible:translate-x-24 group-focus-visible:opacity-100 lg:group-hover:translate-x-24 lg:group-hover:opacity-100 motion-reduce:translate-x-0 motion-reduce:opacity-0 motion-reduce:transition-none"
+            />
             <Image
               src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/profile-pic-logo-transparent-background%20%281%29-NsrnIlw2XUmCf9NaHqCqGNTdzkkgw9.png"
               alt="Luxx Miami"
@@ -109,7 +116,7 @@ export function Header() {
               height={64}
               priority
               sizes="64px"
-              className="h-12 lg:h-16 w-auto"
+              className="relative z-10 h-12 w-auto transition-[filter] duration-300 group-focus-visible:drop-shadow-[0_0_14px_rgba(236,172,54,0.34)] lg:h-16 lg:group-hover:drop-shadow-[0_0_14px_rgba(236,172,54,0.34)] motion-reduce:transition-none"
             />
           </Link>
 
@@ -120,31 +127,31 @@ export function Header() {
                 <div key={item.name} className="relative group">
                   <Link
                     href={item.href}
-                    className="luxx-nav-hover flex items-center rounded-md border border-white/0 px-4 py-2 text-sm font-medium text-white/90 outline-none hover:border-[#ECAC36]/25 hover:bg-white/[0.04] hover:text-[#ECAC36] focus-visible:border-[#ECAC36]/35 focus-visible:text-[#ECAC36]"
+                    className="luxx-nav-hover relative flex items-center overflow-hidden rounded-md border border-white/0 px-4 py-2 text-sm font-medium text-white/90 outline-none transition-[box-shadow] duration-200 after:absolute after:inset-x-4 after:bottom-1.5 after:h-px after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-transparent after:via-[#ECAC36]/90 after:to-transparent after:opacity-0 after:transition-all after:duration-300 hover:border-[#ECAC36]/30 hover:bg-white/[0.045] hover:text-[#ECAC36] hover:shadow-[0_10px_24px_rgba(236,172,54,0.12)] hover:after:scale-x-100 hover:after:opacity-100 focus-visible:border-[#ECAC36]/40 focus-visible:text-[#ECAC36] focus-visible:shadow-[0_0_0_1px_rgba(236,172,54,0.18),0_10px_24px_rgba(236,172,54,0.12)] focus-visible:after:scale-x-100 focus-visible:after:opacity-100 group-hover:border-[#ECAC36]/25 group-hover:bg-white/[0.04] group-hover:text-[#ECAC36] group-hover:after:scale-x-100 group-hover:after:opacity-100 motion-reduce:transition-none"
                   >
-                    {item.name}
+                    <span className="relative z-10">{item.name}</span>
                     {item.hasSubmenu && (
-                      <ChevronDown className="ml-1 h-3.5 w-3.5 opacity-60 transition-transform duration-200 group-hover:rotate-180" />
+                      <ChevronDown className="relative z-10 ml-1 h-3.5 w-3.5 opacity-60 transition-transform duration-200 group-hover:rotate-180 group-focus-within:rotate-180" />
                     )}
                   </Link>
 
                   {item.hasSubmenu && item.submenuType === "brands" && item.brands && (
-                    <div className="absolute top-full left-0 w-56 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                      <div className="bg-black/98 backdrop-blur-md border border-white/10 rounded-lg shadow-2xl overflow-hidden">
+                    <div className="invisible absolute left-0 top-full w-56 translate-y-1 pt-2 opacity-0 transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100 motion-reduce:translate-y-0 motion-reduce:transition-none">
+                      <div className="overflow-hidden rounded-lg border border-white/10 bg-black/98 shadow-2xl shadow-black/60 ring-1 ring-[#ECAC36]/0 backdrop-blur-md transition-[border-color,box-shadow] duration-200 group-hover:border-[#ECAC36]/20 group-hover:shadow-[0_18px_55px_rgba(0,0,0,0.55),0_0_24px_rgba(236,172,54,0.10)] group-focus-within:border-[#ECAC36]/20">
                         <div className="p-3">
                           <Link
                             href="/cars"
-                            className="luxx-nav-hover mb-2 block rounded-md border-b border-white/10 px-2 py-2 text-sm font-medium text-[#ECAC36] outline-none hover:bg-white/[0.04] hover:text-[#e6c766] focus-visible:text-[#e6c766]"
+                            className="luxx-nav-hover relative mb-2 block overflow-hidden rounded-md border border-white/0 border-b-white/10 px-2.5 py-2 text-sm font-medium text-[#ECAC36] outline-none transition-[border-color,background-color,box-shadow,color] duration-200 after:absolute after:inset-x-2.5 after:bottom-1 after:h-px after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-transparent after:via-[#ECAC36]/80 after:to-transparent after:opacity-0 after:transition-all after:duration-300 hover:border-[#ECAC36]/25 hover:bg-[#ECAC36]/[0.06] hover:text-[#e6c766] hover:shadow-[inset_0_0_0_1px_rgba(236,172,54,0.06)] hover:after:scale-x-100 hover:after:opacity-100 focus-visible:border-[#ECAC36]/35 focus-visible:text-[#e6c766] focus-visible:after:scale-x-100 focus-visible:after:opacity-100 motion-reduce:transition-none"
                           >
                             View All Cars
                           </Link>
                           <div className="text-[10px] text-white/40 uppercase tracking-wider mb-2">By Brand</div>
-                          <div className="grid grid-cols-2 gap-0.5">
+                          <div className="grid grid-cols-2 gap-1">
                             {item.brands.map((brand) => (
                               <Link
                                 key={brand.name}
                                 href={brand.href}
-                                className="luxx-nav-hover block rounded px-2 py-1.5 text-sm text-white/70 outline-none hover:bg-white/5 hover:text-[#ECAC36] focus-visible:text-[#ECAC36]"
+                                className="luxx-nav-hover relative block overflow-hidden rounded-md border border-white/0 px-2.5 py-1.5 text-sm text-white/70 outline-none transition-[border-color,background-color,box-shadow,color] duration-200 after:absolute after:bottom-1 after:left-2.5 after:h-px after:w-5 after:origin-left after:scale-x-0 after:bg-[#ECAC36]/75 after:opacity-0 after:transition-all after:duration-300 hover:border-[#ECAC36]/20 hover:bg-[#ECAC36]/[0.07] hover:text-[#ECAC36] hover:shadow-[0_8px_18px_rgba(236,172,54,0.08)] hover:after:scale-x-100 hover:after:opacity-100 focus-visible:border-[#ECAC36]/35 focus-visible:bg-[#ECAC36]/[0.08] focus-visible:text-[#ECAC36] focus-visible:after:scale-x-100 focus-visible:after:opacity-100 motion-reduce:transition-none"
                               >
                                 {brand.name}
                               </Link>
@@ -156,14 +163,14 @@ export function Header() {
                   )}
 
                   {item.hasSubmenu && item.submenuType === "services" && item.services && (
-                    <div className="absolute top-full right-0 w-64 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                      <div className="bg-black/98 backdrop-blur-md border border-white/10 rounded-lg shadow-2xl overflow-hidden">
+                    <div className="invisible absolute right-0 top-full w-64 translate-y-1 pt-2 opacity-0 transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100 motion-reduce:translate-y-0 motion-reduce:transition-none">
+                      <div className="overflow-hidden rounded-lg border border-white/10 bg-black/98 shadow-2xl shadow-black/60 ring-1 ring-[#ECAC36]/0 backdrop-blur-md transition-[border-color,box-shadow] duration-200 group-hover:border-[#ECAC36]/20 group-hover:shadow-[0_18px_55px_rgba(0,0,0,0.55),0_0_24px_rgba(236,172,54,0.10)] group-focus-within:border-[#ECAC36]/20">
                         <div className="p-2">
                           {item.services.map((service) => (
                             <Link
                               key={service.name}
                               href={service.href}
-                              className="luxx-nav-hover block rounded px-3 py-2.5 text-sm text-white/70 outline-none hover:bg-white/5 hover:text-[#ECAC36] focus-visible:text-[#ECAC36]"
+                              className="luxx-nav-hover relative block overflow-hidden rounded-md border border-white/0 px-3 py-2.5 text-sm text-white/70 outline-none transition-[border-color,background-color,box-shadow,color] duration-200 after:absolute after:bottom-1.5 after:left-3 after:h-px after:w-6 after:origin-left after:scale-x-0 after:bg-[#ECAC36]/75 after:opacity-0 after:transition-all after:duration-300 hover:border-[#ECAC36]/20 hover:bg-[#ECAC36]/[0.07] hover:text-[#ECAC36] hover:shadow-[0_8px_18px_rgba(236,172,54,0.08)] hover:after:scale-x-100 hover:after:opacity-100 focus-visible:border-[#ECAC36]/35 focus-visible:bg-[#ECAC36]/[0.08] focus-visible:text-[#ECAC36] focus-visible:after:scale-x-100 focus-visible:after:opacity-100 motion-reduce:transition-none"
                             >
                               {service.name}
                             </Link>

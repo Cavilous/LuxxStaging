@@ -1,5 +1,4 @@
 import Image from "next/image"
-import { ParallaxWrapper } from "./parallax-wrapper"
 
 const categories = [
   {
@@ -28,8 +27,8 @@ const categories = [
 export function HeroSection() {
   return (
     <section className="relative min-h-screen overflow-hidden hero-mask">
-      <ParallaxWrapper className="absolute inset-0 z-0 parallax-element">
-        <div className="relative w-full h-[120%]">
+      <div className="absolute inset-0 z-0">
+        <div className="relative h-full w-full">
           <Image
             src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/DSC09371.jpg-O5HNBgv5aKL6h2eBmJofJr3ZkGM5Nd.jpeg"
             alt="Luxury exotic car in Miami"
@@ -49,7 +48,7 @@ export function HeroSection() {
             backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
           }}
         />
-      </ParallaxWrapper>
+      </div>
 
       <div className="absolute right-8 top-1/2 z-10 hidden -translate-y-1/2 lg:block">
         <div className="flex flex-col gap-3">
@@ -57,7 +56,7 @@ export function HeroSection() {
             <a
               key={category.href}
               href={category.href}
-              className="luxx-index-panel cut-corner relative min-w-[180px] overflow-hidden border border-[#ECAC36]/25 bg-black/35 px-4 py-3 backdrop-blur-md"
+              className="cut-corner relative min-w-[180px] overflow-hidden border border-[#ECAC36]/25 bg-black/35 px-4 py-3 backdrop-blur-md"
             >
               <div className="flex items-center gap-3">
                 <span className="text-xs font-bold text-[#ECAC36]">{category.eyebrow}</span>
@@ -147,7 +146,7 @@ export function HeroSection() {
             }}
           >
             <div
-              className="w-1 h-4 bg-[#ECAC36] animate-bounce"
+              className="w-1 h-4 bg-[#ECAC36]"
               style={{ clipPath: "polygon(0 0, 100% 0, 50% 100%)" }}
             ></div>
           </div>
