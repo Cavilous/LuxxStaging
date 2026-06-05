@@ -138,9 +138,9 @@ export function CarsFilters({
             })}
           </div>
 
-          <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
-            <div className="flex shrink-0 items-center justify-between gap-3 xl:w-[12.5rem]">
-              <div className="flex items-center gap-2.5 text-sm font-semibold uppercase tracking-[0.14em] text-white/90">
+          <div className="flex flex-col items-center gap-3 text-center">
+            <div className="flex w-full shrink-0 items-center justify-center gap-3">
+              <div className="flex items-center justify-center gap-2.5 text-sm font-semibold uppercase tracking-[0.14em] text-white/90">
                 <span className="flex h-9 w-9 items-center justify-center border border-[#ECAC36]/30 bg-[#ECAC36]/10 text-[#ECAC36] cut-corner">
                   <SlidersHorizontal className="h-4 w-4" />
                 </span>
@@ -157,8 +157,8 @@ export function CarsFilters({
               )}
             </div>
 
-            <div className="pb-1 xl:flex-1 xl:pb-0">
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 md:flex md:items-center md:gap-3">
+            <div className="flex w-full justify-center pb-1 xl:pb-0">
+              <div className="grid w-full max-w-4xl grid-cols-1 gap-2 sm:grid-cols-3 md:flex md:flex-wrap md:items-center md:justify-center md:gap-3">
                 <Button
                   type="button"
                   onClick={() => togglePanel("brand")}
@@ -331,7 +331,7 @@ export function CarsFilters({
                   <span className="text-xs font-semibold text-[#ECAC36]">{priceLabel}</span>
                 </div>
               </div>
-              <div className="max-w-full space-y-5 p-4 md:max-w-xl">
+              <div className="mx-auto max-w-full space-y-5 p-4 md:max-w-xl">
                 <Slider
                   value={filters.priceRange}
                   onValueChange={(value) =>
@@ -365,7 +365,7 @@ export function CarsFilters({
 
           {activeCount > 0 && (
             <div className="mt-3 max-w-full overflow-x-auto pb-1 scrollbar-hide">
-              <div className="flex max-w-full gap-2 md:flex-wrap md:pb-0">
+              <div className="flex max-w-full justify-center gap-2 md:flex-wrap md:pb-0">
                 {selectedBrands.map((brand) => (
                   <button
                     key={`brand-${brand}`}
