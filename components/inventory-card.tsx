@@ -332,7 +332,7 @@ export function InventoryCard({
             lqSrc={lqImage}
             alt={title || "Luxury Vehicle"}
             fill
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 50vw, 25vw"
+            sizes="(max-width: 767px) calc(100vw - 32px), (max-width: 1024px) 50vw, 25vw"
             quality={70}
             className="luxx-card-image object-cover"
             objectPosition={focalPoint}

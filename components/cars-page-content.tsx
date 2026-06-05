@@ -258,7 +258,7 @@ export function CarsPageContent({ initialCars }: CarsPageContentProps) {
             items={filteredAndSortedCars}
             initialCount={INITIAL_ITEMS}
             incrementCount={LOAD_MORE_COUNT}
-            gridClassName="fleet-grid grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6"
+            gridClassName="fleet-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6"
             renderItem={(car, index) => (
               <InventoryCard
                 key={car.id}

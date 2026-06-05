@@ -923,7 +923,7 @@ export default async function BrandPage({ params }: BrandPageProps) {
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+              <div className="fleet-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6 lg:gap-8">
                 {cars.map((car, index) => {
                   const images = Array.isArray(car.images)
                     ? (car.images as any[])

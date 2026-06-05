@@ -165,7 +165,7 @@ export default async function SeoPage({ params }: SeoPageProps) {
             <h2 className="text-2xl md:text-3xl font-heading font-bold text-white mb-6">
               Available <span className="text-[#ECAC36]">{page.title?.replace(' Rental Miami', '').replace(' Miami', '')}</span> Inventory
             </h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
+            <div className="fleet-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6">
               {brandInventory.map((unit: any, index: number) => {
                 const images = Array.isArray(unit.images)
                   ? (unit.images as any[])
@@ -226,7 +226,7 @@ export default async function SeoPage({ params }: SeoPageProps) {
             )}
 
             {displayUnits.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
+              <div className="fleet-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6">
                 {displayUnits.map((unit: any, index: number) => {
                   const images = Array.isArray(unit.images)
                     ? (unit.images as any[])

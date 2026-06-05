@@ -11,7 +11,7 @@ export default function SeoPageLoading() {
 
       <section className="pb-16 px-4">
         <div className="container mx-auto max-w-7xl">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
+          <div className="fleet-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6">
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="bg-[#111111] border border-[#222222] rounded-lg overflow-hidden">
                 <div className="aspect-[4/3] bg-gray-800 animate-pulse" />

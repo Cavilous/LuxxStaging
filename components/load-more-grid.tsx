@@ -33,7 +33,7 @@ export function LoadMoreGrid<T>({
   incrementCount = 8,
   renderItem,
   renderSkeleton = DefaultSkeleton,
-  gridClassName = "grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6",
+  gridClassName = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6",
   emptyState,
 }: LoadMoreGridProps<T>) {
   const [displayCount, setDisplayCount] = useState(initialCount)

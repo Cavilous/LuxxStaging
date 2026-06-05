@@ -27,7 +27,7 @@ interface CarsFiltersProps {
 }
 
 const filterButtonClass =
-  "magnetic-hover cut-corner-button h-12 min-w-[10rem] shrink-0 justify-between border border-white/10 bg-white/[0.035] px-3.5 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_12px_28px_rgba(0,0,0,0.26)] transition-all duration-200 hover:border-[#ECAC36]/50 hover:bg-[#ECAC36]/10 hover:text-white focus-angular"
+  "magnetic-hover cut-corner-button h-11 min-w-0 w-full justify-between border border-white/10 bg-white/[0.035] px-3 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_12px_28px_rgba(0,0,0,0.26)] transition-all duration-200 hover:border-[#ECAC36]/50 hover:bg-[#ECAC36]/10 hover:text-white focus-angular md:h-12 md:min-w-[10rem] md:w-auto md:shrink-0 md:px-3.5"
 
 const activeFilterButtonClass =
   "border-[#ECAC36]/70 bg-[#ECAC36]/15 text-[#f3c764] shadow-[inset_0_1px_0_rgba(236,172,54,0.16),0_12px_30px_rgba(0,0,0,0.32)]"
@@ -157,8 +157,8 @@ export function CarsFilters({
               )}
             </div>
 
-            <div className="-mx-3 overflow-x-auto px-3 pb-1 scrollbar-hide md:mx-0 md:px-0 xl:flex-1 xl:pb-0">
-              <div className="flex min-w-max items-center gap-2 md:gap-3">
+            <div className="pb-1 xl:flex-1 xl:pb-0">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 md:flex md:items-center md:gap-3">
                 <Button
                   type="button"
                   onClick={() => togglePanel("brand")}
@@ -210,7 +210,7 @@ export function CarsFilters({
                   onClick={() => togglePanel("price")}
                   aria-expanded={openPanel === "price"}
                   aria-controls="fleet-price-panel"
-                  className={cn(filterButtonClass, "min-w-[13.75rem]", (hasCustomPrice || openPanel === "price") && activeFilterButtonClass)}
+                  className={cn(filterButtonClass, "md:min-w-[13.75rem]", (hasCustomPrice || openPanel === "price") && activeFilterButtonClass)}
                   aria-label="Filter by price range"
                 >
                   <span className="flex min-w-0 items-center gap-2.5">
@@ -331,7 +331,7 @@ export function CarsFilters({
                   <span className="text-xs font-semibold text-[#ECAC36]">{priceLabel}</span>
                 </div>
               </div>
-              <div className="max-w-xl space-y-5 p-4">
+              <div className="max-w-full space-y-5 p-4 md:max-w-xl">
                 <Slider
                   value={filters.priceRange}
                   onValueChange={(value) =>
@@ -364,8 +364,8 @@ export function CarsFilters({
           )}
 
           {activeCount > 0 && (
-            <div className="-mx-3 mt-3 overflow-x-auto px-3 scrollbar-hide md:mx-0 md:px-0">
-              <div className="flex w-max gap-2 pb-1 md:w-auto md:flex-wrap md:pb-0">
+            <div className="mt-3 max-w-full overflow-x-auto pb-1 scrollbar-hide">
+              <div className="flex max-w-full gap-2 md:flex-wrap md:pb-0">
                 {selectedBrands.map((brand) => (
                   <button
                     key={`brand-${brand}`}

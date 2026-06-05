@@ -324,7 +324,7 @@ export default async function NotFound() {
               View All →
             </Link>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+          <div className="fleet-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6">
             {cars.slice(0, 4).map((car, index) => (
               <InventoryCard
                 key={car.id}
@@ -349,7 +349,7 @@ export default async function NotFound() {
               View All →
             </Link>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+          <div className="fleet-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6">
             {yachts.slice(0, 4).map((yacht) => (
               <InventoryCard
                 key={yacht.id}
@@ -373,7 +373,7 @@ export default async function NotFound() {
               View All →
             </Link>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+          <div className="fleet-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6">
             {villas.slice(0, 4).map((villa) => (
               <InventoryCard
                 key={villa.id}

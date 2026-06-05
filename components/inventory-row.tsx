@@ -88,7 +88,7 @@ export function InventoryRow({ title, description, items, viewAllHref, priorityC
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+          <div className="fleet-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6">
             {items.map((item, index) => (
               <InventoryCard 
                 key={item.id} 

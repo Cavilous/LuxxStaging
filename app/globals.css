@@ -155,11 +155,15 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    overflow-x: hidden;
+  }
   body {
     @apply bg-background text-foreground;
     /* Added subtle grain overlay */
     background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.02) 1px, transparent 0);
     background-size: 20px 20px;
+    overflow-x: hidden;
   }
 }
 
@@ -686,11 +690,43 @@
     }
   }
 
+  @media (max-width: 768px) {
+    .fleet-grid {
+      grid-template-columns: minmax(0, 1fr) !important;
+      gap: 20px;
+    }
+
+    .fleet-grid .car-card,
+    .fleet-grid .car-card:hover,
+    .fleet-grid .car-card:focus,
+    .fleet-grid .car-card:focus-within {
+      max-width: 100%;
+      margin: 0;
+      border-radius: 15px;
+      transform: none !important;
+    }
+
+    .fleet-grid .car-img-wrap {
+      margin: 8px 8px 0;
+      border-radius: 11px;
+    }
+
+    .fleet-grid .car-body {
+      padding: 16px 14px 15px;
+    }
+
+    .luxx-rate-guide-panel {
+      width: min(300px, calc(100vw - 48px));
+    }
+  }
+
   .luxx-brand-shortcut-rail {
     display: flex;
+    flex-wrap: wrap;
     gap: 0.5rem;
+    justify-content: center;
     margin: 0 0 0.85rem;
-    overflow-x: auto;
+    overflow: visible;
     padding-bottom: 0.2rem;
     scrollbar-width: none;
   }
@@ -705,7 +741,7 @@
     isolation: isolate;
     display: inline-flex;
     min-height: 2.85rem;
-    min-width: max-content;
+    min-width: 0;
     align-items: center;
     gap: 0.55rem;
     overflow: hidden;
@@ -777,6 +813,13 @@
     clip-path: polygon(0 0, calc(100% - 0.28rem) 0, 100% 0.28rem, 100% 100%, 0.28rem 100%, 0 calc(100% - 0.28rem));
   }
 
+  .luxx-brand-shortcut span:not(.luxx-brand-shortcut-logo) {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .luxx-brand-shortcut:hover,
   .luxx-brand-shortcut:focus-visible,
   .luxx-brand-shortcut.is-active {
@@ -794,6 +837,36 @@
   .luxx-brand-shortcut.is-active::before {
     opacity: 1;
     transform: translate3d(46%, 0, 0);
+  }
+
+  @media (max-width: 768px) {
+    .luxx-brand-shortcut-rail {
+      gap: 8px;
+      justify-content: center;
+      overflow: visible;
+      padding-bottom: 0;
+    }
+
+    .luxx-brand-shortcut {
+      flex: 1 1 calc(50% - 4px);
+      max-width: calc(50% - 4px);
+      min-height: 2.45rem;
+      justify-content: center;
+      gap: 0.42rem;
+      padding: 6px 10px;
+      font-size: 0.72rem;
+    }
+
+    .luxx-brand-shortcut-logo {
+      width: 1.1rem;
+      height: 1.1rem;
+    }
+
+    .luxx-brand-shortcut em {
+      min-width: 1.1rem;
+      height: 1.1rem;
+      font-size: 0.58rem;
+    }
   }
 
   @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {

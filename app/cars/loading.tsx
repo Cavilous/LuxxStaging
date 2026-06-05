@@ -9,7 +9,7 @@ export default function CarsLoading() {
             <div className="h-6 w-96 mx-auto bg-gray-800/50 rounded animate-pulse" />
           </div>
           
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6">
             {Array.from({ length: 9 }).map((_, i) => (
               <div key={i} className="bg-[#0A0A0A] border border-gray-800 rounded-lg overflow-hidden">
                 <div className="aspect-[3/2] bg-gray-800/50 animate-pulse" />
