@@ -8,11 +8,14 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Menu, Phone, ChevronDown, Home, Car, Anchor, Building, Briefcase, Instagram } from "lucide-react"
 import { SOCIAL_LINKS } from "@/lib/social-config"
 import { TrackedPhoneLink } from "@/components/tracked-phone-link"
+import { getFleetBrandLogoStyle } from "@/lib/brand-logo-utils"
 
 const desktopMagneticQuery = "(min-width: 1024px) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)"
 
 type HeaderStyleVars = CSSProperties & {
   "--luxx-brand-rgb"?: string
+  "--brand-logo"?: string
+  "--brand-glow-rgb"?: string
   "--luxx-mobile-delay"?: string
 }
 
@@ -33,9 +36,14 @@ const brandAccentRgb: Record<string, string> = {
   Tesla: "232, 33, 39",
 }
 
-const getBrandStyle = (brandName: string): HeaderStyleVars => ({
-  "--luxx-brand-rgb": brandAccentRgb[brandName] ?? "236, 172, 54",
-})
+const getBrandStyle = (brandName: string): HeaderStyleVars => {
+  const logoVars = getFleetBrandLogoStyle(brandName) as HeaderStyleVars | null
+
+  return {
+    "--luxx-brand-rgb": logoVars?.["--brand-glow-rgb"] ?? brandAccentRgb[brandName] ?? "236, 172, 54",
+    ...logoVars,
+  }
+}
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false)
@@ -205,7 +213,7 @@ export function Header() {
                                 onPointerMove={handleMagneticPointerMove}
                                 onPointerLeave={handleMagneticPointerLeave}
                               >
-                                {brand.name}
+                                <span className="relative z-10">{brand.name}</span>
                               </Link>
                             ))}
                           </div>
@@ -363,7 +371,7 @@ export function Header() {
                                     style={getBrandStyle(brand.name)}
                                     onClick={() => setIsOpen(false)}
                                   >
-                                    {brand.name}
+                                    <span className="relative z-10">{brand.name}</span>
                                   </Link>
                                 ))}
                               </div>

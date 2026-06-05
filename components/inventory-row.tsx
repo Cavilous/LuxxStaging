@@ -3,6 +3,7 @@ import { ArrowRight, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 interface InventoryRowProps {
+  id?: string
   title: string
   description?: string
   items: Array<{
@@ -26,11 +27,11 @@ interface InventoryRowProps {
   showSectionDivider?: boolean
 }
 
-export function InventoryRow({ title, description, items, viewAllHref, priorityCount = 4, showSectionDivider = true }: InventoryRowProps) {
+export function InventoryRow({ id, title, description, items, viewAllHref, priorityCount = 4, showSectionDivider = true }: InventoryRowProps) {
   const isEmpty = items.length === 0
 
   return (
-    <section className="py-20 relative">
+    <section id={id} className="py-20 relative">
       <div className="container mx-auto px-4">
         <div className="mb-8 relative">
           <div className="flex items-center mb-4">

@@ -4,6 +4,7 @@ import { LatestBlogs } from "@/components/latest-blogs"
 import { LocalBusinessSchema } from "@/components/local-business-schema"
 import { HomepageSeoSection } from "@/components/homepage-seo-section"
 import { PresentationCallouts } from "@/components/presentation-callouts"
+import { HomepageSectionNav } from "@/components/homepage-section-nav"
 import { db, withRetry } from "@/lib/db"
 import { inventory, homePageSections } from "@/lib/db/schema"
 import { eq, asc, and, sql } from "drizzle-orm"
@@ -204,11 +205,13 @@ export default async function HomePage() {
   return (
     <div className="min-h-screen bg-black">
       <LocalBusinessSchema />
+      <HomepageSectionNav />
       <HeroSection />
       <PresentationCallouts />
 
       <main>
         <InventoryRow 
+          id="featured-exotics"
           title="Featured Exotics" 
           description="Hand-picked exotic and luxury vehicles available for immediate rental. From supercars to luxury SUVs, experience Miami in style."
           items={featuredExotics}
@@ -217,6 +220,7 @@ export default async function HomePage() {
         />
 
         <InventoryRow 
+          id="luxury-yachts"
           title="Luxury Yachts" 
           description="Explore Miami's pristine waters aboard our exclusive fleet of luxury yachts. Full crew, premium amenities, and unforgettable experiences included."
           items={featuredYachts}
@@ -224,6 +228,7 @@ export default async function HomePage() {
           showSectionDivider={false}
         />
         <InventoryRow 
+          id="premium-villas"
           title="Premium Villas" 
           description="Discover Miami's finest waterfront estates and luxury properties. Perfect for extended stays, events, or ultimate relaxation."
           items={featuredVillas}
@@ -231,10 +236,10 @@ export default async function HomePage() {
           showSectionDivider={false}
         />
 
-        <LatestBlogs />
+        <LatestBlogs id="latest-guides" />
 
         {/* Content Promos - Enhanced CTAs */}
-        <section className="py-20 bg-gradient-to-b from-black via-black/95 to-black">
+        <section id="miami-guides" className="py-20 bg-gradient-to-b from-black via-black/95 to-black">
           <div className="container mx-auto px-4">
             <div className="mb-12 text-center">
               <h2 className="text-3xl md:text-4xl font-heading font-black text-white mb-4">
@@ -296,7 +301,7 @@ export default async function HomePage() {
           </div>
         </section>
 
-        <HomepageSeoSection />
+        <HomepageSeoSection id="concierge" />
       </main>
     </div>
   )

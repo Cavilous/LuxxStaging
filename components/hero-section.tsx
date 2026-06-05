@@ -26,7 +26,7 @@ const categories = [
 
 export function HeroSection() {
   return (
-    <section className="relative min-h-[calc(100svh-5rem)] overflow-hidden bg-black hero-mask">
+    <section id="home" className="relative min-h-[calc(100svh-5rem)] overflow-hidden bg-black hero-mask">
       <div className="absolute inset-0 z-0">
         <div className="relative h-full w-full">
           <Image
