@@ -3,7 +3,6 @@
 import { useEffect, useId, useRef, useState } from "react"
 import type {
   CSSProperties,
-  MouseEvent as ReactMouseEvent,
   PointerEvent as ReactPointerEvent,
 } from "react"
 import { normalizeImageUrl } from "@/lib/media-utils"
@@ -314,19 +313,6 @@ export function InventoryCard({
     setIsRateGuideOpen((isOpen) => !isOpen)
   }
 
-  const handleCardClick = (event: ReactMouseEvent<HTMLDivElement>) => {
-    const target = event.target instanceof HTMLElement ? event.target : null
-    if (!target || target.closest("button")) return
-
-    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
-
-    const anchor = target.closest<HTMLAnchorElement>("a[href]")
-    const href = anchor?.getAttribute("href") || detailUrl
-
-    event.preventDefault()
-    window.location.assign(href)
-  }
-
   return (
     <div
       ref={cardRef}
@@ -335,7 +321,6 @@ export function InventoryCard({
       data-brand-logo-key={brandLogo?.key}
       data-brand-logo={brandLogo?.logo}
       style={cardStyle}
-      onClickCapture={handleCardClick}
       onPointerMove={handlePointerMove}
       onPointerLeave={resetPointerEffect}
     >
