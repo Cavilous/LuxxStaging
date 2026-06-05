@@ -497,7 +497,7 @@
     opacity: 0;
     transform: translate3d(-50%, -50%, 0) scale(0.92);
     transform-origin: center;
-    transition: opacity 0.24s ease, transform 0.32s ease;
+    transition: opacity 0.2s ease, transform 0.24s ease;
     background: radial-gradient(
       circle at center,
       rgba(var(--brand-glow-rgb), 0.34) 0 14%,
@@ -534,15 +534,11 @@
     background-repeat: no-repeat;
     background-position: center;
     background-size: 140% 140%, 10px 100%;
-    opacity: 0.38;
-    transform: rotate(20deg) scale(1.1);
+    opacity: 0.26;
+    transform: rotate(20deg) scale(1.04);
     transform-origin: center;
-    transition: opacity 0.24s ease, transform 0.32s ease;
-    filter:
-      contrast(1.18)
-      saturate(0.82)
-      drop-shadow(0 0 30px rgba(var(--brand-glow-rgb), 0.38))
-      drop-shadow(0 12px 22px rgba(0, 0, 0, 0.26));
+    transition: opacity 0.2s ease, transform 0.24s ease;
+    filter: contrast(1.04) saturate(0.86);
     -webkit-mask-image: var(--brand-logo);
     mask-image: var(--brand-logo);
     -webkit-mask-repeat: no-repeat;
@@ -556,8 +552,8 @@
   .fleet-grid .car-card:hover .car-brand-glow::before,
   .fleet-grid .car-card:focus-within .car-brand-glow::before,
   .fleet-grid .car-card.logo-cooldown .car-brand-glow::before {
-    opacity: 0.42;
-    transform: rotate(20deg) scale(1.18);
+    opacity: 0.32;
+    transform: rotate(20deg) scale(1.07);
   }
 
   .fleet-grid .car-brand-glow::after {
@@ -567,7 +563,7 @@
     border-radius: inherit;
     pointer-events: none;
     opacity: 0;
-    transform: rotate(20deg) scale(1.1);
+    transform: rotate(20deg) scale(1.08);
     transform-origin: center;
     transition: opacity 0.24s ease, transform 0.32s ease;
     background: linear-gradient(
@@ -581,8 +577,8 @@
     );
     background-repeat: no-repeat;
     background-size: 40% 150%;
-    background-position: var(--card-shine-x, 50%) center;
-    filter: blur(0.2px) drop-shadow(0 0 22px rgba(var(--brand-glow-rgb), 0.28));
+    background-position: 50% center;
+    filter: none;
     mix-blend-mode: screen;
     -webkit-mask-image: var(--brand-logo);
     mask-image: var(--brand-logo);
@@ -592,19 +588,20 @@
     mask-position: center;
     -webkit-mask-size: min(82%, 560px) auto;
     mask-size: min(82%, 560px) auto;
+    display: none;
   }
 
   .fleet-grid .car-card:hover .car-brand-glow::after,
   .fleet-grid .car-card:focus-within .car-brand-glow::after,
   .fleet-grid .car-card.logo-cooldown .car-brand-glow::after {
-    opacity: 0.46;
-    transform: rotate(20deg) scale(1.18);
+    opacity: 0;
+    transform: rotate(20deg) scale(1.06);
   }
 
   .fleet-grid .car-card:hover .car-brand-glow,
   .fleet-grid .car-card:focus-within .car-brand-glow,
   .fleet-grid .car-card.logo-cooldown .car-brand-glow {
-    opacity: 0.78;
+    opacity: 0.68;
     transform: translate3d(-50%, -50%, 0) scale(1);
     will-change: opacity, transform;
   }
@@ -638,13 +635,13 @@
     }
 
     .fleet-grid .car-card.logo-scroll-visible .car-brand-glow {
-      opacity: 0.5 !important;
+      opacity: 0.3 !important;
       transform: translate3d(-50%, -50%, 0) scale(1) !important;
       transition: opacity 0.32s ease !important;
       background: radial-gradient(
         circle at center,
-        rgba(var(--brand-glow-rgb), 0.28) 0 18%,
-        rgba(var(--brand-glow-rgb), 0.12) 44%,
+        rgba(var(--brand-glow-rgb), 0.22) 0 18%,
+        rgba(var(--brand-glow-rgb), 0.09) 44%,
         transparent 70%
       ) !important;
     }
@@ -668,25 +665,21 @@
     }
 
     .fleet-grid .car-card.logo-scroll-visible .car-brand-glow::before {
-      opacity: 0.44 !important;
+      opacity: 0.22 !important;
       transform: rotate(20deg) !important;
       transition: opacity 0.32s ease !important;
     }
 
     .fleet-grid .car-brand-glow::after {
-      display: block !important;
+      display: none !important;
       opacity: 0 !important;
       transform: rotate(20deg) !important;
       transform-origin: center !important;
       transition: opacity 0.28s ease !important;
-      background-position: var(--mobile-logo-glimmer-x, 50%) center !important;
     }
 
     .fleet-grid .car-card.logo-scroll-visible .car-brand-glow::after {
-      display: block !important;
-      opacity: 0.58 !important;
-      transform: rotate(20deg) !important;
-      transition: opacity 0.28s ease !important;
+      display: none !important;
     }
   }
 
@@ -1084,9 +1077,9 @@
     background-repeat: no-repeat;
     background-size: contain;
     opacity: 0;
-    transform: translate3d(1.15rem, -50%, 0) rotate(20deg) scale(0.84);
-    filter: drop-shadow(0 0 20px rgba(var(--luxx-brand-rgb), 0.42));
-    transition: opacity 240ms ease, transform 340ms ease;
+    transform: translate3d(0.8rem, -50%, 0) rotate(20deg) scale(0.9);
+    filter: drop-shadow(0 0 10px rgba(var(--luxx-brand-rgb), 0.2));
+    transition: opacity 180ms ease, transform 220ms ease;
     pointer-events: none;
   }
 
@@ -1211,8 +1204,8 @@
 
     .luxx-header-brand-link:hover::before,
     .luxx-header-brand-link:focus-visible::before {
-      opacity: 0.28;
-      transform: translate3d(0, -50%, 0) rotate(20deg) scale(1);
+      opacity: 0.22;
+      transform: translate3d(0, -50%, 0) rotate(20deg) scale(0.98);
     }
 
     .luxx-header-brand-link:hover::after,
@@ -1729,9 +1722,9 @@
     background-position: center;
     background-repeat: no-repeat;
     background-size: contain;
-    opacity: 0.26;
+    opacity: 0.18;
     transform: translate3d(0, -50%, 0) rotate(20deg) scale(1);
-    filter: drop-shadow(0 0 20px rgba(var(--luxx-brand-rgb), 0.44));
+    filter: drop-shadow(0 0 10px rgba(var(--luxx-brand-rgb), 0.18));
     pointer-events: none;
   }
 
@@ -1760,8 +1753,8 @@
   .luxx-mobile-brand-chip:hover::before,
   .luxx-mobile-brand-chip:focus-visible::before,
   .luxx-mobile-brand-chip:active::before {
-    opacity: 0.36;
-    transform: translate3d(-0.15rem, -50%, 0) rotate(20deg) scale(1.05);
+    opacity: 0.26;
+    transform: translate3d(0, -50%, 0) rotate(20deg) scale(1);
   }
 
   .luxx-mobile-brand-chip:hover::after,

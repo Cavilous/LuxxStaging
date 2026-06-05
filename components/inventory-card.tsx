@@ -176,29 +176,6 @@ export function InventoryCard({
 
     if (!mobileLike || reduceMotion || !("IntersectionObserver" in window)) return
 
-    let frame: number | null = null
-
-    const updateMobileLogoGlimmer = () => {
-      frame = null
-      const rect = card.getBoundingClientRect()
-      const viewportHeight = Math.max(window.innerHeight || 1, 1)
-
-      if (rect.bottom < 0 || rect.top > viewportHeight) {
-        card.classList.remove("logo-scroll-visible")
-        return
-      }
-
-      const centerY = rect.top + rect.height * 0.5
-      const progress = Math.max(0, Math.min(1, centerY / viewportHeight))
-      const glimmerX = Math.round((1 - progress) * 100)
-      card.style.setProperty("--mobile-logo-glimmer-x", `${glimmerX}%`)
-    }
-
-    const requestMobileLogoGlimmerUpdate = () => {
-      if (frame !== null) return
-      frame = window.requestAnimationFrame(updateMobileLogoGlimmer)
-    }
-
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry?.isIntersecting && entry.intersectionRatio >= 0.08) {
@@ -206,33 +183,18 @@ export function InventoryCard({
         } else {
           card.classList.remove("logo-scroll-visible")
         }
-        requestMobileLogoGlimmerUpdate()
       },
       {
         rootMargin: "0px 0px -8% 0px",
-        threshold: [0, 0.08, 0.22, 0.55],
+        threshold: [0, 0.08],
       }
     )
 
     card.dataset.logoScrollBound = "1"
-    card.style.setProperty("--logo-scroll-opacity", "0.42")
-    card.style.setProperty("--logo-scroll-layer-opacity", "0.28")
-    card.style.setProperty("--logo-scroll-scale", "1")
-    card.style.setProperty("--logo-scroll-layer-scale", "1")
-    card.style.setProperty("--mobile-logo-glimmer-x", "50%")
-
     observer.observe(card)
-    window.addEventListener("scroll", requestMobileLogoGlimmerUpdate, { passive: true })
-    window.addEventListener("resize", requestMobileLogoGlimmerUpdate, { passive: true })
-    requestMobileLogoGlimmerUpdate()
 
     return () => {
-      if (frame !== null) {
-        window.cancelAnimationFrame(frame)
-      }
       observer.disconnect()
-      window.removeEventListener("scroll", requestMobileLogoGlimmerUpdate)
-      window.removeEventListener("resize", requestMobileLogoGlimmerUpdate)
       card.classList.remove("logo-scroll-visible")
       delete card.dataset.logoScrollBound
     }
