@@ -2218,6 +2218,85 @@
     transform: translateX(45%);
   }
 
+  .luxx-hero-card {
+    --hero-card-x: 0px;
+    --hero-card-y: 0px;
+    --hero-card-rotate-x: 0deg;
+    --hero-card-rotate-y: 0deg;
+    --hero-card-shine-x: 50%;
+    --hero-card-shine-y: 50%;
+    isolation: isolate;
+    transform: translate3d(var(--hero-card-x), var(--hero-card-y), 0)
+      perspective(900px)
+      rotateX(var(--hero-card-rotate-x))
+      rotateY(var(--hero-card-rotate-y));
+    transform-style: preserve-3d;
+    transition:
+      transform 120ms var(--ease-luxury),
+      border-color 240ms var(--ease-luxury),
+      background-color 240ms var(--ease-luxury),
+      box-shadow 240ms var(--ease-luxury);
+  }
+
+  .luxx-hero-card::before,
+  .luxx-hero-card::after {
+    z-index: 1;
+  }
+
+  .luxx-hero-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at var(--hero-card-shine-x) var(--hero-card-shine-y), rgba(255, 255, 255, 0.16), rgba(236, 172, 54, 0.08) 24%, transparent 56%);
+    opacity: 0;
+    transition: opacity 220ms var(--ease-luxury);
+    mix-blend-mode: screen;
+  }
+
+  .luxx-hero-card-line,
+  .luxx-hero-card-content {
+    position: relative;
+    z-index: 2;
+  }
+
+  @media (hover: hover) and (pointer: fine) and (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+    .luxx-hero-card {
+      will-change: transform;
+    }
+
+    .luxx-hero-card.is-magnetized,
+    .luxx-hero-card:hover,
+    .luxx-hero-card:focus-visible {
+      box-shadow: 0 18px 42px rgba(0, 0, 0, 0.42), 0 0 28px rgba(236, 172, 54, 0.12);
+    }
+
+    .luxx-hero-card.is-magnetized::after,
+    .luxx-hero-card:hover::after,
+    .luxx-hero-card:focus-visible::after {
+      opacity: 1;
+    }
+
+    .luxx-hero-card-content {
+      transform: translateZ(14px);
+    }
+  }
+
+  @media (max-width: 767px), (hover: none), (pointer: coarse), (prefers-reduced-motion: reduce) {
+    .luxx-hero-card,
+    .luxx-hero-card:hover,
+    .luxx-hero-card:focus-visible {
+      transform: none !important;
+      transition: border-color 200ms ease, box-shadow 200ms ease, background 200ms ease;
+      will-change: auto;
+    }
+
+    .luxx-hero-card::after {
+      display: none;
+    }
+  }
+
   .magnetic-hover {
     transition: transform 260ms var(--ease-luxury), border-color 260ms var(--ease-luxury), background 260ms var(--ease-luxury);
   }

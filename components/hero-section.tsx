@@ -1,3 +1,6 @@
+"use client"
+
+import { useCallback, useEffect, useRef, type PointerEvent } from "react"
 import Image from "next/image"
 
 const categories = [
@@ -24,7 +27,78 @@ const categories = [
   },
 ]
 
+const HERO_CARD_MAGNET_QUERY =
+  "(min-width: 768px) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)"
+
 export function HeroSection() {
+  const magnetFrameRef = useRef<number | null>(null)
+  const activeHeroCardRef = useRef<HTMLAnchorElement | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (magnetFrameRef.current !== null) {
+        window.cancelAnimationFrame(magnetFrameRef.current)
+      }
+    }
+  }, [])
+
+  const resetHeroCardMagnet = useCallback((card?: HTMLAnchorElement | null) => {
+    const target = card ?? activeHeroCardRef.current
+    if (!target) return
+
+    if (magnetFrameRef.current !== null) {
+      window.cancelAnimationFrame(magnetFrameRef.current)
+      magnetFrameRef.current = null
+    }
+
+    activeHeroCardRef.current = null
+    target.classList.remove("is-magnetized")
+    target.style.setProperty("--hero-card-x", "0px")
+    target.style.setProperty("--hero-card-y", "0px")
+    target.style.setProperty("--hero-card-rotate-x", "0deg")
+    target.style.setProperty("--hero-card-rotate-y", "0deg")
+    target.style.setProperty("--hero-card-shine-x", "50%")
+    target.style.setProperty("--hero-card-shine-y", "50%")
+  }, [])
+
+  const handleHeroCardPointerMove = useCallback((event: PointerEvent<HTMLAnchorElement>) => {
+    if (event.pointerType !== "mouse" || !window.matchMedia(HERO_CARD_MAGNET_QUERY).matches) return
+
+    const card = event.currentTarget
+    const rect = card.getBoundingClientRect()
+    const pointerX = (event.clientX - rect.left) / rect.width
+    const pointerY = (event.clientY - rect.top) / rect.height
+    const magneticX = (pointerX - 0.5) * 10
+    const magneticY = (pointerY - 0.5) * 7
+    const rotateX = (0.5 - pointerY) * 2
+    const rotateY = (pointerX - 0.5) * 2.5
+
+    if (magnetFrameRef.current !== null) {
+      window.cancelAnimationFrame(magnetFrameRef.current)
+    }
+
+    activeHeroCardRef.current = card
+    magnetFrameRef.current = window.requestAnimationFrame(() => {
+      card.classList.add("is-magnetized")
+      card.style.setProperty("--hero-card-x", `${magneticX.toFixed(2)}px`)
+      card.style.setProperty("--hero-card-y", `${magneticY.toFixed(2)}px`)
+      card.style.setProperty("--hero-card-rotate-x", `${rotateX.toFixed(2)}deg`)
+      card.style.setProperty("--hero-card-rotate-y", `${rotateY.toFixed(2)}deg`)
+      card.style.setProperty("--hero-card-shine-x", `${(pointerX * 100).toFixed(1)}%`)
+      card.style.setProperty("--hero-card-shine-y", `${(pointerY * 100).toFixed(1)}%`)
+      magnetFrameRef.current = null
+    })
+  }, [])
+
+  const handleHeroCardPointerOut = useCallback(
+    (event: PointerEvent<HTMLAnchorElement>) => {
+      const relatedTarget = event.relatedTarget
+      if (relatedTarget instanceof Node && event.currentTarget.contains(relatedTarget)) return
+      resetHeroCardMagnet(event.currentTarget)
+    },
+    [resetHeroCardMagnet],
+  )
+
   return (
     <section id="home" className="relative min-h-[calc(100svh-5rem)] overflow-hidden bg-black hero-mask">
       <div className="absolute inset-0 z-0">
@@ -102,10 +176,15 @@ export function HeroSection() {
               <a
                 key={category.href}
                 href={category.href}
-                className="luxx-glimmer-panel magnetic-hover group relative bg-black/40 backdrop-blur-md border-2 border-[#ECAC36]/30 hover:border-[#ECAC36]/60 p-8 cut-corner hover-lift transition-all duration-300 overflow-hidden"
+                className="luxx-glimmer-panel luxx-hero-card group relative bg-black/40 backdrop-blur-md border-2 border-[#ECAC36]/30 hover:border-[#ECAC36]/60 p-8 cut-corner overflow-hidden"
+                onPointerMove={handleHeroCardPointerMove}
+                onPointerLeave={(event) => resetHeroCardMagnet(event.currentTarget)}
+                onPointerOut={handleHeroCardPointerOut}
+                onPointerCancel={(event) => resetHeroCardMagnet(event.currentTarget)}
+                onBlur={(event) => resetHeroCardMagnet(event.currentTarget)}
               >
-                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#ECAC36]/60 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
-                <div className="relative z-10">
+                <div className="luxx-hero-card-line absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#ECAC36]/60 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
+                <div className="luxx-hero-card-content relative z-10">
                   <div className="mb-4 text-xs font-bold text-[#ECAC36]/80">{category.eyebrow}</div>
                   <h2 className="text-2xl font-heading font-black text-white mb-2">{category.title}</h2>
                   <p className="text-base text-gray-300 mb-4">{category.description}</p>

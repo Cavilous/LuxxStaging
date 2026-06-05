@@ -36,7 +36,9 @@ export function HomepageSectionNav() {
 
       setActiveId((current) => (current === nextActiveId ? current : nextActiveId))
       setVisible((current) => {
-        const nextVisible = window.scrollY > 100
+        const hero = document.getElementById("home")
+        const heroBottom = hero ? hero.offsetTop + hero.offsetHeight : window.innerHeight
+        const nextVisible = window.scrollY + 8 >= heroBottom
         return current === nextVisible ? current : nextVisible
       })
       ticking = false
