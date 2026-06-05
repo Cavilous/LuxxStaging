@@ -11,6 +11,7 @@ import {
   ExternalLink,
   EyeOff,
   Home,
+  Info,
   Ship,
   Sparkles,
   X,
@@ -29,6 +30,7 @@ type DemoStep = {
   title: string
   body: string
   callout: string
+  infoTip: string
   note: string
   href?: string
   actionLabel?: string
@@ -65,6 +67,7 @@ const demoSteps: DemoStep[] = [
     title: "Homepage polish is ready",
     body: "Hero, featured inventory, blog thumbnails, and the guided page index are ready for review.",
     callout: "Start at the hero, then use the left page index to show the walkthrough feel.",
+    infoTip: "Use this as the opening proof point: the demo now feels complete from hero to inventory instead of looking like a partial staging page.",
     note: "Open with the polished first impression: this is the clearest before-and-after moment.",
     href: "/",
     actionLabel: "Open homepage",
@@ -78,6 +81,7 @@ const demoSteps: DemoStep[] = [
     title: "Menu hover and mobile menu are ready",
     body: "Desktop brand hovers use logo glow and magnetic motion. Mobile keeps a premium brand-chip menu without cursor-only effects.",
     callout: "Hover Exotic Cars on desktop, then mention the mobile menu was QA'd separately.",
+    infoTip: "Show desktop hover first, then mobile menu. The point is premium navigation polish without changing their core menu structure.",
     note: "This sells polish without forcing a layout change to their core navigation.",
     href: "/",
     actionLabel: "Open homepage",
@@ -94,6 +98,7 @@ const demoSteps: DemoStep[] = [
     title: "Fleet cards and filters are ready",
     body: "Cards have cleaner motion, brand-logo glimmer, working View vehicle links, and a tighter brand/filter experience.",
     callout: "Open the fleet and show one card hover plus the brand buttons/filter area.",
+    infoTip: "Call out the improved card feel, brand buttons, and cleaner filters. Keep it visual; no need to explain the code.",
     note: "This is the main product-display upgrade: the fleet should feel smoother and more premium.",
     href: "/",
     actionLabel: "Show cards",
@@ -108,6 +113,7 @@ const demoSteps: DemoStep[] = [
     title: "Multi-day pricing is connected",
     body: "The rate guide opens the car detail page with the selected daily rate, reservation total, savings, and free delivery.",
     callout: "Show the selected-rate detail page and point at the reservation total.",
+    infoTip: "Use one example rate. The selected daily rate, total reservation amount, savings, and free delivery are the important selling points.",
     note: "This is a clean upsell moment: lower daily rate, total reservation amount, and savings are visible in one place.",
     href: "/cars/ferrari-sf-90?tier=3-day&days=3&rate=2445",
     actionLabel: "Open pricing example",
@@ -120,6 +126,7 @@ const demoSteps: DemoStep[] = [
     title: "Brand pages are working",
     body: "The menu and footer now point to working brand pages with loaded inventory and brand-background logo polish.",
     callout: "Use Bentley as the quick brand-page proof point.",
+    infoTip: "Keep the language simple: the brand page opens and shows cars. Production inventory count differences can be handled in the next package.",
     note: "Keep this simple for the client: brand pages now open and show cars.",
     href: "/car-brand/bentley",
     actionLabel: "Open Bentley",
@@ -132,6 +139,7 @@ const demoSteps: DemoStep[] = [
     title: "Yachts and villas load",
     body: "Yachts and villas no longer dead-end; the visible listing pages load preview inventory and working cards.",
     callout: "Open yachts first, then villas.",
+    infoTip: "This is a staging fix: listings and details now populate so the demo path does not dead-end.",
     note: "Keep this quick in the walkthrough: the point is that the preview does not dead-end.",
     href: "/yachts",
     actionLabel: "Open yachts",
@@ -145,6 +153,7 @@ const demoSteps: DemoStep[] = [
     title: "Private preview is covered",
     body: "The demo has a preview acknowledgement gate and noindex rules so it is not positioned as a public launch.",
     callout: "Mention the privacy gate and noindex setup before sharing the link.",
+    infoTip: "Say this is a private review link. The acknowledgement gate and noindex settings protect the preview while it is being shown.",
     note: "Use this to reassure them the demo is for review only.",
     secondaryActions: [{ label: "Open preview rules", href: "/robots.txt" }],
   },
@@ -155,6 +164,7 @@ const demoSteps: DemoStep[] = [
     title: "QA pass and next recommendations",
     body: "The visible demo path, brand menus, card links, and major listing pages were checked. After approval, the next package should include production inventory reconciliation, slug cleanup, and deeper SEO/internal-link mapping.",
     callout: "Close with what is working now, then name the next package items.",
+    infoTip: "Frame remaining differences as next-step recommendations: production inventory sync, clean slugs, internal links, and SEO mapping.",
     note: "This frames recommendations as the next phase, not as problems with the preview.",
   },
 ]
@@ -208,6 +218,7 @@ export function PresentationCallouts() {
   const [activeKey, setActiveKey] = useState(demoSteps[0].key)
   const [pendingScroll, setPendingScroll] = useState<PendingScroll>(null)
   const [spotlight, setSpotlight] = useState<SpotlightState | null>(null)
+  const [openInfoKey, setOpenInfoKey] = useState<string | null>(null)
   const active = demoSteps.find((step) => step.key === activeKey) || demoSteps[0]
   const activeIndex = Math.max(
     demoSteps.findIndex((step) => step.key === active.key),
@@ -305,6 +316,7 @@ export function PresentationCallouts() {
   }, [active, isOpen, pathname])
 
   function goToStep(step: DemoStep) {
+    setOpenInfoKey(null)
     setActiveKey(step.key)
     const shouldScroll = step.scrollTop || step.scrollTarget
 
@@ -338,6 +350,10 @@ export function PresentationCallouts() {
   function goToRelativeStep(direction: -1 | 1) {
     const nextIndex = (activeIndex + direction + demoSteps.length) % demoSteps.length
     goToStep(demoSteps[nextIndex])
+  }
+
+  function toggleInfoTip(key: string) {
+    setOpenInfoKey((currentKey) => currentKey === key ? null : key)
   }
 
   return (
@@ -427,26 +443,57 @@ export function PresentationCallouts() {
                     {group.steps.map((step) => {
                       const Icon = step.icon
                       const isActive = step.key === activeKey
+                      const isInfoOpen = openInfoKey === step.key
 
                       return (
-                        <button
+                        <div
                           key={step.key}
-                          type="button"
-                          onClick={() => goToStep(step)}
-                          className={`luxx-demo-step-button magnetic-hover cut-corner flex min-h-12 items-center justify-between gap-3 px-3 py-3 text-left text-sm font-bold sm:min-h-0 sm:py-2.5 ${
-                            isActive
-                              ? "bg-[#ECAC36] text-black"
-                              : "border border-white/15 bg-white/5 text-gray-200 hover:border-[#ECAC36]/40"
+                          className={`luxx-demo-step-shell relative grid grid-cols-[minmax(0,1fr)_auto] gap-2 ${
+                            isInfoOpen ? "is-info-open" : ""
                           }`}
                         >
-                          <span className="flex min-w-0 items-center gap-2">
-                            <Icon className="h-4 w-4 shrink-0" />
-                            <span className="truncate">{step.label}</span>
-                          </span>
-                          {step.href || step.scrollTarget || step.scrollTop ? (
-                            <ExternalLink className="h-3.5 w-3.5 shrink-0 opacity-75" />
-                          ) : null}
-                        </button>
+                          <button
+                            type="button"
+                            onClick={() => goToStep(step)}
+                            className={`luxx-demo-step-button luxx-demo-step-main magnetic-hover cut-corner flex min-h-12 items-center justify-between gap-3 px-3 py-3 text-left text-sm font-bold sm:min-h-0 sm:py-2.5 ${
+                              isActive
+                                ? "bg-[#ECAC36] text-black"
+                                : "border border-white/15 bg-white/5 text-gray-200 hover:border-[#ECAC36]/40"
+                            }`}
+                          >
+                            <span className="flex min-w-0 items-center gap-2">
+                              <Icon className="h-4 w-4 shrink-0" />
+                              <span className="truncate">{step.label}</span>
+                            </span>
+                            {step.href || step.scrollTarget || step.scrollTop ? (
+                              <ExternalLink className="h-3.5 w-3.5 shrink-0 opacity-75" />
+                            ) : null}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => toggleInfoTip(step.key)}
+                            className={`luxx-demo-info-button cut-corner flex min-h-12 w-12 items-center justify-center border text-sm sm:min-h-0 sm:w-10 ${
+                              isActive
+                                ? "border-[#ECAC36]/45 bg-[#ECAC36]/15 text-[#ECAC36]"
+                                : "border-white/15 bg-white/[0.045] text-gray-300 hover:border-[#ECAC36]/45 hover:text-[#ECAC36]"
+                            }`}
+                            aria-label={`${step.label} info tip`}
+                            aria-expanded={isInfoOpen}
+                            aria-describedby={`demo-info-${step.key}`}
+                          >
+                            <Info className="h-4 w-4" />
+                          </button>
+                          <div
+                            id={`demo-info-${step.key}`}
+                            className={`luxx-demo-info-popover ${
+                              isInfoOpen ? "is-open" : ""
+                            }`}
+                            role="tooltip"
+                          >
+                            <span className="luxx-demo-info-kicker">Info tip</span>
+                            {step.infoTip}
+                          </div>
+                        </div>
                       )
                     })}
                   </div>
@@ -466,6 +513,13 @@ export function PresentationCallouts() {
               </p>
               <h3 className="mb-2 pr-10 text-base font-bold">{active.title}</h3>
               <p className="text-sm leading-relaxed text-gray-300">{active.body}</p>
+              <div className="luxx-demo-active-tip mt-3 flex gap-2 border border-white/10 bg-black/30 px-3 py-2.5 text-xs leading-relaxed text-gray-300">
+                <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#ECAC36]" />
+                <span>
+                  <span className="font-bold text-[#ECAC36]">Info tip: </span>
+                  {active.infoTip}
+                </span>
+              </div>
               <div className="luxx-demo-note mt-3 border border-[#ECAC36]/20 bg-[#ECAC36]/10 px-3 py-2 text-xs leading-relaxed text-[#f4d28a]">
                 <span className="font-bold text-[#ECAC36]">Walkthrough note: </span>
                 {active.note}
