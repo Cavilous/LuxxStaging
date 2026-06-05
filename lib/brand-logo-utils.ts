@@ -131,3 +131,13 @@ export function getFleetBrandLogoStyle(brand?: string, title?: string) {
     "--brand-glow-rgb": brandLogo.rgb,
   }
 }
+
+export function getFleetBrandPageLogoStyle(brand?: string, title?: string) {
+  const brandLogo = getFleetBrandLogo(brand, title)
+  if (!brandLogo) return null
+
+  return {
+    "--page-brand-logo": `url('${brandLogo.logo}')`,
+    "--page-brand-glow-rgb": brandLogo.rgb,
+  }
+}

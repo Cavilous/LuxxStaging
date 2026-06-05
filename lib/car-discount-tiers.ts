@@ -11,6 +11,7 @@ export type SelectedCarDiscount = CarDiscountTier & {
   rate: number
   savingsPerDay: number
   totalSavings: number
+  reservationTotal: number
 }
 
 export const CAR_DISCOUNT_TIERS: CarDiscountTier[] = [
@@ -31,6 +32,10 @@ export function getTieredDailyRate(baseRate: number, days: number) {
   const fixedSavingsRate = baseRate - tier.savingsPerDay
   const floorRate = baseRate * (tier.floorPercent / 100)
   return roundRateToFive(Math.max(fixedSavingsRate, floorRate))
+}
+
+export function getReservationTotal(dailyRate: number, days: number) {
+  return dailyRate * days
 }
 
 export function getDiscountHref(detailUrl: string, tier: CarDiscountTier, baseRate: number) {
@@ -60,11 +65,13 @@ export function getSelectedCarDiscount(
 
   const rate = getTieredDailyRate(baseRate, tier.days)
   const savingsPerDay = Math.max(0, baseRate - rate)
+  const reservationTotal = getReservationTotal(rate, tier.days)
 
   return {
     ...tier,
     rate,
     savingsPerDay,
     totalSavings: savingsPerDay * tier.days,
+    reservationTotal,
   }
 }

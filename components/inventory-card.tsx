@@ -8,7 +8,13 @@ import type {
 } from "react"
 import { normalizeImageUrl } from "@/lib/media-utils"
 import { ProgressiveImage } from "@/components/progressive-image"
-import { CAR_DISCOUNT_TIERS, getDiscountHref, getTieredDailyRate, parseDailyRate } from "@/lib/car-discount-tiers"
+import {
+  CAR_DISCOUNT_TIERS,
+  getDiscountHref,
+  getReservationTotal,
+  getTieredDailyRate,
+  parseDailyRate,
+} from "@/lib/car-discount-tiers"
 import { getFleetBrandLogo, getFleetBrandLogoStyle } from "@/lib/brand-logo-utils"
 
 interface InventoryCardProps {
@@ -398,11 +404,13 @@ export function InventoryCard({
             <span className="text-xs font-semibold text-white/80">View rates</span>
           </button>
           <div id={rateGuidePanelId} className="luxx-rate-guide-panel">
+            <div className="luxx-rate-guide-delivery-sticker">Free delivery</div>
             <div className="luxx-rate-guide-header">Multi-Day Rate Tiers</div>
             {CAR_DISCOUNT_TIERS.map((tier) => {
               const rate = getTieredDailyRate(dailyRate, tier.days)
               const tierHref = getDiscountHref(detailUrl, tier, dailyRate)
               const savingsPerDay = Math.max(0, dailyRate - rate)
+              const reservationTotal = getReservationTotal(rate, tier.days)
 
               return (
                 <Link
@@ -413,7 +421,7 @@ export function InventoryCard({
                       ? "luxx-rate-guide-row--best"
                       : ""
                   }`}
-                  aria-label={`${tier.label} rate for ${title}: $${rate.toLocaleString()} per day`}
+                  aria-label={`${tier.label} rate for ${title}: $${rate.toLocaleString()} per day, ${reservationTotal.toLocaleString()} total`}
                   onClick={() => setIsRateGuideOpen(false)}
                 >
                   <span className="luxx-rate-guide-duration">{tier.label}</span>
@@ -421,6 +429,9 @@ export function InventoryCard({
                     <span className="flex items-baseline justify-end gap-1">
                       <span className="text-sm font-bold text-[#ECAC36]">${rate.toLocaleString()}</span>
                       <span className="text-[0.7rem] text-gray-500">/day</span>
+                    </span>
+                    <span className="luxx-rate-guide-total">
+                      Total ${reservationTotal.toLocaleString()}
                     </span>
                     <span
                       className={`luxx-rate-guide-save ${

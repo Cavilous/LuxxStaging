@@ -49,6 +49,17 @@ const demoSteps: DemoStep[] = [
     scrollTop: true,
   },
   {
+    key: "menu-logos",
+    label: "Menu logos",
+    icon: Sparkles,
+    title: "Menu logo hovers ready",
+    body: "The Exotic Cars menu now reveals brand-specific logo glow states on hover, with matching logo-backed brand chips on mobile.",
+    callout: "Hover Exotic Cars, then hover a brand like Bentley to show the logo reveal.",
+    href: "/",
+    actionLabel: "Open homepage",
+    scrollTop: true,
+  },
+  {
     key: "fleet",
     label: "Fleet cards",
     icon: Car,
@@ -100,8 +111,8 @@ const demoSteps: DemoStep[] = [
   },
 ]
 
-const readySteps = demoSteps.slice(0, 5)
-const packageSteps = demoSteps.slice(5)
+const readySteps = demoSteps.slice(0, 6)
+const packageSteps = demoSteps.slice(6)
 
 function scrollToHeading(targets: string[]) {
   const normalizedTargets = targets.map((target) => target.toLowerCase())

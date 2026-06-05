@@ -720,6 +720,83 @@
     }
   }
 
+  .luxx-brand-page {
+    --page-brand-glow-rgb: 236, 172, 54;
+    --page-brand-logo: none;
+  }
+
+  .luxx-brand-hero {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+  }
+
+  .luxx-brand-hero::before {
+    content: "";
+    position: absolute;
+    inset: -32% -18% -18%;
+    z-index: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(
+        ellipse at 50% 36%,
+        rgba(var(--page-brand-glow-rgb), 0.22),
+        rgba(var(--page-brand-glow-rgb), 0.08) 34%,
+        transparent 67%
+      );
+    filter: blur(8px);
+    opacity: 0.92;
+  }
+
+  .luxx-brand-hero::after {
+    content: "";
+    position: absolute;
+    top: 54%;
+    left: 50%;
+    z-index: 0;
+    width: min(760px, 118vw);
+    aspect-ratio: 1;
+    pointer-events: none;
+    background-image: var(--page-brand-logo);
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    opacity: 0.085;
+    filter:
+      grayscale(1)
+      brightness(1.16)
+      contrast(0.98)
+      drop-shadow(0 0 42px rgba(var(--page-brand-glow-rgb), 0.28));
+    mix-blend-mode: screen;
+    transform: translate3d(-50%, -50%, 0);
+  }
+
+  .luxx-brand-hero > .container {
+    position: relative;
+    z-index: 1;
+  }
+
+  @media (min-width: 768px) {
+    .luxx-brand-hero::after {
+      top: 52%;
+      width: min(1080px, 74vw);
+      opacity: 0.08;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .luxx-brand-hero::before {
+      inset: -20% -28% -12%;
+      opacity: 0.76;
+    }
+
+    .luxx-brand-hero::after {
+      top: 50%;
+      width: min(520px, 135vw);
+      opacity: 0.065;
+    }
+  }
+
   .luxx-brand-shortcut-rail {
     display: flex;
     flex-wrap: wrap;
@@ -1634,6 +1711,7 @@
   }
 
   .luxx-rate-guide-panel {
+    position: relative;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.5rem;
@@ -1653,6 +1731,7 @@
 
   .luxx-rate-guide-header {
     grid-column: 1 / -1;
+    padding-right: 6.25rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.065);
     padding-bottom: 0.55rem;
     font-size: 0.68rem;
@@ -1662,9 +1741,28 @@
     color: #ECAC36;
   }
 
+  .luxx-rate-guide-delivery-sticker {
+    position: absolute;
+    right: 0.6rem;
+    top: 0.55rem;
+    z-index: 2;
+    border: 1px solid rgba(236, 172, 54, 0.36);
+    border-radius: 999px;
+    background: rgba(236, 172, 54, 0.12);
+    padding: 0.2rem 0.45rem;
+    color: #ECAC36;
+    font-size: 0.55rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    line-height: 1;
+    text-transform: uppercase;
+    box-shadow: 0 0 16px rgba(236, 172, 54, 0.14);
+    pointer-events: none;
+  }
+
   .luxx-rate-guide-row {
     display: flex;
-    min-height: 2.75rem;
+    min-height: 3.25rem;
     align-items: center;
     justify-content: space-between;
     gap: 0.75rem;
@@ -1701,6 +1799,14 @@
     font-size: 0.62rem;
     font-weight: 800;
     line-height: 1.1;
+    white-space: nowrap;
+  }
+
+  .luxx-rate-guide-total {
+    color: rgba(255, 255, 255, 0.76);
+    font-size: 0.62rem;
+    font-weight: 850;
+    line-height: 1.05;
     white-space: nowrap;
   }
 
@@ -1746,7 +1852,7 @@
   }
 
   .luxx-rate-guide.is-open .luxx-rate-guide-panel {
-    max-height: 20rem;
+    max-height: 26rem;
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
@@ -1825,7 +1931,7 @@
   }
 
   .luxx-rate-guide.is-open > .luxx-rate-guide-panel {
-    max-height: 20rem;
+    max-height: 26rem;
     opacity: 1;
     visibility: visible;
     pointer-events: auto;

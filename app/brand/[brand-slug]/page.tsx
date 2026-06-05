@@ -6,9 +6,10 @@ import { eq, and, sql, ilike, or } from "drizzle-orm"
 import Link from "next/link"
 import Image from "next/image"
 import { Phone, MessageCircle } from "lucide-react"
-import { cache } from "react"
+import { cache, type CSSProperties } from "react"
 import { InventoryCard } from "@/components/inventory-card"
 import { getFallbackCarsByTerms } from "@/lib/fallback-cars"
+import { getFleetBrandPageLogoStyle } from "@/lib/brand-logo-utils"
 
 export const dynamic = 'force-dynamic'
 
@@ -833,6 +834,7 @@ export default async function BrandPage({ params }: BrandPageProps) {
   }
 
   const cars = await getBrandCars(brand.name, brandSlug)
+  const brandPageStyle = getFleetBrandPageLogoStyle(brand.displayName, brand.name) as CSSProperties | null
 
   const collectionSchema = {
     "@context": "https://schema.org",
@@ -872,8 +874,12 @@ export default async function BrandPage({ params }: BrandPageProps) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionSchema) }}
       />
 
-      <div className="min-h-screen bg-black">
-        <section className="bg-gradient-to-b from-black via-[#0A0A0A] to-black py-16 md:py-20">
+      <div
+        className="luxx-brand-page min-h-screen bg-black"
+        data-brand={brandSlug}
+        style={brandPageStyle ?? undefined}
+      >
+        <section className="luxx-brand-hero bg-gradient-to-b from-black via-[#0A0A0A] to-black py-16 md:py-20">
           <div className="container mx-auto px-4 max-w-5xl">
             <div className="text-center mb-12">
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-heading font-black text-white mb-6">
@@ -923,7 +929,10 @@ export default async function BrandPage({ params }: BrandPageProps) {
                 </div>
               </div>
             ) : (
-              <div className="fleet-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6 lg:gap-8">
+              <div
+                className="fleet-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6 lg:gap-8"
+                data-brand-filter={brandSlug}
+              >
                 {cars.map((car, index) => {
                   const images = Array.isArray(car.images)
                     ? (car.images as any[])
@@ -936,6 +945,7 @@ export default async function BrandPage({ params }: BrandPageProps) {
                       key={car.id}
                       type="car"
                       title={car.title}
+                      brand={brand.displayName}
                       subtitle={car.subtitle || ""}
                       price={`$${Number(car.pricePerDay || 0).toLocaleString()}`}
                       priceUnit="day"

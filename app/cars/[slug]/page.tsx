@@ -1,5 +1,5 @@
 import { InventoryRow } from "@/components/inventory-row"
-import { Calendar, Users, Gauge, Fuel, Shield, MapPin, Settings, Car } from 'lucide-react'
+import { Calendar, Users, Gauge, Fuel, Shield, MapPin, Settings, Car, Truck } from 'lucide-react'
 import { notFound } from "next/navigation"
 import { EmbeddedInquiryForm } from "@/components/embedded-inquiry-form"
 import { ProductSchema } from "@/components/product-schema"
@@ -12,7 +12,13 @@ import { buildCarSpecRows, getExplicitFeatures, isPresentString, isPresentNumber
 import { getBrandSeoUrl } from "@/lib/seo-constants"
 import { PhotoGallery } from "@/components/photo-gallery-wrapper"
 import { getFallbackCars } from "@/lib/fallback-cars"
-import { CAR_DISCOUNT_TIERS, getDiscountHref, getSelectedCarDiscount, getTieredDailyRate } from "@/lib/car-discount-tiers"
+import {
+  CAR_DISCOUNT_TIERS,
+  getDiscountHref,
+  getReservationTotal,
+  getSelectedCarDiscount,
+  getTieredDailyRate,
+} from "@/lib/car-discount-tiers"
 
 export const revalidate = 0
 export const dynamic = "force-dynamic"
@@ -223,9 +229,10 @@ export default async function CarDetailPage({ params, searchParams }: CarDetailP
   const basePricePerDay = Number(car.pricePerDay || 0)
   const selectedDiscount = getSelectedCarDiscount(resolvedSearchParams, basePricePerDay)
   const displayedPricePerDay = selectedDiscount?.rate || basePricePerDay
+  const selectedReservationTotal = selectedDiscount?.reservationTotal || displayedPricePerDay
   const detailPath = `/cars/${slug}`
   const pricingNote = selectedDiscount
-    ? `${selectedDiscount.label} multi-day rate selected: $${selectedDiscount.rate.toLocaleString()}/day for ${selectedDiscount.days} days. Base rate is $${basePricePerDay.toLocaleString()}/day.`
+    ? `${selectedDiscount.label} multi-day rate selected: $${selectedDiscount.rate.toLocaleString()}/day for ${selectedDiscount.days} days. Reservation total is $${selectedReservationTotal.toLocaleString()}. Base rate is $${basePricePerDay.toLocaleString()}/day.`
     : undefined
   
   // Fallback gradient image (data URI) instead of placeholder.svg
@@ -324,8 +331,12 @@ export default async function CarDetailPage({ params, searchParams }: CarDetailP
 
             {/* Pricing - Conditionally show price or contact message */}
             {basePricePerDay > 0 ? (
-              <div className="bg-charcoal/50 rounded-2xl p-6 border border-[#ECAC36]/20">
-                <div className="mb-4 flex flex-wrap items-baseline gap-2">
+              <div className="relative overflow-hidden bg-charcoal/50 rounded-2xl p-6 border border-[#ECAC36]/20">
+                <div className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full border border-[#ECAC36]/35 bg-black/70 px-3 py-1 text-[0.68rem] font-black uppercase tracking-[0.12em] text-[#ECAC36] shadow-[0_0_18px_rgba(236,172,54,0.16)]">
+                  <Truck className="h-3.5 w-3.5" aria-hidden="true" />
+                  Free delivery
+                </div>
+                <div className="mb-4 flex flex-wrap items-baseline gap-2 pt-8 sm:pt-0 sm:pr-40">
                   <span className="text-4xl font-heading font-black text-[#ECAC36]">
                     ${displayedPricePerDay.toLocaleString()}
                   </span>
@@ -352,13 +363,16 @@ export default async function CarDetailPage({ params, searchParams }: CarDetailP
                       </div>
                       <div className="rounded-lg border border-[#ECAC36]/30 bg-black/30 px-4 py-3 text-left sm:text-right">
                         <span className="block text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-[#B5B5B5]">
-                          You save
+                          Reservation total
                         </span>
                         <strong className="block text-2xl font-black leading-none text-[#ECAC36]">
-                          ${selectedDiscount.totalSavings.toLocaleString()}
+                          ${selectedReservationTotal.toLocaleString()}
                         </strong>
                         <span className="mt-1 block text-[0.72rem] text-gray-400">
-                          over {selectedDiscount.days} days
+                          {selectedDiscount.days} days at ${selectedDiscount.rate.toLocaleString()}/day
+                        </span>
+                        <span className="mt-2 block border-t border-white/10 pt-2 text-[0.72rem] text-gray-400">
+                          You save <span className="font-bold text-[#ECAC36]">${selectedDiscount.totalSavings.toLocaleString()}</span>
                         </span>
                       </div>
                     </div>
@@ -369,6 +383,7 @@ export default async function CarDetailPage({ params, searchParams }: CarDetailP
                     const rate = getTieredDailyRate(basePricePerDay, tier.days)
                     const isSelected = selectedDiscount?.days === tier.days
                     const tierSavingsPerDay = Math.max(0, basePricePerDay - rate)
+                    const reservationTotal = getReservationTotal(rate, tier.days)
 
                     return (
                       <a
@@ -383,6 +398,9 @@ export default async function CarDetailPage({ params, searchParams }: CarDetailP
                         <span className="block font-semibold">{tier.label}</span>
                         <span className={isSelected ? "text-black/80" : "text-[#ECAC36]"}>
                           ${rate.toLocaleString()}/day
+                        </span>
+                        <span className={isSelected ? "mt-0.5 block text-[0.68rem] font-semibold text-black/80" : "mt-0.5 block text-[0.68rem] font-semibold text-gray-300"}>
+                          Total ${reservationTotal.toLocaleString()}
                         </span>
                         <span className={isSelected ? "mt-0.5 block text-[0.68rem] text-black/70" : "mt-0.5 block text-[0.68rem] text-gray-500"}>
                           Save{" "}
