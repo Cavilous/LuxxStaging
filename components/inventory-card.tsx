@@ -58,6 +58,41 @@ function getCardActionLabel(type: InventoryCardProps["type"]) {
   return "View vehicle"
 }
 
+function formatCardSpec(spec: string): string | null {
+  const value = spec.trim().replace(/\s+/g, " ")
+  if (!value || value.length > 28) return null
+
+  const lowerValue = value.toLowerCase()
+  const seatsMatch = lowerValue.match(/^(\d+)\s*seats?$/)
+  if (seatsMatch) return `${seatsMatch[1]} Seats`
+
+  const hpMatch = lowerValue.match(/^(\d{2,4})\s*hp$/)
+  if (hpMatch) return `${hpMatch[1]} HP`
+
+  const zeroSixtyMatch = lowerValue.match(/^(\d(?:\.\d+)?)\s*s(?:ec(?:onds?)?)?$/)
+  if (zeroSixtyMatch) return `${zeroSixtyMatch[1]}s 0-60`
+
+  if (lowerValue.includes("0-60")) {
+    return value.replace(/\bmph\b/gi, "MPH")
+  }
+
+  if (lowerValue === "automatic") return "Auto"
+  return value
+}
+
+function getCardSpecs(type: InventoryCardProps["type"], specs: string[]): string[] {
+  if (type !== "car") return []
+
+  const formattedSpecs = specs
+    .map(formatCardSpec)
+    .filter((spec): spec is string => Boolean(spec))
+
+  const strongerSpecs = formattedSpecs.filter((spec) => !["Auto", "Automatic"].includes(spec))
+  const specsToShow = strongerSpecs.length >= 2 ? strongerSpecs : formattedSpecs
+
+  return Array.from(new Set(specsToShow)).slice(0, 3)
+}
+
 export function InventoryCard({
   type,
   title,
@@ -143,6 +178,7 @@ export function InventoryCard({
   const lowestRateTier = CAR_DISCOUNT_TIERS[CAR_DISCOUNT_TIERS.length - 1]
   const lowestDailyRate =
     showDiscountTiers && lowestRateTier ? getTieredDailyRate(dailyRate, lowestRateTier.days) : 0
+  const cardSpecs = getCardSpecs(type, specs)
 
   useEffect(() => {
     const card = cardRef.current
@@ -272,6 +308,15 @@ export function InventoryCard({
           <h3 className="text-lg font-semibold text-white truncate leading-tight group-hover:text-[#ECAC36] transition-colors duration-300">
             {title || "Luxury Vehicle"}
           </h3>
+          {cardSpecs.length > 0 && (
+            <div className="luxx-card-specs" aria-label={`${title} quick specs`}>
+              {cardSpecs.map((spec) => (
+                <span key={spec} className="luxx-card-spec">
+                  {spec}
+                </span>
+              ))}
+            </div>
+          )}
           {showSubtitle && (
             <p className="text-sm truncate text-gray-500">{displaySubtitle}</p>
           )}
