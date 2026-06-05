@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Clock, Users, Shield, CheckCircle, Camera, Car, Phone, Mail, User, Calendar, MapPin, Star } from "lucide-react"
+import { Clock, Shield, CheckCircle, Camera, Car, Phone, Mail, User, Calendar, Star } from "lucide-react"
 import { toast } from "sonner"
-import Image from "next/image"
 import dynamic from "next/dynamic"
+import { TourCarSelectCard } from "@/components/tour-car-select-card"
 
 const TourRouteMap = dynamic(() => import("@/components/tour-route-map"), { 
   ssr: false,
@@ -63,6 +63,8 @@ export default function ToursPage() {
     const hours = duration === "2h" ? 2 : 1
     return (pricing.pax1 || 300) * hours
   }
+
+  const durationLabel = duration === "2h" ? "2h tour" : "1h tour"
 
   const selectedCar = cars.find(c => c.id === selectedCarId)
 
@@ -248,46 +250,20 @@ export default function ToursPage() {
             ) : cars.length === 0 ? (
               <p className="text-gray-400 text-center py-8">No tour cars available at this time.</p>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="fleet-grid tour-cars-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {cars.map((car) => (
-                  <button
+                  <TourCarSelectCard
                     key={car.id}
-                    onClick={() => setSelectedCarId(car.id)}
-                    className={`text-left border-2 transition-all duration-300 overflow-hidden cut-corner ${
-                      selectedCarId === car.id
-                        ? "border-gold bg-gold/5"
-                        : "border-gray-700 hover:border-gray-500"
-                    }`}
-                  >
-                    <div className="aspect-[16/10] relative overflow-hidden bg-gray-900">
-                      {car.images?.[0] && (
-                        <Image
-                          src={car.images[0]}
-                          alt={`${car.make} ${car.model}`}
-                          fill
-                          className="object-cover"
-                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                        />
-                      )}
-                      {selectedCarId === car.id && (
-                        <div className="absolute top-3 right-3 bg-gold text-black px-3 py-1 text-sm font-bold">
-                          Selected
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-4">
-                      <div className="font-bold text-white text-lg">{car.make} {car.model}</div>
-                      <div className="flex items-center justify-between mt-2">
-                        <span className="text-gray-400 text-sm">
-                          <Users className="h-4 w-4 inline mr-1" />
-                          Up to {car.tourMaxPassengers || 3} passengers
-                        </span>
-                        <span className="text-gold font-bold">
-                          From ${calculatePrice(car)}
-                        </span>
-                      </div>
-                    </div>
-                  </button>
+                    id={car.id}
+                    make={car.make}
+                    model={car.model}
+                    image={car.images?.[0]}
+                    maxPassengers={car.tourMaxPassengers}
+                    price={calculatePrice(car)}
+                    durationLabel={durationLabel}
+                    selected={selectedCarId === car.id}
+                    onSelect={() => setSelectedCarId(car.id)}
+                  />
                 ))}
               </div>
             )}

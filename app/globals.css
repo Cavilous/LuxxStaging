@@ -480,6 +480,36 @@
     overflow: hidden;
   }
 
+  .tour-car-card {
+    display: block;
+    width: 100%;
+    min-height: 100%;
+    appearance: none;
+    padding: 0;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+  }
+
+  .tour-car-card:focus-visible {
+    outline: 2px solid rgba(236, 172, 54, 0.9);
+    outline-offset: 4px;
+  }
+
+  .tour-car-card.is-selected {
+    background:
+      linear-gradient(180deg, rgba(236, 172, 54, 0.11), rgba(255, 255, 255, 0.024) 42%, rgba(9, 9, 9, 0.96)),
+      #0a0a0a;
+    box-shadow:
+      0 0 0 1px rgba(236, 172, 54, 0.35),
+      0 0 34px rgba(236, 172, 54, 0.22),
+      0 18px 48px rgba(0, 0, 0, 0.44);
+  }
+
+  .tour-car-card .tour-card-cta {
+    pointer-events: none;
+  }
+
   .fleet-grid .car-img-wrap,
   .fleet-grid .car-body {
     position: relative;
