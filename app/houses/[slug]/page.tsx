@@ -15,16 +15,13 @@ import { VillaAvailabilityCalendar } from "@/components/villa-availability-calen
 import { getFallbackVillas } from "@/lib/fallback-villas"
 
 export const revalidate = 900
+export const dynamic = "force-dynamic"
 export const dynamicParams = true
 
 const fallbackImage = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400"%3E%3Cdefs%3E%3ClinearGradient id="g" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%23000;stop-opacity:1"/%3E%3Cstop offset="100%25" style="stop-color:%23333;stop-opacity:1"/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23g)" width="600" height="400"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" fill="%23ECAC36" font-size="24" font-family="Arial"%3ELuxx Miami%3C/text%3E%3C/svg%3E'
 
 function getFallbackVillaBySlug(slug: string) {
   return getFallbackVillas().find((villa) => villa.slug === slug) || null
-}
-
-function getFallbackVillaStaticParams() {
-  return getFallbackVillas().map((villa) => ({ slug: villa.slug }))
 }
 
 function getVillaImages(images: unknown) {
@@ -73,24 +70,7 @@ function mapSimilarVillas(villas: any[], currentVillaId: string, currentVillaSlu
 }
 
 export async function generateStaticParams() {
-  if (!process.env.DATABASE_URL && !process.env.POSTGRES_URL && !process.env.POSTGRES_PRISMA_URL) {
-    return getFallbackVillaStaticParams()
-  }
-
-  try {
-    const villas = await db
-      .select({ slug: inventory.slug })
-      .from(inventory)
-      .where(and(eq(inventory.category, "villa"), eq(inventory.isPublished, true)))
-      .limit(50)
-    
-    return villas
-      .filter((villa) => villa.slug && typeof villa.slug === 'string')
-      .map((villa) => ({ slug: String(villa.slug) }))
-  } catch (error) {
-    console.error('Error generating static params for villas:', error)
-    return getFallbackVillaStaticParams()
-  }
+  return []
 }
 
 interface VillaDetailPageProps {

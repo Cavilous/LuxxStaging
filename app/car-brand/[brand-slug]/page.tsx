@@ -1090,12 +1090,8 @@ const BRANDS: Record<string, BrandData> = {
   },
 }
 
-const VALID_BRANDS = Object.keys(BRANDS)
-
 export async function generateStaticParams() {
-  return VALID_BRANDS.map((brand) => ({
-    "brand-slug": brand,
-  }))
+  return []
 }
 
 export const dynamicParams = true

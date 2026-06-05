@@ -680,12 +680,8 @@ const BRAND_MATCH_TERMS: Record<string, string[]> = {
   "aston-martin": ["aston martin", "aston"],
 }
 
-const VALID_BRANDS = Object.keys(BRANDS)
-
 export async function generateStaticParams() {
-  return VALID_BRANDS.map((brand) => ({
-    "brand-slug": brand,
-  }))
+  return []
 }
 
 export const revalidate = 900

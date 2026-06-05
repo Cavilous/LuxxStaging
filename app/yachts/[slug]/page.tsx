@@ -13,6 +13,7 @@ import { PhotoGallery } from "@/components/photo-gallery-wrapper"
 import { getFallbackYachts } from "@/lib/fallback-yachts"
 
 export const revalidate = 900
+export const dynamic = "force-dynamic"
 export const dynamicParams = true
 
 const fallbackImage = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400"%3E%3Cdefs%3E%3ClinearGradient id="g" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%23000;stop-opacity:1"/%3E%3Cstop offset="100%25" style="stop-color:%23333;stop-opacity:1"/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23g)" width="600" height="400"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" fill="%23ECAC36" font-size="24" font-family="Arial"%3ELuxx Miami%3C/text%3E%3C/svg%3E'
@@ -26,10 +27,6 @@ function getYachtImages(yacht: { images?: unknown }) {
 
 function getFallbackYachtBySlug(slug: string) {
   return getFallbackYachts().find((yacht) => yacht.slug === slug) || null
-}
-
-function getFallbackYachtStaticParams() {
-  return getFallbackYachts().map((yacht) => ({ slug: yacht.slug }))
 }
 
 function getYachtPrice4Hr(yacht: { pricePerHour?: unknown; pricePer4Hr?: unknown }) {
@@ -58,24 +55,7 @@ function mapSimilarYacht(yacht: any) {
 }
 
 export async function generateStaticParams() {
-  if (!process.env.DATABASE_URL && !process.env.POSTGRES_URL && !process.env.POSTGRES_PRISMA_URL) {
-    return getFallbackYachtStaticParams()
-  }
-
-  try {
-    const yachts = await db
-      .select({ slug: inventory.slug })
-      .from(inventory)
-      .where(and(eq(inventory.category, "yacht"), eq(inventory.isPublished, true)))
-      .limit(50)
-
-    return yachts
-      .filter((yacht) => yacht.slug && typeof yacht.slug === 'string')
-      .map((yacht) => ({ slug: String(yacht.slug) }))
-  } catch (error) {
-    console.error('Error generating static params for yachts:', error)
-    return getFallbackYachtStaticParams()
-  }
+  return []
 }
 
 interface YachtDetailPageProps {
