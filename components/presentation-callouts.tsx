@@ -77,7 +77,7 @@ const demoSteps: DemoStep[] = [
   },
   {
     key: "menu-logos",
-    label: "Menu motion",
+    label: "Menu UI",
     icon: Sparkles,
     title: "Menu UI improvements are ready",
     body: "Desktop menu hover, brand-logo motion, magnetic hover, and mobile navigation polish are ready to show.",
@@ -136,7 +136,7 @@ const demoSteps: DemoStep[] = [
   },
   {
     key: "brand-pages",
-    label: "Brand pages",
+    label: "Brand pages fixed",
     icon: Sparkles,
     title: "Brand pages are fixed across brands",
     body: "Brand pages now open, show matching cars, and include the branded background logo polish.",
