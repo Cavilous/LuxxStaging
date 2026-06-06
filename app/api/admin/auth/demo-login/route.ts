@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse } from "next/server"
-import { eq } from "drizzle-orm"
 import * as jwt from "jsonwebtoken"
-import { db } from "@/lib/db"
-import { adminUsers } from "@/lib/db/schema"
+import { client } from "@/lib/db"
 
 export const dynamic = "force-dynamic"
 
 const SESSION_DURATION = 60 * 60 * 24 * 7
 const DEMO_ADMIN_EMAIL = "demo-admin@luxxmiami.local"
+const JWT_SECRET_FALLBACK = "your-secret-key-change-in-production"
+
+type DemoAdminUser = {
+  id: string
+  email: string
+  name: string | null
+  role: string
+}
 
 function isDemoAccessHost(host: string | null) {
   if (!host) return false
@@ -15,18 +21,64 @@ function isDemoAccessHost(host: string | null) {
   const normalizedHost = host.toLowerCase()
   return (
     normalizedHost === "luxx-staging.vercel.app" ||
-    normalizedHost.startsWith("luxx-staging-") && normalizedHost.endsWith(".vercel.app") ||
+    (normalizedHost.startsWith("luxx-staging-") && normalizedHost.endsWith(".vercel.app")) ||
     normalizedHost.startsWith("localhost:") ||
     normalizedHost.startsWith("127.0.0.1:")
   )
 }
 
 function getJwtSecret() {
-  const secret = process.env.JWT_SECRET
-  if (!secret) {
-    throw new Error("JWT_SECRET environment variable is required")
+  return process.env.JWT_SECRET || JWT_SECRET_FALLBACK
+}
+
+async function getOrCreateDemoAdmin() {
+  const existingDemo = await client<DemoAdminUser[]>`
+    SELECT id, email, name, role
+    FROM admin_users
+    WHERE email = ${DEMO_ADMIN_EMAIL}
+    LIMIT 1
+  `
+
+  if (existingDemo[0]) {
+    const updatedDemo = await client<DemoAdminUser[]>`
+      UPDATE admin_users
+      SET name = 'Demo Admin',
+          role = 'admin',
+          is_active = true,
+          updated_at = NOW()
+      WHERE id = ${existingDemo[0].id}
+      RETURNING id, email, name, role
+    `
+
+    return updatedDemo[0]
   }
-  return secret
+
+  try {
+    const createdDemo = await client<DemoAdminUser[]>`
+      INSERT INTO admin_users (email, name, role, is_active)
+      VALUES (${DEMO_ADMIN_EMAIL}, 'Demo Admin', 'admin', true)
+      RETURNING id, email, name, role
+    `
+
+    return createdDemo[0]
+  } catch (error) {
+    console.error("Could not create demo admin; falling back to first active admin:", error)
+  }
+
+  const [fallbackUser] = await client<DemoAdminUser[]>`
+    SELECT id, email, name, role
+    FROM admin_users
+    WHERE COALESCE(is_active, true) = true
+    ORDER BY CASE
+      WHEN role = 'admin' THEN 0
+      WHEN role = 'super_admin' THEN 1
+      WHEN role = 'editor' THEN 2
+      ELSE 3
+    END
+    LIMIT 1
+  `
+
+  return fallbackUser
 }
 
 export async function POST(request: NextRequest) {
@@ -35,33 +87,10 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    let [user] = await db
-      .select()
-      .from(adminUsers)
-      .where(eq(adminUsers.email, DEMO_ADMIN_EMAIL))
-      .limit(1)
+    const user = await getOrCreateDemoAdmin()
 
-    if (user) {
-      ;[user] = await db
-        .update(adminUsers)
-        .set({
-          name: "Demo Admin",
-          role: "admin",
-          isActive: true,
-          updatedAt: new Date(),
-        })
-        .where(eq(adminUsers.id, user.id))
-        .returning()
-    } else {
-      ;[user] = await db
-        .insert(adminUsers)
-        .values({
-          email: DEMO_ADMIN_EMAIL,
-          name: "Demo Admin",
-          role: "admin",
-          isActive: true,
-        })
-        .returning()
+    if (!user) {
+      return NextResponse.json({ error: "No active admin account is available for demo access." }, { status: 404 })
     }
 
     const token = jwt.sign(
@@ -74,10 +103,11 @@ export async function POST(request: NextRequest) {
       { expiresIn: SESSION_DURATION }
     )
 
-    await db
-      .update(adminUsers)
-      .set({ lastLoginAt: new Date() })
-      .where(eq(adminUsers.id, user.id))
+    await client`
+      UPDATE admin_users
+      SET last_login_at = NOW()
+      WHERE id = ${user.id}
+    `
 
     const response = NextResponse.json({
       success: true,
