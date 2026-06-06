@@ -2,15 +2,18 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 
 export default function AdminLoginContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [loading, setLoading] = useState(false)
+  const [demoLoading, setDemoLoading] = useState(false)
   const [error, setError] = useState("")
+  const returnTo = searchParams.get("returnTo") || "/admin"
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -29,7 +32,7 @@ export default function AdminLoginContent() {
       })
 
       if (res.ok) {
-        router.push("/admin")
+        router.push(returnTo)
         router.refresh()
       } else {
         const data = await res.json()
@@ -40,6 +43,31 @@ export default function AdminLoginContent() {
       console.error("Login error:", err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleDemoAccess() {
+    setDemoLoading(true)
+    setError("")
+
+    try {
+      const res = await fetch("/api/admin/auth/demo-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      })
+
+      if (res.ok) {
+        router.push(returnTo)
+        router.refresh()
+      } else {
+        const data = await res.json()
+        setError(data.error || "Demo access failed")
+      }
+    } catch (err) {
+      setError("Demo access failed")
+      console.error("Demo login error:", err)
+    } finally {
+      setDemoLoading(false)
     }
   }
 
@@ -81,6 +109,14 @@ export default function AdminLoginContent() {
               className="w-full bg-gradient-to-r from-[#ECAC36] to-[#e6c766] text-black font-bold hover:opacity-90"
             >
               {loading ? "Logging in..." : "Login"}
+            </Button>
+            <Button
+              type="button"
+              disabled={demoLoading}
+              onClick={handleDemoAccess}
+              className="w-full border border-[#ECAC36]/50 bg-[#ECAC36]/10 text-[#ECAC36] hover:bg-[#ECAC36] hover:text-black"
+            >
+              {demoLoading ? "Opening demo..." : "Enter Demo Admin"}
             </Button>
           </form>
         </CardContent>
