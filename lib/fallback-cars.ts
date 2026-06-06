@@ -1204,12 +1204,10 @@ export const fallbackCars: FallbackCar[] = [
     "brand": "Lamborghini",
     "brandSlug": "lamborghini",
     "images": [
-      "https://photos.smugmug.com/AVAILABLE-CARS/Lamborghini-Huracan-STO/i-DVLTF3k/0/L/_BMS5199-L.jpg",
       "https://photos.smugmug.com/AVAILABLE-CARS/Lamborghini-Huracan-STO/i-t8ZztKQ/0/MF75w2HzHCfVQJ2bkvFxfDNcSGVSPFZTBptzgNrVj/M/_BMS5188-M.jpg",
       "https://photos.smugmug.com/AVAILABLE-CARS/Lamborghini-Huracan-STO/i-P2BRBzw/0/LDCftRG5ZRF4BcZJwtbNfk57tkVPJKPr6XkjbgMzV/M/_BMS5311-M.jpg",
       "https://photos.smugmug.com/AVAILABLE-CARS/Lamborghini-Huracan-STO/i-cQ5MRx5/0/Kb8fRdJ5F7R2pdcX2zRS3sGhpLmXnRtD2B7d2t2gd/M/_BMS5224-M.jpg",
-      "https://photos.smugmug.com/AVAILABLE-CARS/Lamborghini-Huracan-STO/i-KgBtCBL/0/NfRFKMGvMD3xZxf4FWbPRCRXT5VM8sR99S7pv2Wq4/M/_BMS5154-M.jpg",
-      "https://photos.smugmug.com/AVAILABLE-CARS/Lamborghini-Huracan-STO/i-DVLTF3k/0/XL/_BMS5199-XL.jpg"
+      "https://photos.smugmug.com/AVAILABLE-CARS/Lamborghini-Huracan-STO/i-KgBtCBL/0/NfRFKMGvMD3xZxf4FWbPRCRXT5VM8sR99S7pv2Wq4/M/_BMS5154-M.jpg"
     ],
     "pricePerDay": "1895.00",
     "isFeatured": false,
