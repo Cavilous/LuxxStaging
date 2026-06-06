@@ -6,6 +6,7 @@ import { sql } from 'drizzle-orm'
 import * as bcrypt from 'bcryptjs'
 import * as jwt from 'jsonwebtoken'
 import { isAllowedAdminRole } from '../auth-utils'
+import { getDemoAdminUser, isDemoAdminIdentity } from '../demo-admin'
 
 const SESSION_DURATION = 60 * 60 * 24 * 7
 const JWT_SECRET_FALLBACK = 'your-secret-key-change-in-production'
@@ -244,6 +245,22 @@ export function createDbClient() {
           }
           
           const decoded = jwt.verify(sessionCookie.value, getJWTSecret()) as { userId: string, email: string, role: string }
+
+          if (isDemoAdminIdentity(decoded)) {
+            const demoUser = getDemoAdminUser()
+            return {
+              data: {
+                session: {
+                  user: {
+                    id: demoUser.id,
+                    email: demoUser.email,
+                    role: demoUser.role,
+                  },
+                },
+              },
+              error: null,
+            }
+          }
           
           const user = await db
             .select()

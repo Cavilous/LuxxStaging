@@ -1,4 +1,3 @@
-import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import AdminLayout from "@/components/admin-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -6,63 +5,66 @@ import { db } from "@/lib/db"
 import { inventory, homePageSections } from "@/lib/db/schema"
 import { eq, asc } from "drizzle-orm"
 import { HomePageSectionManager } from "@/components/home-page-section-manager"
+import { getDemoSafeAccessibleSections, getDemoSafeCurrentUser } from "../demo-safe-admin"
 
 export const dynamic = 'force-dynamic'
 
 export default async function HomePageManagement() {
-  const supabase = createClient()
+  const [currentUser, accessibleSections] = await Promise.all([
+    getDemoSafeCurrentUser(),
+    getDemoSafeAccessibleSections(),
+  ])
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-
-  if (!session) {
+  if (!currentUser) {
     redirect("/admin/login")
   }
 
-  const { data: adminUser } = await supabase
-    .from("admin_users")
-    .select("*")
-    .eq("email", session.user.email)
-    .eq("is_active", true)
-    .single()
+  let sections: any[] = []
+  let allInventory: any[] = []
 
-  if (!adminUser) {
-    redirect("/admin/login?error=unauthorized")
+  try {
+    sections = await db
+      .select({
+        id: homePageSections.id,
+        section: homePageSections.section,
+        inventoryId: homePageSections.inventoryId,
+        displayOrder: homePageSections.displayOrder,
+        title: inventory.title,
+        category: inventory.category,
+        images: inventory.images,
+      })
+      .from(homePageSections)
+      .innerJoin(inventory, eq(homePageSections.inventoryId, inventory.id))
+      .orderBy(asc(homePageSections.section), asc(homePageSections.displayOrder))
+  } catch (error) {
+    console.error("Error loading home page sections:", error)
   }
 
-  const sections = await db
-    .select({
-      id: homePageSections.id,
-      section: homePageSections.section,
-      inventoryId: homePageSections.inventoryId,
-      displayOrder: homePageSections.displayOrder,
-      title: inventory.title,
-      category: inventory.category,
-      images: inventory.images,
-    })
-    .from(homePageSections)
-    .innerJoin(inventory, eq(homePageSections.inventoryId, inventory.id))
-    .orderBy(asc(homePageSections.section), asc(homePageSections.displayOrder))
-
-  const allInventory = await db
-    .select({
-      id: inventory.id,
-      title: inventory.title,
-      category: inventory.category,
-      subtitle: inventory.subtitle,
-      images: inventory.images,
-    })
-    .from(inventory)
-    .where(eq(inventory.isPublished, true))
-    .orderBy(asc(inventory.category), asc(inventory.title))
+  try {
+    allInventory = await db
+      .select({
+        id: inventory.id,
+        title: inventory.title,
+        category: inventory.category,
+        subtitle: inventory.subtitle,
+        images: inventory.images,
+      })
+      .from(inventory)
+      .where(eq(inventory.isPublished, true))
+      .orderBy(asc(inventory.category), asc(inventory.title))
+  } catch (error) {
+    console.error("Error loading home page inventory options:", error)
+  }
 
   const featuredExotics = sections.filter(s => s.section === "featured_exotics")
   const luxuryYachts = sections.filter(s => s.section === "luxury_yachts")
   const premiumVillas = sections.filter(s => s.section === "premium_villas")
 
   return (
-    <AdminLayout user={adminUser}>
+    <AdminLayout
+      user={{ email: currentUser.email, role: currentUser.role }}
+      accessibleSections={accessibleSections}
+    >
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">Home Page Management</h1>

@@ -4,12 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Plus, Home, Upload } from "lucide-react"
 import Link from "next/link"
 import { InventoryListClient } from "@/components/admin/inventory-list-client"
-import { db } from "@/lib/db"
-import { inventory } from "@/lib/db/schema"
-import { eq, desc, asc, and, or, ilike, sql } from "drizzle-orm"
 import { SearchFilterBar } from "@/components/admin/search-filter-bar"
 import { FilterSelect } from "@/components/admin/filter-select"
 import { Pagination } from "@/components/admin/pagination"
+import { getAdminInventoryList } from "@/lib/admin-inventory-list-data"
 
 export const dynamic = 'force-dynamic'
 
@@ -25,40 +23,15 @@ export default async function AdminHousesPage({
   const sortColumn = resolvedSearchParams.sort || null
   const sortOrder = (resolvedSearchParams.order as 'asc' | 'desc') || 'desc'
 
-  const conditions = [eq(inventory.category, "villa")]
-
-  if (q) {
-    conditions.push(
-      or(
-        ilike(inventory.title, `%${q}%`),
-        ilike(inventory.subtitle, `%${q}%`)
-      )!
-    )
-  }
-
-  if (status === "published") {
-    conditions.push(eq(inventory.isPublished, true))
-  } else if (status === "draft") {
-    conditions.push(eq(inventory.isPublished, false))
-  }
-
-  const [totalCountResult] = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(inventory)
-    .where(and(...conditions))
-  const totalCount = totalCountResult?.count || 0
-
-  const houses = await db
-    .select()
-    .from(inventory)
-    .where(and(...conditions))
-    .orderBy(
-      sortColumn === "title" ? (sortOrder === "asc" ? asc(inventory.title) : desc(inventory.title)) :
-      sortColumn === "price" ? (sortOrder === "asc" ? asc(inventory.pricePerDay) : desc(inventory.pricePerDay)) :
-      sortOrder === "asc" ? asc(inventory.createdAt) : desc(inventory.createdAt)
-    )
-    .limit(itemsPerPage)
-    .offset((page - 1) * itemsPerPage)
+  const { totalCount, items: houses } = await getAdminInventoryList({
+    category: "villa",
+    q,
+    status,
+    page,
+    itemsPerPage,
+    sortColumn,
+    sortOrder,
+  })
 
   return (
     <AdminLayout>

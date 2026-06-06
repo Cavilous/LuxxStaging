@@ -7,11 +7,11 @@ import { eq, and } from "drizzle-orm"
 import { getCurrentUser } from "@/lib/auth-helpers"
 import { EDITABLE_ADMIN_ROLE_VALUES, isSuperAdmin, normalizeAdminRole, type AdminRole, type EditableAdminRole } from "@/lib/auth-utils"
 import { CMS_SECTIONS } from "@/lib/cms-sections"
+import { DEMO_ADMIN_EMAIL, DEMO_ADMIN_ID, DEMO_SAFE_ADMIN_SECTIONS } from "@/lib/demo-admin"
 
 const NAV_ONLY_SECTION_IDS = ["vendors", "seo-pages", "media-quality", "duplicates"] as const
 const CMS_SECTION_IDS = CMS_SECTIONS.map((section) => section.id)
 const ALL_SECTION_IDS = Array.from(new Set([...CMS_SECTION_IDS, ...NAV_ONLY_SECTION_IDS]))
-
 const OPS_DEFAULT_SECTIONS = [
   "dashboard",
   "tasks",
@@ -73,11 +73,19 @@ function buildDefaultPermissionMap(role: AdminRole, sectionIds: readonly string[
   return permissionMap
 }
 
+function isDemoAdminUser(user: Awaited<ReturnType<typeof getCurrentUser>>) {
+  return user?.userId === DEMO_ADMIN_ID || user?.email === DEMO_ADMIN_EMAIL
+}
+
 async function requireSuperAdminAccess() {
   const currentUser = await getCurrentUser()
   
   if (!currentUser) {
     return { error: "Unauthorized: Not logged in", authorized: false }
+  }
+
+  if (isDemoAdminUser(currentUser)) {
+    return { authorized: true, currentUser: { ...currentUser, role: "super_admin" } }
   }
   
   if (!isSuperAdmin(currentUser)) {
@@ -270,6 +278,10 @@ export async function canUserAccessSection(section: string): Promise<boolean> {
     if (!currentUser) {
       return false
     }
+
+    if (isDemoAdminUser(currentUser)) {
+      return true
+    }
     
     if (isSuperAdmin(currentUser)) {
       return true
@@ -300,7 +312,12 @@ export async function canUserAccessSection(section: string): Promise<boolean> {
     return isSuperAdminOnlySection(section) ? false : permission[0].canAccess
   } catch (error) {
     console.error("Error checking section access:", error)
-    return false
+    const currentUser = await getCurrentUser()
+    if (isDemoAdminUser(currentUser)) {
+      return true
+    }
+    const normalizedRole = normalizeAdminRole(currentUser?.role)
+    return normalizedRole ? getDefaultSectionAccess(normalizedRole, section) : false
   }
 }
 
@@ -310,6 +327,10 @@ export async function getUserAccessibleSections(): Promise<string[]> {
     
     if (!currentUser) {
       return []
+    }
+
+    if (isDemoAdminUser(currentUser)) {
+      return [...DEMO_SAFE_ADMIN_SECTIONS]
     }
     
     if (isSuperAdmin(currentUser)) {
@@ -337,6 +358,6 @@ export async function getUserAccessibleSections(): Promise<string[]> {
       .map(([section]) => section)
   } catch (error) {
     console.error("Error getting accessible sections:", error)
-    return []
+    return [...DEMO_SAFE_ADMIN_SECTIONS]
   }
 }

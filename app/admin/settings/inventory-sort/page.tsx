@@ -1,24 +1,24 @@
 import AdminLayout from "@/components/admin-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowUpDown, ShieldAlert } from "lucide-react"
-import { getCurrentUser } from "@/lib/auth-helpers"
-import { isSuperAdmin } from "@/lib/auth-utils"
 import { redirect } from "next/navigation"
-import { getUserAccessibleSections } from "@/lib/role-permissions-actions"
 import { getAllSortSettings } from "@/lib/sort-settings-actions"
 import { InventorySortSettings } from "@/components/admin/inventory-sort-settings"
+import { canUseDemoSafeAdminAccess, getDemoSafeAccessibleSections, getDemoSafeCurrentUser } from "../../demo-safe-admin"
 
 export const dynamic = 'force-dynamic'
 
 export default async function InventorySortPage() {
-  const currentUser = await getCurrentUser()
-  const accessibleSections = await getUserAccessibleSections()
+  const [currentUser, accessibleSections] = await Promise.all([
+    getDemoSafeCurrentUser(),
+    getDemoSafeAccessibleSections(),
+  ])
 
   if (!currentUser) {
     redirect("/admin/login")
   }
 
-  if (!isSuperAdmin(currentUser)) {
+  if (!canUseDemoSafeAdminAccess(currentUser)) {
     return (
       <AdminLayout
         user={{ email: currentUser.email, role: currentUser.role }}

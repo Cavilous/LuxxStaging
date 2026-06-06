@@ -7,9 +7,9 @@ import { adminUsers } from "@/lib/db/schema"
 import { desc } from "drizzle-orm"
 import { AddUserDialog } from "@/components/admin/add-user-dialog"
 import { UserActions } from "@/components/admin/user-actions"
-import { getCurrentUser } from "@/lib/auth-helpers"
-import { getAdminRoleLabel, isSuperAdmin, normalizeAdminRole } from "@/lib/auth-utils"
+import { getAdminRoleLabel, normalizeAdminRole } from "@/lib/auth-utils"
 import { redirect } from "next/navigation"
+import { canUseDemoSafeAdminAccess, getDemoSafeAccessibleSections, getDemoSafeCurrentUser, isDemoAdminUser } from "../demo-safe-admin"
 
 export const dynamic = 'force-dynamic'
 
@@ -43,15 +43,18 @@ function getRoleBadgeClass(role: string) {
 }
 
 export default async function UsersPage() {
-  const currentUser = await getCurrentUser()
+  const [currentUser, accessibleSections] = await Promise.all([
+    getDemoSafeCurrentUser(),
+    getDemoSafeAccessibleSections(),
+  ])
   
   if (!currentUser) {
     redirect("/admin/login")
   }
   
-  if (!isSuperAdmin(currentUser)) {
+  if (!canUseDemoSafeAdminAccess(currentUser)) {
     return (
-      <AdminLayout user={{ email: currentUser.email, role: currentUser.role }}>
+      <AdminLayout user={{ email: currentUser.email, role: currentUser.role }} accessibleSections={accessibleSections}>
         <div className="flex flex-col items-center justify-center min-h-[60vh]">
           <ShieldAlert className="h-16 w-16 text-red-500 mb-4" />
           <h1 className="text-2xl font-bold text-white mb-2">Access Denied</h1>
@@ -64,13 +67,33 @@ export default async function UsersPage() {
     )
   }
 
-  const users = await db
-    .select()
-    .from(adminUsers)
-    .orderBy(desc(adminUsers.createdAt))
+  let users: any[] = []
+  try {
+    users = await db
+      .select()
+      .from(adminUsers)
+      .orderBy(desc(adminUsers.createdAt))
+  } catch (error) {
+    console.error("Error loading admin users:", error)
+  }
+
+  if (isDemoAdminUser(currentUser) && !users.some((user) => user.id === currentUser.userId)) {
+    users = [
+      {
+        id: currentUser.userId,
+        name: currentUser.name ?? "Demo Admin",
+        email: currentUser.email,
+        role: currentUser.role,
+        isActive: true,
+        lastLoginAt: null,
+        createdAt: new Date(),
+      },
+      ...users,
+    ]
+  }
 
   return (
-    <AdminLayout user={{ email: currentUser.email, role: currentUser.role }}>
+    <AdminLayout user={{ email: currentUser.email, role: currentUser.role }} accessibleSections={accessibleSections}>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>

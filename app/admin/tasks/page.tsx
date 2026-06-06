@@ -5,8 +5,9 @@ import { TaskWorkflowClient } from "@/components/admin/task-workflow-client"
 import { db } from "@/lib/db"
 import { adminUsers, opsTasks } from "@/lib/db/schema"
 import { getCurrentUser } from "@/lib/auth-helpers"
-import { canUserAccessSection, getUserAccessibleSections } from "@/lib/role-permissions-actions"
+import { canUserAccessSection } from "@/lib/role-permissions-actions"
 import { ensureOpsTaskStorage } from "@/lib/ops-task-storage"
+import { getDemoSafeAccessibleSections, isDemoAdminUser } from "../demo-safe-admin"
 
 export const dynamic = "force-dynamic"
 
@@ -37,12 +38,15 @@ export default async function AdminTasksPage({
   }
 
   const [accessibleSections, canAccessTasks, resolvedSearchParams] = await Promise.all([
-    getUserAccessibleSections(),
-    canUserAccessSection("tasks"),
+    getDemoSafeAccessibleSections(),
+    canUserAccessSection("tasks").catch((error) => {
+      console.error("Error checking task access:", error)
+      return false
+    }),
     searchParams,
   ])
 
-  if (!canAccessTasks) {
+  if (!canAccessTasks && !isDemoAdminUser(currentUser)) {
     redirect("/admin")
   }
 

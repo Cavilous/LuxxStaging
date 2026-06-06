@@ -6,6 +6,7 @@ import { db } from "@/lib/db"
 import { adminUsers } from "@/lib/db/schema"
 import { eq } from "drizzle-orm"
 import { isSuperAdmin } from "./auth-utils"
+import { getDemoAdminUser, isDemoAdminIdentity } from "./demo-admin"
 
 const JWT_SECRET_FALLBACK = "your-secret-key-change-in-production"
 
@@ -35,6 +36,16 @@ export async function requireApiAuth(): Promise<CurrentUser> {
       const error = new Error("Unauthorized")
       ;(error as any).status = 401
       throw error
+    }
+
+    if (isDemoAdminIdentity(decoded)) {
+      const demoUser = getDemoAdminUser()
+      return {
+        userId: demoUser.userId,
+        email: demoUser.email,
+        role: demoUser.role,
+        name: demoUser.name,
+      }
     }
 
     return {
@@ -72,6 +83,16 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
       role: string
     }
 
+    if (isDemoAdminIdentity(decoded)) {
+      const demoUser = getDemoAdminUser()
+      return {
+        userId: demoUser.userId,
+        email: demoUser.email,
+        role: demoUser.role,
+        name: demoUser.name,
+      }
+    }
+
     return {
       userId: decoded.userId,
       email: decoded.email,
@@ -97,6 +118,16 @@ export async function getCurrentUserWithDetails(): Promise<CurrentUser | null> {
       userId: string
       email: string
       role: string
+    }
+
+    if (isDemoAdminIdentity(decoded)) {
+      const demoUser = getDemoAdminUser()
+      return {
+        userId: demoUser.userId,
+        email: demoUser.email,
+        role: demoUser.role,
+        name: demoUser.name,
+      }
     }
 
     const [user] = await db

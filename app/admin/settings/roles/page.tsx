@@ -1,12 +1,12 @@
 import AdminLayout from "@/components/admin-layout"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Shield, ShieldAlert, Settings } from "lucide-react"
-import { getCurrentUser } from "@/lib/auth-helpers"
-import { ADMIN_ROLE_OPTIONS, EDITABLE_ADMIN_ROLE_VALUES, getAdminRoleLabel, isSuperAdmin, type EditableAdminRole } from "@/lib/auth-utils"
+import { ADMIN_ROLE_OPTIONS, EDITABLE_ADMIN_ROLE_VALUES, getAdminRoleLabel, type EditableAdminRole } from "@/lib/auth-utils"
 import { redirect } from "next/navigation"
-import { getAllRolePermissions, getUserAccessibleSections } from "@/lib/role-permissions-actions"
+import { getAllRolePermissions } from "@/lib/role-permissions-actions"
 import { CMS_SECTIONS } from "@/lib/cms-sections"
 import { RolePermissionsTable } from "@/components/admin/role-permissions-table"
+import { canUseDemoSafeAdminAccess, getDemoSafeAccessibleSections, getDemoSafeCurrentUser } from "../../demo-safe-admin"
 
 export const dynamic = 'force-dynamic'
 
@@ -17,14 +17,16 @@ const ROLE_CARD_STYLES: Record<EditableAdminRole, { iconBg: string; iconText: st
 }
 
 export default async function RoleSettingsPage() {
-  const currentUser = await getCurrentUser()
-  const accessibleSections = await getUserAccessibleSections()
+  const [currentUser, accessibleSections] = await Promise.all([
+    getDemoSafeCurrentUser(),
+    getDemoSafeAccessibleSections(),
+  ])
   
   if (!currentUser) {
     redirect("/admin/login")
   }
   
-  if (!isSuperAdmin(currentUser)) {
+  if (!canUseDemoSafeAdminAccess(currentUser)) {
     return (
       <AdminLayout 
         user={{ email: currentUser.email, role: currentUser.role }}

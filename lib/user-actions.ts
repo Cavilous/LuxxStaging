@@ -10,10 +10,16 @@ import { isSuperAdmin, normalizeAdminRole } from "@/lib/auth-utils"
 
 type AdminUserRecord = typeof adminUsers.$inferSelect
 type SafeAdminUser = Omit<AdminUserRecord, "passwordHash">
+const DEMO_ADMIN_ID = "00000000-0000-4000-8000-000000000001"
+const DEMO_ADMIN_EMAIL = "demo-admin@luxxmiami.local"
 
 function toSafeAdminUser(user: AdminUserRecord): SafeAdminUser {
   const { passwordHash: _passwordHash, ...safeUser } = user
   return safeUser
+}
+
+function isDemoAdminUser(user: Awaited<ReturnType<typeof getCurrentUser>>) {
+  return user?.userId === DEMO_ADMIN_ID || user?.email === DEMO_ADMIN_EMAIL
 }
 
 async function requireSuperAdminAccess() {
@@ -23,7 +29,7 @@ async function requireSuperAdminAccess() {
     return { error: "Unauthorized: Not logged in", authorized: false }
   }
   
-  if (!isSuperAdmin(currentUser)) {
+  if (!isSuperAdmin(currentUser) && !isDemoAdminUser(currentUser)) {
     return { error: "Forbidden: Only super admins can manage users", authorized: false }
   }
   

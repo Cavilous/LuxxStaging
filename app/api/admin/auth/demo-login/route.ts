@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import * as jwt from "jsonwebtoken"
+import { DEMO_ADMIN_EMAIL, DEMO_ADMIN_ID, DEMO_ADMIN_NAME, DEMO_ADMIN_ROLE } from "@/lib/demo-admin"
 
 export const dynamic = "force-dynamic"
 
 const SESSION_DURATION = 60 * 60 * 24 * 7
-const DEMO_ADMIN_ID = "00000000-0000-4000-8000-000000000001"
-const DEMO_ADMIN_EMAIL = "demo-admin@luxxmiami.local"
 const JWT_SECRET_FALLBACK = "your-secret-key-change-in-production"
 
 function isDemoAccessHost(host: string | null) {
@@ -36,10 +35,10 @@ function safeReturnTo(request: NextRequest) {
 
 function createDemoToken() {
   return jwt.sign(
-    {
-      userId: DEMO_ADMIN_ID,
-      email: DEMO_ADMIN_EMAIL,
-      role: "admin",
+      {
+        userId: DEMO_ADMIN_ID,
+        email: DEMO_ADMIN_EMAIL,
+        role: DEMO_ADMIN_ROLE,
     },
     getJwtSecret(),
     { expiresIn: SESSION_DURATION }
@@ -88,8 +87,8 @@ export async function POST(request: NextRequest) {
       user: {
         id: DEMO_ADMIN_ID,
         email: DEMO_ADMIN_EMAIL,
-        name: "Demo Admin",
-        role: "admin",
+        name: DEMO_ADMIN_NAME,
+        role: DEMO_ADMIN_ROLE,
       },
     })
 

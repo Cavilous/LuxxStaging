@@ -1,14 +1,12 @@
-import { db } from "@/lib/db"
-import { forSaleAssets } from "@/lib/db/schema"
-import { desc, eq, ilike, or, and, sql } from "drizzle-orm"
 import AdminLayout from "@/components/admin-layout"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { Plus, Edit, Trash2, Car, Anchor, Home, Eye, EyeOff, AlertTriangle } from "lucide-react"
+import { Plus, Car, Anchor, Home, AlertTriangle } from "lucide-react"
 import Link from "next/link"
 import { ForSaleFilters } from "@/components/admin/for-sale-filters"
 import { ForSaleActions } from "@/components/admin/for-sale-actions"
+import { getAdminForSaleList } from "@/lib/admin-inventory-list-data"
 
 export const dynamic = 'force-dynamic'
 
@@ -19,51 +17,7 @@ export default async function ForSaleAssetsPage({
 }) {
   const { q, category, status, managed } = await searchParams
 
-  const conditions: any[] = []
-
-  if (q) {
-    conditions.push(
-      or(
-        ilike(forSaleAssets.title, `%${q}%`),
-        ilike(forSaleAssets.brand, `%${q}%`),
-        ilike(forSaleAssets.model, `%${q}%`)
-      )
-    )
-  }
-
-  if (category && category !== "all") {
-    conditions.push(eq(forSaleAssets.category, category))
-  }
-
-  if (status && status !== "all") {
-    conditions.push(eq(forSaleAssets.status, status))
-  }
-
-  if (managed === "yes") {
-    conditions.push(sql`${forSaleAssets.managedAssetPrice} IS NOT NULL`)
-  } else if (managed === "no") {
-    conditions.push(sql`${forSaleAssets.managedAssetPrice} IS NULL`)
-  }
-
-  const whereClause = conditions.length > 0 ? and(...conditions) : undefined
-
-  const assets = await db
-    .select()
-    .from(forSaleAssets)
-    .where(whereClause)
-    .orderBy(desc(forSaleAssets.updatedAt))
-
-  const [totalResult] = await db.select({ count: sql<number>`count(*)::int` }).from(forSaleAssets)
-  const [liveResult] = await db.select({ count: sql<number>`count(*)::int` }).from(forSaleAssets).where(eq(forSaleAssets.status, "Live"))
-  const [underOfferResult] = await db.select({ count: sql<number>`count(*)::int` }).from(forSaleAssets).where(eq(forSaleAssets.status, "UnderOffer"))
-  const [managedResult] = await db.select({ count: sql<number>`count(*)::int` }).from(forSaleAssets).where(sql`${forSaleAssets.managedAssetPrice} IS NOT NULL`)
-
-  const stats = {
-    total: totalResult?.count || 0,
-    live: liveResult?.count || 0,
-    underOffer: underOfferResult?.count || 0,
-    withManagedPrice: managedResult?.count || 0,
-  }
+  const { assets, stats } = await getAdminForSaleList({ q, category, status, managed })
 
   const formatPrice = (price: string | null) => {
     if (!price) return " - "

@@ -6,18 +6,32 @@ import { FileText, Filter } from "lucide-react"
 import { db } from "@/lib/db"
 import { auditLogs } from "@/lib/db/schema"
 import { desc } from "drizzle-orm"
+import { getDemoSafeAccessibleSections, getDemoSafeCurrentUser } from "../demo-safe-admin"
 
 export const dynamic = 'force-dynamic'
 
 export default async function AuditLogsPage() {
-  const logs = await db
-    .select()
-    .from(auditLogs)
-    .orderBy(desc(auditLogs.createdAt))
-    .limit(100)
+  const [currentUser, accessibleSections] = await Promise.all([
+    getDemoSafeCurrentUser(),
+    getDemoSafeAccessibleSections(),
+  ])
+
+  let logs: any[] = []
+  try {
+    logs = await db
+      .select()
+      .from(auditLogs)
+      .orderBy(desc(auditLogs.createdAt))
+      .limit(100)
+  } catch (error) {
+    console.error("Error loading audit logs:", error)
+  }
 
   return (
-    <AdminLayout>
+    <AdminLayout
+      user={currentUser ? { email: currentUser.email, role: currentUser.role } : null}
+      accessibleSections={accessibleSections}
+    >
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">

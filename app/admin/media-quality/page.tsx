@@ -9,6 +9,7 @@ import { AlertTriangle, ImageOff, Image as ImageIcon, Check, ExternalLink } from
 import Link from "next/link"
 import { analyzeImages, getPrimaryImage, normalizeImageUrl } from "@/lib/media-utils"
 import Image from "next/image"
+import { getDemoSafeAccessibleSections, getDemoSafeCurrentUser } from "../demo-safe-admin"
 
 interface MediaIssue {
   id: string
@@ -28,6 +29,11 @@ export default async function MediaQualityPage({
   const resolvedSearchParams = await searchParams
   const categoryFilter = resolvedSearchParams.category || 'all'
   const issueFilter = resolvedSearchParams.issue || 'all'
+
+  const [currentUser, accessibleSections] = await Promise.all([
+    getDemoSafeCurrentUser(),
+    getDemoSafeAccessibleSections(),
+  ])
   
   const conditions = []
   if (categoryFilter !== 'all') {
@@ -35,17 +41,29 @@ export default async function MediaQualityPage({
   }
   conditions.push(eq(inventory.isPublished, true))
   
-  const items = await db
-    .select({
-      id: inventory.id,
-      title: inventory.title,
-      category: inventory.category,
-      slug: inventory.slug,
-      images: inventory.images
-    })
-    .from(inventory)
-    .where(conditions.length > 0 ? and(...conditions) : undefined)
-    .orderBy(desc(inventory.createdAt))
+  let items: {
+    id: string
+    title: string
+    category: string
+    slug: string | null
+    images: unknown
+  }[] = []
+
+  try {
+    items = await db
+      .select({
+        id: inventory.id,
+        title: inventory.title,
+        category: inventory.category,
+        slug: inventory.slug,
+        images: inventory.images
+      })
+      .from(inventory)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(inventory.createdAt))
+  } catch (error) {
+    console.error("Error loading media quality inventory:", error)
+  }
   
   const issues: MediaIssue[] = []
   let noImagesCount = 0
@@ -106,7 +124,10 @@ export default async function MediaQualityPage({
   }
   
   return (
-    <AdminLayout>
+    <AdminLayout
+      user={currentUser ? { email: currentUser.email, role: currentUser.role } : null}
+      accessibleSections={accessibleSections}
+    >
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>

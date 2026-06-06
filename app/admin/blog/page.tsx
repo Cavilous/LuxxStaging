@@ -12,6 +12,7 @@ import { SearchFilterBar } from "@/components/admin/search-filter-bar"
 import { FilterSelect } from "@/components/admin/filter-select"
 import { Pagination } from "@/components/admin/pagination"
 import { deleteBlogPost } from "@/lib/blog-actions"
+import { getDemoSafeAccessibleSections, getDemoSafeCurrentUser } from "../demo-safe-admin"
 
 export const dynamic = 'force-dynamic'
 
@@ -50,30 +51,46 @@ export default async function AdminBlogPage({
 
   const whereClause = conditions.length > 0 ? and(...conditions) : undefined
 
-  const [totalCountResult] = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(blogPosts)
-    .where(whereClause)
-  const totalCount = totalCountResult?.count || 0
+  const [currentUser, accessibleSections] = await Promise.all([
+    getDemoSafeCurrentUser(),
+    getDemoSafeAccessibleSections(),
+  ])
 
-  const posts = await db
-    .select()
-    .from(blogPosts)
-    .where(whereClause)
-    .orderBy(
-      sortColumn === "title" ? (sortOrder === "asc" ? asc(blogPosts.title) : desc(blogPosts.title)) :
-      sortOrder === "asc" ? asc(blogPosts.createdAt) : desc(blogPosts.createdAt)
-    )
-    .limit(itemsPerPage)
-    .offset((page - 1) * itemsPerPage)
+  let totalCount = 0
+  let posts: any[] = []
+  let categories: { category: string | null }[] = []
 
-  const categories = await db
-    .selectDistinct({ category: blogPosts.category })
-    .from(blogPosts)
-    .where(sql`${blogPosts.category} IS NOT NULL`)
+  try {
+    const [totalCountResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(blogPosts)
+      .where(whereClause)
+    totalCount = totalCountResult?.count || 0
+
+    posts = await db
+      .select()
+      .from(blogPosts)
+      .where(whereClause)
+      .orderBy(
+        sortColumn === "title" ? (sortOrder === "asc" ? asc(blogPosts.title) : desc(blogPosts.title)) :
+        sortOrder === "asc" ? asc(blogPosts.createdAt) : desc(blogPosts.createdAt)
+      )
+      .limit(itemsPerPage)
+      .offset((page - 1) * itemsPerPage)
+
+    categories = await db
+      .selectDistinct({ category: blogPosts.category })
+      .from(blogPosts)
+      .where(sql`${blogPosts.category} IS NOT NULL`)
+  } catch (error) {
+    console.error("Error loading blog admin data:", error)
+  }
 
   return (
-    <AdminLayout>
+    <AdminLayout
+      user={currentUser ? { email: currentUser.email, role: currentUser.role } : null}
+      accessibleSections={accessibleSections}
+    >
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
