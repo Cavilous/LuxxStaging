@@ -687,13 +687,13 @@
   @media (hover: none), (pointer: coarse) {
     .fleet-grid .car-brand-glow {
       display: block !important;
-      opacity: 0.24 !important;
+      opacity: 0.06 !important;
       width: 138%;
       height: 138%;
       transform: translate3d(-50%, -50%, 0) scale(1) !important;
-      transition: none !important;
+      transition: opacity 280ms ease !important;
       contain: paint;
-      will-change: auto;
+      will-change: opacity;
       background: radial-gradient(
         circle at center,
         rgba(var(--brand-glow-rgb), 0.18) 0 16%,
@@ -706,7 +706,7 @@
     .fleet-grid .car-card.logo-scroll-visible .car-brand-glow {
       opacity: 0.24 !important;
       transform: translate3d(-50%, -50%, 0) scale(1) !important;
-      transition: none !important;
+      transition: opacity 280ms ease !important;
     }
 
     .fleet-grid .car-brand-glow::before {
@@ -716,13 +716,13 @@
           rgba(255, 255, 255, 0.22) 0%,
           rgba(var(--brand-glow-rgb), 0.2) 45%,
           rgba(255, 255, 255, 0.18) 100%
-        ) !important;
+      ) !important;
       background-blend-mode: normal !important;
       filter: none !important;
-      opacity: 0.18 !important;
+      opacity: 0.06 !important;
       transform: rotate(20deg) !important;
       transform-origin: center !important;
-      transition: none !important;
+      transition: opacity 280ms ease !important;
       -webkit-mask-size: min(89%, 398px) auto !important;
       mask-size: min(89%, 398px) auto !important;
       backface-visibility: hidden;
@@ -731,7 +731,7 @@
     .fleet-grid .car-card.logo-scroll-visible .car-brand-glow::before {
       opacity: 0.18 !important;
       transform: rotate(20deg) !important;
-      transition: none !important;
+      transition: opacity 280ms ease !important;
     }
 
     .fleet-grid .car-brand-glow::after {
@@ -3146,9 +3146,6 @@
 
     .luxx-card-shine,
     .luxx-card-shine::before,
-    .fleet-grid .car-brand-glow,
-    .fleet-grid .car-brand-glow::before,
-    .fleet-grid .car-brand-glow::after,
     .luxx-brand-shortcut,
     .luxx-brand-shortcut::before,
     .luxx-glimmer-panel::before,
@@ -3175,24 +3172,21 @@
       will-change: auto;
     }
 
-    .fleet-grid .car-brand-glow,
-    .fleet-grid .car-card:hover .car-brand-glow,
-    .fleet-grid .car-card:focus-within .car-brand-glow {
-      opacity: 0;
-      filter: none;
-      will-change: auto;
-    }
-
-    .fleet-grid .car-brand-glow::before,
-    .fleet-grid .car-card:hover .car-brand-glow::before,
-    .fleet-grid .car-card:focus-within .car-brand-glow::before,
-    .fleet-grid .car-brand-glow::after,
-    .fleet-grid .car-card:hover .car-brand-glow::after,
-    .fleet-grid .car-card:focus-within .car-brand-glow::after,
     .luxx-brand-shortcut,
     .luxx-brand-shortcut::before {
       transform: none;
       will-change: auto;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fleet-grid .car-brand-glow,
+    .fleet-grid .car-brand-glow::before,
+    .fleet-grid .car-brand-glow::after {
+      opacity: 0 !important;
+      transition: none !important;
+      transform: none !important;
+      will-change: auto !important;
     }
   }
 }

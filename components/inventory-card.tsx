@@ -185,12 +185,7 @@ export function InventoryCard({
     if (!brandLogo || !card || typeof window === "undefined") return
 
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    const mobileLike =
-      window.matchMedia("(hover: none)").matches ||
-      window.matchMedia("(pointer: coarse)").matches ||
-      window.matchMedia("(max-width: 768px)").matches
-
-    if (mobileLike || reduceMotion || !("IntersectionObserver" in window)) return
+    if (reduceMotion || !("IntersectionObserver" in window)) return
 
     const observer = new IntersectionObserver(
       ([entry]) => {
