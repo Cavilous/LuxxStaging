@@ -6,6 +6,7 @@ import { db } from "@/lib/db"
 import { opsTasks } from "@/lib/db/schema"
 import { getCurrentUser } from "@/lib/auth-helpers"
 import { canUserAccessSection } from "@/lib/role-permissions-actions"
+import { ensureOpsTaskStorage } from "@/lib/ops-task-storage"
 
 const TASK_TYPES = ["daily", "social_outreach"] as const
 const TASK_STATUSES = ["open", "in_progress", "completed"] as const
@@ -45,6 +46,13 @@ async function requireTaskAccess() {
   const canAccessTasks = await canUserAccessSection("tasks")
   if (!canAccessTasks) {
     return { error: "You do not have access to the tasks section." }
+  }
+
+  try {
+    await ensureOpsTaskStorage()
+  } catch (error) {
+    console.error("Error preparing ops task storage:", error)
+    return { error: "Task storage is not active yet. Apply the ops task migration and try again." }
   }
 
   return { currentUser }

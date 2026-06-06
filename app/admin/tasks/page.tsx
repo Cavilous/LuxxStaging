@@ -6,6 +6,7 @@ import { db } from "@/lib/db"
 import { adminUsers, opsTasks } from "@/lib/db/schema"
 import { getCurrentUser } from "@/lib/auth-helpers"
 import { canUserAccessSection, getUserAccessibleSections } from "@/lib/role-permissions-actions"
+import { ensureOpsTaskStorage } from "@/lib/ops-task-storage"
 
 export const dynamic = "force-dynamic"
 
@@ -45,6 +46,14 @@ export default async function AdminTasksPage({
     redirect("/admin")
   }
 
+  let schemaWarning: string | null = null
+  try {
+    await ensureOpsTaskStorage()
+  } catch (error) {
+    console.error("Error preparing ops task storage:", error)
+    schemaWarning = "Task storage is not active yet. Apply scripts/016_create_ops_tasks.sql to the staging database to enable saving daily tasks and social outreach."
+  }
+
   const { status, type, assignee } = resolvedSearchParams
   const conditions = []
 
@@ -67,7 +76,6 @@ export default async function AdminTasksPage({
   const tomorrowStart = new Date(todayStart)
   tomorrowStart.setDate(todayStart.getDate() + 1)
 
-  let schemaWarning: string | null = null
   let activeAdmins: ActiveAdminRow[] = []
   let taskRows: OpsTaskRow[] = []
   let dueTodayResult: CountRow[] = [{ count: 0 }]
