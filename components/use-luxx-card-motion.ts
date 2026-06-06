@@ -48,9 +48,13 @@ export function useLuxxCardMotion<T extends HTMLElement>() {
       const rotateY = ((x - centerX) / centerX) * 5
       const shineX = Math.max(0, Math.min(100, (x / rect.width) * 100))
       const shineY = Math.max(0, Math.min(100, (y / rect.height) * 100))
+      const logoX = Math.max(-8, Math.min(108, (x / rect.width) * 100))
+      const logoY = Math.max(12, Math.min(88, (y / rect.height) * 100))
 
       card.style.setProperty("--luxx-shine-x", `${shineX.toFixed(1)}%`)
       card.style.setProperty("--luxx-shine-y", `${shineY.toFixed(1)}%`)
+      card.style.setProperty("--luxx-logo-x", `${logoX.toFixed(1)}%`)
+      card.style.setProperty("--luxx-logo-y", `${logoY.toFixed(1)}%`)
       card.style.transition = "none"
       card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-8px)`
       animationFrame.current = null
@@ -69,6 +73,8 @@ export function useLuxxCardMotion<T extends HTMLElement>() {
 
     card.style.setProperty("--luxx-shine-x", "50%")
     card.style.setProperty("--luxx-shine-y", "50%")
+    card.style.setProperty("--luxx-logo-x", "50%")
+    card.style.setProperty("--luxx-logo-y", "50%")
     card.style.transition = "transform 280ms cubic-bezier(0.2, 0.8, 0.2, 1), border-color 220ms ease, box-shadow 220ms ease, background 220ms ease"
     card.style.transform = "perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(0)"
   }

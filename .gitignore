@@ -5,6 +5,8 @@
 
 # next.js
 /.next/
+/.next-stale-*/
+/.next-dev.*.log
 /out/
 
 # production
@@ -29,4 +31,5 @@ next-env.d.ts
 # local audit output
 reports/lighthouse-*/
 reports/unlighthouse-*/
+reports/qa-screenshots/
 reports/*.png

@@ -405,6 +405,8 @@
     isolation: isolate;
     --luxx-shine-x: 50%;
     --luxx-shine-y: 50%;
+    --luxx-logo-x: 50%;
+    --luxx-logo-y: 50%;
     transform-style: preserve-3d;
     background:
       linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.018) 42%, rgba(9, 9, 9, 0.94)),
@@ -476,6 +478,8 @@
     --brand-glow-rgb: 232, 137, 12;
     --card-shine-x: var(--luxx-shine-x, 50%);
     --card-shine-y: var(--luxx-shine-y, 50%);
+    --luxx-logo-x: 50%;
+    --luxx-logo-y: 50%;
     isolation: isolate;
     overflow: hidden;
   }
@@ -561,9 +565,9 @@
     transition: opacity 0.2s ease, transform 0.24s ease;
     background: radial-gradient(
       circle at center,
-      rgba(var(--brand-glow-rgb), 0.34) 0 14%,
-      rgba(var(--brand-glow-rgb), 0.18) 30%,
-      rgba(var(--brand-glow-rgb), 0.08) 45%,
+      rgba(var(--brand-glow-rgb), 0.2) 0 14%,
+      rgba(var(--brand-glow-rgb), 0.1) 30%,
+      rgba(var(--brand-glow-rgb), 0.04) 45%,
       transparent 68%
     );
     backface-visibility: hidden;
@@ -576,26 +580,26 @@
     background:
       linear-gradient(
         112deg,
-        rgba(255, 255, 255, 0.04) 0%,
-        rgba(255, 255, 255, 0.42) 16%,
-        rgba(92, 96, 104, 0.34) 28%,
-        rgba(var(--brand-glow-rgb), 0.2) 42%,
-        rgba(247, 249, 252, 0.58) 52%,
-        rgba(122, 126, 132, 0.36) 66%,
-        rgba(255, 255, 255, 0.5) 82%,
-        rgba(255, 255, 255, 0.08) 100%
+        rgba(255, 255, 255, 0.08) 0%,
+        rgba(255, 255, 255, 0.32) 18%,
+        rgba(92, 96, 104, 0.26) 30%,
+        rgba(var(--brand-glow-rgb), 0.16) 44%,
+        rgba(247, 249, 252, 0.42) 54%,
+        rgba(122, 126, 132, 0.28) 66%,
+        rgba(255, 255, 255, 0.34) 84%,
+        rgba(255, 255, 255, 0.1) 100%
       ),
       repeating-linear-gradient(
         102deg,
-        rgba(255, 255, 255, 0.16) 0 1px,
+        rgba(255, 255, 255, 0.1) 0 1px,
         rgba(255, 255, 255, 0.02) 1px 3px,
-        rgba(0, 0, 0, 0.12) 3px 5px
+        rgba(0, 0, 0, 0.08) 3px 5px
       );
     background-blend-mode: screen, overlay;
     background-repeat: no-repeat;
     background-position: center;
     background-size: 140% 140%, 10px 100%;
-    opacity: 0.26;
+    opacity: 0.18;
     transform: rotate(20deg) scale(1.04);
     transform-origin: center;
     transition: opacity 0.2s ease, transform 0.24s ease;
@@ -613,7 +617,7 @@
   .fleet-grid .car-card:hover .car-brand-glow::before,
   .fleet-grid .car-card:focus-within .car-brand-glow::before,
   .fleet-grid .car-card.logo-cooldown .car-brand-glow::before {
-    opacity: 0.32;
+    opacity: 0.24;
     transform: rotate(20deg) scale(1.07);
   }
 
@@ -626,19 +630,19 @@
     opacity: 0;
     transform: rotate(20deg) scale(1.08);
     transform-origin: center;
-    transition: opacity 0.24s ease, transform 0.32s ease;
+    transition: opacity 0.16s ease, transform 0.24s ease, background-position 80ms linear;
     background: linear-gradient(
       104deg,
-      transparent 0 31%,
-      rgba(var(--brand-glow-rgb), 0.2) 43%,
-      rgba(255, 255, 255, 0.74) 49%,
-      rgba(255, 244, 211, 0.5) 52%,
-      rgba(var(--brand-glow-rgb), 0.22) 57%,
-      transparent 69% 100%
+      transparent 0 28%,
+      rgba(var(--brand-glow-rgb), 0.18) 39%,
+      rgba(255, 255, 255, 0.78) 47%,
+      rgba(255, 244, 211, 0.62) 51%,
+      rgba(var(--brand-glow-rgb), 0.24) 58%,
+      transparent 70% 100%
     );
     background-repeat: no-repeat;
-    background-size: 40% 150%;
-    background-position: 50% center;
+    background-size: 46% 170%;
+    background-position: var(--luxx-logo-x, 50%) var(--luxx-logo-y, 50%);
     filter: none;
     mix-blend-mode: screen;
     -webkit-mask-image: var(--brand-logo);
@@ -649,20 +653,21 @@
     mask-position: center;
     -webkit-mask-size: min(82%, 560px) auto;
     mask-size: min(82%, 560px) auto;
-    display: none;
+    display: block;
+    will-change: background-position, opacity;
   }
 
   .fleet-grid .car-card:hover .car-brand-glow::after,
   .fleet-grid .car-card:focus-within .car-brand-glow::after,
   .fleet-grid .car-card.logo-cooldown .car-brand-glow::after {
-    opacity: 0;
+    opacity: 0.82;
     transform: rotate(20deg) scale(1.06);
   }
 
   .fleet-grid .car-card:hover .car-brand-glow,
   .fleet-grid .car-card:focus-within .car-brand-glow,
   .fleet-grid .car-card.logo-cooldown .car-brand-glow {
-    opacity: 0.68;
+    opacity: 0.4;
     transform: translate3d(-50%, -50%, 0) scale(1);
     will-change: opacity, transform;
   }
@@ -684,10 +689,29 @@
     transform: rotate(20deg) scale(1.1);
   }
 
+  @keyframes luxxMobileLogoSweep {
+    0% {
+      opacity: 0;
+      background-position: -34% 50%;
+    }
+    18% {
+      opacity: 0.64;
+    }
+    74% {
+      opacity: 0.52;
+      background-position: 128% 50%;
+    }
+    100% {
+      opacity: 0.34;
+      background-position: 128% 50%;
+    }
+  }
+
   @media (hover: none), (pointer: coarse) {
     .fleet-grid .car-brand-glow {
       display: block !important;
-      opacity: 0.06 !important;
+      z-index: 3;
+      opacity: 0.12 !important;
       width: 138%;
       height: 138%;
       transform: translate3d(-50%, -50%, 0) scale(1) !important;
@@ -696,15 +720,16 @@
       will-change: opacity;
       background: radial-gradient(
         circle at center,
-        rgba(var(--brand-glow-rgb), 0.18) 0 16%,
-        rgba(var(--brand-glow-rgb), 0.07) 42%,
+        rgba(var(--brand-glow-rgb), 0.06) 0 16%,
+        rgba(var(--brand-glow-rgb), 0.025) 42%,
         transparent 70%
       ) !important;
       backface-visibility: hidden;
+      mix-blend-mode: screen;
     }
 
     .fleet-grid .car-card.logo-scroll-visible .car-brand-glow {
-      opacity: 0.24 !important;
+      opacity: 0.74 !important;
       transform: translate3d(-50%, -50%, 0) scale(1) !important;
       transition: opacity 280ms ease !important;
     }
@@ -719,31 +744,35 @@
       ) !important;
       background-blend-mode: normal !important;
       filter: none !important;
-      opacity: 0.06 !important;
+      opacity: 0.2 !important;
       transform: rotate(20deg) !important;
       transform-origin: center !important;
       transition: opacity 280ms ease !important;
-      -webkit-mask-size: min(89%, 398px) auto !important;
-      mask-size: min(89%, 398px) auto !important;
+      -webkit-mask-size: min(96%, 460px) auto !important;
+      mask-size: min(96%, 460px) auto !important;
       backface-visibility: hidden;
     }
 
     .fleet-grid .car-card.logo-scroll-visible .car-brand-glow::before {
-      opacity: 0.18 !important;
+      opacity: 0.66 !important;
       transform: rotate(20deg) !important;
       transition: opacity 280ms ease !important;
     }
 
     .fleet-grid .car-brand-glow::after {
-      display: none !important;
-      opacity: 0 !important;
+      display: block !important;
+      opacity: 0;
       transform: rotate(20deg) !important;
       transform-origin: center !important;
-      transition: none !important;
+      transition: opacity 280ms ease !important;
+      background-position: -34% 50%;
+      background-size: 48% 165% !important;
     }
 
     .fleet-grid .car-card.logo-scroll-visible .car-brand-glow::after {
-      display: none !important;
+      display: block !important;
+      opacity: 0.42;
+      animation: luxxMobileLogoSweep 1.15s cubic-bezier(0.16, 1, 0.3, 1) both;
     }
   }
 

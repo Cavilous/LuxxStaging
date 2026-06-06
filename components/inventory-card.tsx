@@ -237,6 +237,8 @@ export function InventoryCard({
   const cardStyle = {
     "--luxx-shine-x": "50%",
     "--luxx-shine-y": "50%",
+    "--luxx-logo-x": "50%",
+    "--luxx-logo-y": "50%",
     ...(brandLogoStyle || {}),
   } as CSSProperties
 
