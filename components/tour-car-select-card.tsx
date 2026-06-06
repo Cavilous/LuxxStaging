@@ -74,6 +74,7 @@ export function TourCarSelectCard({
     "--luxx-shine-y": "50%",
     "--luxx-logo-x": "50%",
     "--luxx-logo-y": "50%",
+    "--mobile-logo-glimmer-x": "50%",
     ...(brandLogoStyle || {}),
   } as CSSProperties
 

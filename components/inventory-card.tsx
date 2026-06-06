@@ -185,31 +185,73 @@ export function InventoryCard({
     if (!brandLogo || !card || typeof window === "undefined") return
 
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    const mobileLike =
+      window.matchMedia("(hover: none)").matches ||
+      window.matchMedia("(pointer: coarse)").matches ||
+      window.matchMedia("(max-width: 768px)").matches
     if (reduceMotion || !("IntersectionObserver" in window)) return
+
+    let isVisible = false
+    let animationFrame: number | null = null
+
+    const updateMobileLogoGlimmer = () => {
+      animationFrame = null
+      if (!isVisible) return
+
+      const rect = card.getBoundingClientRect()
+      const viewportHeight = Math.max(window.innerHeight || 1, 1)
+      if (rect.bottom < 0 || rect.top > viewportHeight) {
+        isVisible = false
+        card.classList.remove("logo-scroll-visible")
+        return
+      }
+
+      const centerY = rect.top + rect.height * 0.5
+      const progress = Math.max(0, Math.min(1, centerY / viewportHeight))
+      const glimmerX = Math.round((1 - progress) * 100)
+      card.style.setProperty("--mobile-logo-glimmer-x", `${glimmerX}%`)
+    }
+
+    const requestMobileLogoGlimmerUpdate = () => {
+      if (!mobileLike || animationFrame !== null) return
+      animationFrame = window.requestAnimationFrame(updateMobileLogoGlimmer)
+    }
 
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry?.isIntersecting && entry.intersectionRatio >= 0.08) {
+          isVisible = true
           card.classList.add("logo-scroll-visible")
+          requestMobileLogoGlimmerUpdate()
         } else {
+          isVisible = false
           card.classList.remove("logo-scroll-visible")
         }
       },
       {
         rootMargin: "0px 0px -8% 0px",
-        threshold: [0, 0.08],
+        threshold: [0, 0.08, 0.22, 0.55],
       }
     )
 
     card.dataset.logoScrollBound = "1"
+    card.style.setProperty("--mobile-logo-glimmer-x", "50%")
     observer.observe(card)
+    window.addEventListener("scroll", requestMobileLogoGlimmerUpdate, { passive: true })
+    window.addEventListener("resize", requestMobileLogoGlimmerUpdate, { passive: true })
+    requestMobileLogoGlimmerUpdate()
 
     return () => {
+      if (animationFrame !== null) {
+        window.cancelAnimationFrame(animationFrame)
+      }
       observer.disconnect()
+      window.removeEventListener("scroll", requestMobileLogoGlimmerUpdate)
+      window.removeEventListener("resize", requestMobileLogoGlimmerUpdate)
       card.classList.remove("logo-scroll-visible")
       delete card.dataset.logoScrollBound
     }
-  }, [brandLogo])
+  }, [brandLogo, cardRef])
 
   useEffect(() => {
     if (!showDiscountTiers) return
@@ -239,6 +281,7 @@ export function InventoryCard({
     "--luxx-shine-y": "50%",
     "--luxx-logo-x": "50%",
     "--luxx-logo-y": "50%",
+    "--mobile-logo-glimmer-x": "50%",
     ...(brandLogoStyle || {}),
   } as CSSProperties
 

@@ -689,49 +689,32 @@
     transform: rotate(20deg) scale(1.1);
   }
 
-  @keyframes luxxMobileLogoSweep {
-    0% {
-      opacity: 0;
-      background-position: -34% 50%;
-    }
-    18% {
-      opacity: 0.64;
-    }
-    74% {
-      opacity: 0.52;
-      background-position: 128% 50%;
-    }
-    100% {
-      opacity: 0.34;
-      background-position: 128% 50%;
-    }
-  }
-
   @media (hover: none), (pointer: coarse) {
     .fleet-grid .car-brand-glow {
       display: block !important;
       z-index: 3;
-      opacity: 0.12 !important;
+      opacity: 0 !important;
       width: 138%;
       height: 138%;
       transform: translate3d(-50%, -50%, 0) scale(1) !important;
-      transition: opacity 280ms ease !important;
+      transition: opacity 320ms ease !important;
       contain: paint;
       will-change: opacity;
-      background: radial-gradient(
-        circle at center,
-        rgba(var(--brand-glow-rgb), 0.06) 0 16%,
-        rgba(var(--brand-glow-rgb), 0.025) 42%,
-        transparent 70%
-      ) !important;
+      background: none !important;
       backface-visibility: hidden;
       mix-blend-mode: screen;
     }
 
     .fleet-grid .car-card.logo-scroll-visible .car-brand-glow {
-      opacity: 0.74 !important;
+      opacity: 0.5 !important;
       transform: translate3d(-50%, -50%, 0) scale(1) !important;
-      transition: opacity 280ms ease !important;
+      transition: opacity 320ms ease !important;
+      background: radial-gradient(
+        circle at center,
+        rgba(var(--brand-glow-rgb), 0.28) 0 18%,
+        rgba(var(--brand-glow-rgb), 0.12) 44%,
+        transparent 70%
+      ) !important;
     }
 
     .fleet-grid .car-brand-glow::before {
@@ -744,35 +727,52 @@
       ) !important;
       background-blend-mode: normal !important;
       filter: none !important;
-      opacity: 0.2 !important;
+      opacity: 0 !important;
       transform: rotate(20deg) !important;
       transform-origin: center !important;
-      transition: opacity 280ms ease !important;
-      -webkit-mask-size: min(96%, 460px) auto !important;
-      mask-size: min(96%, 460px) auto !important;
+      transition: opacity 320ms ease !important;
+      -webkit-mask-size: min(89%, 398px) auto !important;
+      mask-size: min(89%, 398px) auto !important;
       backface-visibility: hidden;
     }
 
     .fleet-grid .car-card.logo-scroll-visible .car-brand-glow::before {
-      opacity: 0.66 !important;
+      opacity: 0.44 !important;
       transform: rotate(20deg) !important;
-      transition: opacity 280ms ease !important;
+      transition: opacity 320ms ease !important;
     }
 
     .fleet-grid .car-brand-glow::after {
       display: block !important;
-      opacity: 0;
+      opacity: 0 !important;
       transform: rotate(20deg) !important;
       transform-origin: center !important;
       transition: opacity 280ms ease !important;
-      background-position: -34% 50%;
-      background-size: 48% 165% !important;
+      background:
+        linear-gradient(
+          90deg,
+          transparent 0%,
+          transparent calc(var(--mobile-logo-glimmer-x, 50%) - 22%),
+          rgba(var(--brand-glow-rgb), 0.28) calc(var(--mobile-logo-glimmer-x, 50%) - 10%),
+          rgba(255, 255, 255, 0.72) var(--mobile-logo-glimmer-x, 50%),
+          rgba(255, 244, 211, 0.38) calc(var(--mobile-logo-glimmer-x, 50%) + 10%),
+          transparent calc(var(--mobile-logo-glimmer-x, 50%) + 22%),
+          transparent 100%
+        ) !important;
+      background-size: 100% 100% !important;
+      background-position: center !important;
+      filter: none !important;
+      mix-blend-mode: screen;
+      -webkit-mask-size: min(89%, 398px) auto !important;
+      mask-size: min(89%, 398px) auto !important;
     }
 
     .fleet-grid .car-card.logo-scroll-visible .car-brand-glow::after {
       display: block !important;
-      opacity: 0.42;
-      animation: luxxMobileLogoSweep 1.15s cubic-bezier(0.16, 1, 0.3, 1) both;
+      opacity: 0.58 !important;
+      transform: rotate(20deg) !important;
+      transition: opacity 280ms ease !important;
+      animation: none !important;
     }
   }
 
