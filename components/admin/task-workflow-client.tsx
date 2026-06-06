@@ -62,6 +62,19 @@ export interface TaskAdminOption {
   role: string
 }
 
+interface DailyInstagramTracker {
+  title: string
+  assignedToLabel: string
+  todayComplete: boolean
+  completedDaysLast14: number
+  currentStreak: number
+  days: {
+    dateKey: string
+    label: string
+    completed: boolean
+  }[]
+}
+
 interface TaskWorkflowClientProps {
   tasks: TaskWorkflowItem[]
   admins: TaskAdminOption[]
@@ -83,6 +96,7 @@ interface TaskWorkflowClientProps {
     assignee: string
   }
   schemaWarning?: string | null
+  dailyInstagramTracker?: DailyInstagramTracker
 }
 
 const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
@@ -226,6 +240,7 @@ export function TaskWorkflowClient({
   stats,
   activeFilters,
   schemaWarning,
+  dailyInstagramTracker,
 }: TaskWorkflowClientProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -374,6 +389,72 @@ export function TaskWorkflowClient({
           </CardContent>
         </Card>
       </div>
+
+      {dailyInstagramTracker && (
+        <Card className="bg-[#111111] border-[#333333] cut-corner">
+          <CardContent className="p-4">
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+              <div className="space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge className="cut-corner border-pink-500/30 bg-pink-500/10 text-pink-200">
+                    <Instagram className="mr-1 h-3.5 w-3.5" />
+                    Daily Instagram
+                  </Badge>
+                  <Badge className={cn(
+                    "cut-corner",
+                    dailyInstagramTracker.todayComplete
+                      ? "border-green-500/30 bg-green-500/15 text-green-300"
+                      : "border-[#ECAC36]/30 bg-[#ECAC36]/15 text-[#ECAC36]"
+                  )}>
+                    {dailyInstagramTracker.todayComplete ? "Done today" : "Due today"}
+                  </Badge>
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-white">{dailyInstagramTracker.title}</h2>
+                  <p className="mt-1 text-sm text-gray-400">
+                    Assigned to {dailyInstagramTracker.assignedToLabel}. Post 1 IG Story and leave 5 comments on Miami-based IG pages.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-[auto_auto]">
+                <div className="rounded-md border border-[#333333] bg-[#0A0A0A] px-4 py-3">
+                  <p className="text-xs uppercase tracking-wide text-gray-500">14-day done</p>
+                  <p className="text-2xl font-bold text-white">{dailyInstagramTracker.completedDaysLast14}/14</p>
+                </div>
+                <div className="rounded-md border border-[#333333] bg-[#0A0A0A] px-4 py-3">
+                  <p className="text-xs uppercase tracking-wide text-gray-500">Current streak</p>
+                  <p className="text-2xl font-bold text-white">{dailyInstagramTracker.currentStreak}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-7 gap-2 xl:grid-cols-[repeat(14,minmax(0,1fr))]">
+              {dailyInstagramTracker.days.map((day) => (
+                <div
+                  key={day.dateKey}
+                  className={cn(
+                    "rounded-md border px-2 py-2 text-center text-xs",
+                    day.completed
+                      ? "border-green-500/30 bg-green-500/15 text-green-200"
+                      : "border-[#333333] bg-[#0A0A0A] text-gray-500"
+                  )}
+                  title={`${day.label}: ${day.completed ? "Completed" : "Not completed"}`}
+                >
+                  <div className="mx-auto mb-1 flex h-5 w-5 items-center justify-center rounded-full">
+                    {day.completed ? (
+                      <CheckCircle2 className="h-4 w-4 text-green-300" />
+                    ) : (
+                      <CircleDot className="h-3.5 w-3.5 text-gray-600" />
+                    )}
+                  </div>
+                  <span>{day.label}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(320px,420px)_1fr]">
         <Card className="bg-[#111111] border-[#333333] cut-corner">

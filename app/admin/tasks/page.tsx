@@ -25,6 +25,145 @@ type ActiveAdminRow = {
   role: string
 }
 type CountRow = { count: number }
+type DailyTrackerDay = {
+  dateKey: string
+  label: string
+  completed: boolean
+}
+type DailyInstagramTracker = {
+  title: string
+  assignedToLabel: string
+  todayComplete: boolean
+  completedDaysLast14: number
+  currentStreak: number
+  days: DailyTrackerDay[]
+}
+
+const MEGAN_DAILY_OUTREACH_TITLE = "Megan: IG story + 5 Miami comments"
+const MEGAN_DAILY_OUTREACH_DESCRIPTION =
+  "Daily Instagram checklist: post 1 Luxx Miami IG Story, then leave 5 thoughtful comments on Miami-based IG pages. Focus on restaurants, nightlife, real estate, concierge, yacht, auto, and luxury lifestyle accounts. Add proof links or screenshot notes before marking complete."
+
+function startOfLocalDay(date = new Date()) {
+  const day = new Date(date)
+  day.setHours(0, 0, 0, 0)
+  return day
+}
+
+function addDays(date: Date, days: number) {
+  const next = new Date(date)
+  next.setDate(next.getDate() + days)
+  return next
+}
+
+function dateKey(date: Date) {
+  return date.toISOString().slice(0, 10)
+}
+
+function formatTrackerLabel(date: Date) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+  }).format(date)
+}
+
+function findMeganAdmin(activeAdmins: ActiveAdminRow[]) {
+  return activeAdmins.find((admin) => {
+    const haystack = `${admin.name || ""} ${admin.email || ""}`.toLowerCase()
+    return haystack.includes("megan")
+  })
+}
+
+function isMeganDailyOutreachTask(task: Pick<OpsTaskRow, "title">) {
+  return task.title === MEGAN_DAILY_OUTREACH_TITLE
+}
+
+async function ensureMeganDailyOutreachTask(assignedTo: string | null) {
+  const todayStart = startOfLocalDay()
+  const tomorrowStart = addDays(todayStart, 1)
+
+  const existingToday = await db
+    .select({ id: opsTasks.id })
+    .from(opsTasks)
+    .where(and(
+      eq(opsTasks.title, MEGAN_DAILY_OUTREACH_TITLE),
+      gte(opsTasks.dueDate, todayStart),
+      lt(opsTasks.dueDate, tomorrowStart)
+    ))
+    .limit(1)
+
+  if (existingToday.length > 0) {
+    return
+  }
+
+  await db.insert(opsTasks).values({
+    title: MEGAN_DAILY_OUTREACH_TITLE,
+    description: MEGAN_DAILY_OUTREACH_DESCRIPTION,
+    taskType: "social_outreach",
+    status: "open",
+    priority: "high",
+    dueDate: new Date(todayStart.getTime() + 12 * 60 * 60 * 1000),
+    assignedTo,
+    createdBy: assignedTo,
+    targetName: "Miami-based Instagram pages",
+    targetCategory: "Miami social outreach",
+    platform: "Instagram",
+    notes: "Checklist: 1 IG Story posted + 5 comments left. Add proof before marking complete.",
+  })
+}
+
+async function getDailyInstagramTracker(assignedToLabel: string): Promise<DailyInstagramTracker> {
+  const todayStart = startOfLocalDay()
+  const rangeStart = addDays(todayStart, -13)
+
+  let rows: Pick<OpsTaskRow, "dueDate" | "status" | "completedAt">[] = []
+  try {
+    rows = await db
+      .select({
+        dueDate: opsTasks.dueDate,
+        status: opsTasks.status,
+        completedAt: opsTasks.completedAt,
+      })
+      .from(opsTasks)
+      .where(and(
+        eq(opsTasks.title, MEGAN_DAILY_OUTREACH_TITLE),
+        gte(opsTasks.dueDate, rangeStart)
+      ))
+  } catch (error) {
+    console.error("Error loading Megan daily Instagram tracker:", error)
+  }
+
+  const completedByDate = new Map<string, boolean>()
+  for (const row of rows) {
+    if (!row.dueDate) continue
+    const key = dateKey(startOfLocalDay(row.dueDate))
+    completedByDate.set(key, completedByDate.get(key) || row.status === "completed" || !!row.completedAt)
+  }
+
+  const days = Array.from({ length: 14 }, (_, index) => {
+    const day = addDays(rangeStart, index)
+    const key = dateKey(day)
+    return {
+      dateKey: key,
+      label: formatTrackerLabel(day),
+      completed: completedByDate.get(key) || false,
+    }
+  })
+
+  let currentStreak = 0
+  for (let index = days.length - 1; index >= 0; index--) {
+    if (!days[index].completed) break
+    currentStreak++
+  }
+
+  return {
+    title: MEGAN_DAILY_OUTREACH_TITLE,
+    assignedToLabel,
+    todayComplete: days[days.length - 1]?.completed || false,
+    completedDaysLast14: days.filter((day) => day.completed).length,
+    currentStreak,
+    days,
+  }
+}
 
 export default async function AdminTasksPage({
   searchParams,
@@ -103,6 +242,20 @@ export default async function AdminTasksPage({
     console.error("Error loading task assignees:", error)
   }
 
+  const meganAdmin = findMeganAdmin(activeAdmins)
+  const meganAssignedToLabel = meganAdmin?.name || meganAdmin?.email || "Megan"
+
+  if (!schemaWarning) {
+    try {
+      await ensureMeganDailyOutreachTask(meganAdmin?.id || null)
+    } catch (error) {
+      console.error("Error ensuring Megan daily Instagram task:", error)
+      schemaWarning = "Daily task storage is active, but the Megan Instagram task could not be refreshed automatically."
+    }
+  }
+
+  const dailyInstagramTracker = await getDailyInstagramTracker(meganAssignedToLabel)
+
   try {
     ;[
       taskRows,
@@ -171,7 +324,7 @@ export default async function AdminTasksPage({
       priority: task.priority,
       dueDate: task.dueDate?.toISOString() ?? null,
       assignedTo: task.assignedTo,
-      assignedToName: assigneeRecord?.name || assigneeRecord?.email || null,
+      assignedToName: assigneeRecord?.name || assigneeRecord?.email || (isMeganDailyOutreachTask(task) ? meganAssignedToLabel : null),
       createdBy: task.createdBy,
       createdByName: creatorRecord?.name || creatorRecord?.email || null,
       targetName: task.targetName,
@@ -219,6 +372,7 @@ export default async function AdminTasksPage({
           assignee: assignee || "all",
         }}
         schemaWarning={schemaWarning}
+        dailyInstagramTracker={dailyInstagramTracker}
       />
     </AdminLayout>
   )
