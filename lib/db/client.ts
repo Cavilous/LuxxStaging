@@ -5,9 +5,9 @@ import { eq, and, ilike, desc, asc, inArray } from 'drizzle-orm'
 import { sql } from 'drizzle-orm'
 import * as bcrypt from 'bcryptjs'
 import * as jwt from 'jsonwebtoken'
+import { isAllowedAdminRole } from '../auth-utils'
 
 const SESSION_DURATION = 60 * 60 * 24 * 7
-const ALLOWED_ADMIN_ROLES = ['super_admin', 'admin', 'moderator'] as const
 
 function getJWTSecret() {
   const secret = process.env.JWT_SECRET
@@ -254,7 +254,7 @@ export function createDbClient() {
             .where(eq(adminUsers.id, decoded.userId))
             .limit(1)
           
-          if (!user[0] || !user[0].isActive || !ALLOWED_ADMIN_ROLES.includes(user[0].role as any)) {
+          if (!user[0] || !user[0].isActive || !isAllowedAdminRole(user[0].role)) {
             return { 
               data: { session: null },
               error: null
@@ -312,7 +312,7 @@ export function createDbClient() {
           }
         }
         
-        if (!user.isActive || !ALLOWED_ADMIN_ROLES.includes(user.role as any)) {
+        if (!user.isActive || !isAllowedAdminRole(user.role)) {
           return { 
             data: { user: null, session: null }, 
             error: { message: 'Account access denied' }

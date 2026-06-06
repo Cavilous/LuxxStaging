@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { MoreHorizontal, Edit, Trash2, UserCheck, UserX, Loader2, Eye, EyeOff } from "lucide-react"
 import { updateAdminUser, deleteAdminUser, toggleUserStatus } from "@/lib/user-actions"
+import { ADMIN_ROLE_OPTIONS, normalizeAdminRole } from "@/lib/auth-utils"
 import { toast } from "sonner"
 
 interface UserActionsProps {
@@ -46,8 +47,9 @@ export function UserActions({ user, isCurrentUser = false }: UserActionsProps) {
     name: user.name || "",
     email: user.email,
     password: "",
-    role: user.role,
+    role: normalizeAdminRole(user.role) || "ops",
   })
+  const selectedRole = ADMIN_ROLE_OPTIONS.find((role) => role.value === formData.role)
 
   const handleUpdate = () => {
     if (!formData.email) {
@@ -217,18 +219,28 @@ export function UserActions({ user, isCurrentUser = false }: UserActionsProps) {
               <Label className="text-gray-300">Role {isCurrentUser && <span className="text-gray-500">(cannot change own role)</span>}</Label>
               <Select 
                 value={formData.role} 
-                onValueChange={(value) => setFormData({ ...formData, role: value })}
+                onValueChange={(value) => {
+                  const role = normalizeAdminRole(value)
+                  if (role) {
+                    setFormData({ ...formData, role })
+                  }
+                }}
                 disabled={isCurrentUser}
               >
                 <SelectTrigger className={`bg-[#222] border-[#333] text-white cut-corner ${isCurrentUser ? 'opacity-50 cursor-not-allowed' : ''}`}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-[#222] border-[#333]">
-                  <SelectItem value="super_admin">Super Admin</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="moderator">Moderator</SelectItem>
+                  {ADMIN_ROLE_OPTIONS.map((role) => (
+                    <SelectItem key={role.value} value={role.value}>
+                      {role.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+              {selectedRole && (
+                <p className="mt-2 text-xs text-gray-500">{selectedRole.description}</p>
+              )}
             </div>
           </div>
           <DialogFooter>

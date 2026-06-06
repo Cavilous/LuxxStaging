@@ -16,6 +16,9 @@ export default async function VendorsPage() {
       isActive: vendors.isActive,
       contactName: vendors.contactName,
       contactEmail: vendors.contactEmail,
+      contactPhone: vendors.contactPhone,
+      website: vendors.website,
+      metadata: vendors.metadata,
       createdAt: vendors.createdAt,
     })
     .from(vendors)

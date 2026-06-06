@@ -8,6 +8,7 @@ import { LayoutDashboard, Car, Anchor, Home, Plane, Settings, Users, FileText, L
 import { Button } from "@/components/ui/button"
 import { adminSignOut } from "@/lib/admin-actions"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { getAdminRoleLabel, normalizeAdminRole } from "@/lib/auth-utils"
 
 interface NavItem {
   name: string
@@ -30,6 +31,7 @@ interface ExtendedNavItem extends NavItem {
 
 const navigationGroups: (ExtendedNavItem | NavGroup)[] = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard, sectionId: "dashboard" },
+  { name: "Tasks", href: "/admin/tasks", icon: ClipboardList, sectionId: "tasks" },
   {
     name: "Rental Inventory",
     icon: Package,
@@ -38,7 +40,7 @@ const navigationGroups: (ExtendedNavItem | NavGroup)[] = [
       { name: "Yachts", href: "/admin/yachts", icon: Anchor, sectionId: "yachts" },
       { name: "Houses", href: "/admin/houses", icon: Home, sectionId: "houses" },
       { name: "Jets", href: "/admin/jets", icon: Plane, sectionId: "jets" },
-      { name: "Vendors", href: "/admin/vendors", icon: Building2, sectionId: "vendors" },
+      { name: "Suppliers", href: "/admin/vendors", icon: Building2, sectionId: "vendors" },
     ]
   },
   {
@@ -140,7 +142,8 @@ export default function AdminLayout({ children, user, accessibleSections }: Admi
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const pathname = usePathname()
   
-  const isSuperAdmin = user?.role === 'super_admin'
+  const normalizedRole = normalizeAdminRole(user?.role)
+  const isSuperAdmin = normalizedRole === 'super_admin'
   const filteredNavigation = filterNavigationByRole(navigationGroups, isSuperAdmin, accessibleSections)
   
   // Pre-compute which groups should be open based on active path
@@ -264,7 +267,7 @@ export default function AdminLayout({ children, user, accessibleSections }: Admi
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-white truncate">{user?.email || "Admin User"}</p>
-                <p className="text-xs text-gray-400">{isSuperAdmin ? 'Super Admin' : 'Admin'}</p>
+                <p className="text-xs text-gray-400">{getAdminRoleLabel(normalizedRole)}</p>
               </div>
             </div>
             <Button

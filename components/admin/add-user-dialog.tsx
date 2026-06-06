@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog"
 import { Plus, Loader2, Eye, EyeOff } from "lucide-react"
 import { createAdminUser } from "@/lib/user-actions"
+import { ADMIN_ROLE_OPTIONS } from "@/lib/auth-utils"
 import { toast } from "sonner"
 
 export function AddUserDialog() {
@@ -28,8 +29,9 @@ export function AddUserDialog() {
     name: "",
     email: "",
     password: "",
-    role: "admin",
+    role: "ops",
   })
+  const selectedRole = ADMIN_ROLE_OPTIONS.find((role) => role.value === formData.role)
 
   const handleSubmit = () => {
     if (!formData.email || !formData.password) {
@@ -54,7 +56,7 @@ export function AddUserDialog() {
         toast.error(result.error)
       } else {
         toast.success("User created successfully")
-        setFormData({ name: "", email: "", password: "", role: "admin" })
+        setFormData({ name: "", email: "", password: "", role: "ops" })
         setOpen(false)
         router.refresh()
       }
@@ -71,9 +73,9 @@ export function AddUserDialog() {
       </DialogTrigger>
       <DialogContent className="bg-[#111111] border-[#333333] text-white">
         <DialogHeader>
-          <DialogTitle className="text-white">Add New Admin User</DialogTitle>
+          <DialogTitle className="text-white">Add Team User</DialogTitle>
           <DialogDescription className="text-gray-400">
-            Create a new administrator account. They will be able to log in immediately.
+            Create a team member account with login credentials and role-based dashboard access.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
@@ -122,11 +124,16 @@ export function AddUserDialog() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-[#222] border-[#333]">
-                <SelectItem value="super_admin">Super Admin</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
-                <SelectItem value="moderator">Moderator</SelectItem>
+                {ADMIN_ROLE_OPTIONS.map((role) => (
+                  <SelectItem key={role.value} value={role.value}>
+                    {role.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
+            {selectedRole && (
+              <p className="mt-2 text-xs text-gray-500">{selectedRole.description}</p>
+            )}
           </div>
         </div>
         <DialogFooter>

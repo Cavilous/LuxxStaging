@@ -3,10 +3,18 @@
 import { db } from "@/lib/db"
 import { adminUsers } from "@/lib/db/schema"
 import { revalidatePath } from "next/cache"
-import { eq } from "drizzle-orm"
+import { and, eq } from "drizzle-orm"
 import bcrypt from "bcryptjs"
-import { getCurrentUser, isLastSuperAdmin, countSuperAdmins } from "@/lib/auth-helpers"
-import { isSuperAdmin } from "@/lib/auth-utils"
+import { getCurrentUser, isLastSuperAdmin } from "@/lib/auth-helpers"
+import { isSuperAdmin, normalizeAdminRole } from "@/lib/auth-utils"
+
+type AdminUserRecord = typeof adminUsers.$inferSelect
+type SafeAdminUser = Omit<AdminUserRecord, "passwordHash">
+
+function toSafeAdminUser(user: AdminUserRecord): SafeAdminUser {
+  const { passwordHash: _passwordHash, ...safeUser } = user
+  return safeUser
+}
 
 async function requireSuperAdminAccess() {
   const currentUser = await getCurrentUser()
@@ -32,7 +40,8 @@ export async function createAdminUser(formData: FormData) {
     const name = formData.get("name") as string
     const email = formData.get("email") as string
     const password = formData.get("password") as string
-    const role = formData.get("role") as string
+    const roleInput = formData.get("role") as string
+    const role = roleInput ? normalizeAdminRole(roleInput) : null
 
     if (!email || !password) {
       return { error: "Email and password are required" }
@@ -42,7 +51,7 @@ export async function createAdminUser(formData: FormData) {
       return { error: "Password must be at least 8 characters" }
     }
 
-    if (role && !['admin', 'super_admin'].includes(role)) {
+    if (roleInput && !role) {
       return { error: "Invalid role specified" }
     }
 
@@ -64,13 +73,13 @@ export async function createAdminUser(formData: FormData) {
         name: name || null,
         email: email.toLowerCase(),
         passwordHash,
-        role: role || "admin",
+        role: role || "ops",
         isActive: true,
       })
       .returning()
 
     revalidatePath("/admin/users")
-    return { success: true, data: newUser }
+    return { success: true, data: toSafeAdminUser(newUser) }
   } catch (error) {
     console.error("Error creating admin user:", error)
     return { error: error instanceof Error ? error.message : "Failed to create user" }
@@ -88,7 +97,8 @@ export async function updateAdminUser(id: string, formData: FormData) {
     const name = formData.get("name") as string
     const email = formData.get("email") as string
     const password = formData.get("password") as string
-    const role = formData.get("role") as string
+    const roleInput = formData.get("role") as string
+    const role = roleInput ? normalizeAdminRole(roleInput) : null
 
     if (!email) {
       return { error: "Email is required" }
@@ -104,18 +114,19 @@ export async function updateAdminUser(id: string, formData: FormData) {
       return { error: "User not found" }
     }
 
-    if (role && !['admin', 'super_admin'].includes(role)) {
+    if (roleInput && !role) {
       return { error: "Invalid role specified" }
     }
 
-    if (targetUser.role === 'super_admin' && role === 'admin') {
+    if (targetUser.role === 'super_admin' && role && role !== 'super_admin') {
       const isLast = await isLastSuperAdmin(id)
       if (isLast) {
         return { error: "Cannot demote the last super admin. Create another super admin first." }
       }
     }
 
-    if (id === currentUser.userId && role && role !== currentUser.role) {
+    const currentUserRole = normalizeAdminRole(currentUser.role)
+    if (id === currentUser.userId && role && role !== currentUserRole) {
       return { error: "You cannot change your own role" }
     }
 
@@ -150,7 +161,7 @@ export async function updateAdminUser(id: string, formData: FormData) {
       .returning()
 
     revalidatePath("/admin/users")
-    return { success: true, data: updatedUser }
+    return { success: true, data: toSafeAdminUser(updatedUser) }
   } catch (error) {
     console.error("Error updating admin user:", error)
     return { error: error instanceof Error ? error.message : "Failed to update user" }
@@ -224,8 +235,15 @@ export async function toggleUserStatus(id: string) {
     }
 
     if (user.role === 'super_admin' && user.isActive) {
-      const isLast = await isLastSuperAdmin(id)
-      if (isLast) {
+      const activeSuperAdmins = await db
+        .select({ id: adminUsers.id })
+        .from(adminUsers)
+        .where(and(
+          eq(adminUsers.role, 'super_admin'),
+          eq(adminUsers.isActive, true)
+        ))
+
+      if (activeSuperAdmins.length === 1) {
         return { error: "Cannot deactivate the last active super admin" }
       }
     }
@@ -240,7 +258,7 @@ export async function toggleUserStatus(id: string) {
       .returning()
 
     revalidatePath("/admin/users")
-    return { success: true, data: updatedUser }
+    return { success: true, data: toSafeAdminUser(updatedUser) }
   } catch (error) {
     console.error("Error toggling user status:", error)
     return { error: "Failed to toggle user status" }
@@ -264,7 +282,7 @@ export async function getAdminUserById(id: string) {
       return { error: "User not found" }
     }
 
-    return { success: true, data: user }
+    return { success: true, data: toSafeAdminUser(user) }
   } catch (error) {
     console.error("Error fetching admin user:", error)
     return { error: "Failed to fetch user" }

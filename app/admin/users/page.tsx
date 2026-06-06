@@ -8,10 +8,39 @@ import { desc } from "drizzle-orm"
 import { AddUserDialog } from "@/components/admin/add-user-dialog"
 import { UserActions } from "@/components/admin/user-actions"
 import { getCurrentUser } from "@/lib/auth-helpers"
-import { isSuperAdmin } from "@/lib/auth-utils"
+import { getAdminRoleLabel, isSuperAdmin, normalizeAdminRole } from "@/lib/auth-utils"
 import { redirect } from "next/navigation"
 
 export const dynamic = 'force-dynamic'
+
+function getRoleAvatarClass(role: string) {
+  switch (normalizeAdminRole(role)) {
+    case "super_admin":
+      return "bg-purple-500/20 text-purple-400"
+    case "admin":
+      return "bg-blue-500/20 text-blue-400"
+    case "marketing":
+      return "bg-rose-500/20 text-rose-400"
+    case "ops":
+    default:
+      return "bg-[#ECAC36]/20 text-[#ECAC36]"
+  }
+}
+
+function getRoleBadgeClass(role: string) {
+  switch (normalizeAdminRole(role)) {
+    case "super_admin":
+      return "bg-purple-500/10 text-purple-400 border-purple-500/50"
+    case "admin":
+      return "bg-blue-500/10 text-blue-400 border-blue-500/50"
+    case "marketing":
+      return "bg-rose-500/10 text-rose-400 border-rose-500/50"
+    case "ops":
+      return "bg-[#ECAC36]/10 text-[#ECAC36] border-[#ECAC36]/50"
+    default:
+      return "bg-gray-500/10 text-gray-400 border-gray-500/50"
+  }
+}
 
 export default async function UsersPage() {
   const currentUser = await getCurrentUser()
@@ -45,8 +74,8 @@ export default async function UsersPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-white">Admin Users</h1>
-            <p className="text-gray-400">Manage administrator accounts and permissions</p>
+            <h1 className="text-3xl font-bold text-white">Team Users</h1>
+            <p className="text-gray-400">Manage team login accounts, roles, and active status</p>
           </div>
           <AddUserDialog />
         </div>
@@ -60,7 +89,7 @@ export default async function UsersPage() {
               <div className="text-center py-12">
                 <UsersIcon className="h-16 w-16 text-gray-600 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold text-white mb-2">No users found</h3>
-                <p className="text-gray-400 mb-6">Add administrators to manage the system.</p>
+                <p className="text-gray-400 mb-6">Add team members to manage operational workflows.</p>
                 <AddUserDialog />
               </div>
             ) : (
@@ -81,12 +110,8 @@ export default async function UsersPage() {
                       <tr key={user.id} className="border-b border-[#333333] hover:bg-[#0A0A0A]">
                         <td className="py-4 px-4">
                           <div className="flex items-center gap-3">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                              user.role === 'super_admin' ? 'bg-purple-500/20' : 'bg-[#ECAC36]/20'
-                            }`}>
-                              <Shield className={`h-5 w-5 ${
-                                user.role === 'super_admin' ? 'text-purple-400' : 'text-[#ECAC36]'
-                              }`} />
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${getRoleAvatarClass(user.role)}`}>
+                              <Shield className="h-5 w-5" />
                             </div>
                             <div>
                               <div className="font-medium text-white">{user.name || 'Unnamed User'}</div>
@@ -98,14 +123,8 @@ export default async function UsersPage() {
                         </td>
                         <td className="py-4 px-4 text-gray-300">{user.email}</td>
                         <td className="py-4 px-4">
-                          <Badge className={
-                            user.role === 'super_admin' 
-                              ? "bg-purple-500/10 text-purple-400 border-purple-500/50" 
-                              : user.role === 'admin'
-                              ? "bg-blue-500/10 text-blue-400 border-blue-500/50"
-                              : "bg-gray-500/10 text-gray-400 border-gray-500/50"
-                          }>
-                            {user.role === 'super_admin' ? 'Super Admin' : user.role === 'admin' ? 'Admin' : 'Moderator'}
+                          <Badge className={getRoleBadgeClass(user.role)}>
+                            {getAdminRoleLabel(user.role)}
                           </Badge>
                         </td>
                         <td className="py-4 px-4">

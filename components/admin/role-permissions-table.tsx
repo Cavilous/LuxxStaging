@@ -53,11 +53,12 @@ export function RolePermissionsTable({ role, sections, permissions }: RolePermis
   }
 
   const groupedSections = {
+    operations: sections.filter(s => ["dashboard", "tasks", "social-outreach"].includes(s.id)),
     inventory: sections.filter(s => ["cars", "yachts", "houses", "jets", "for-sale"].includes(s.id)),
     tours: sections.filter(s => ["tour-routes", "tour-addons"].includes(s.id)),
     repair: sections.filter(s => s.id.startsWith("repair-")),
     content: sections.filter(s => ["blog", "home-page"].includes(s.id)),
-    system: sections.filter(s => ["dashboard", "services", "users", "audit", "import"].includes(s.id)),
+    system: sections.filter(s => ["services", "users", "audit", "import"].includes(s.id)),
   }
 
   const renderSection = (section: Section) => {
@@ -124,6 +125,13 @@ export function RolePermissionsTable({ role, sections, permissions }: RolePermis
 
   return (
     <div className="space-y-6">
+      <div className="space-y-4">
+        <h4 className="text-sm font-semibold text-[#ECAC36] uppercase tracking-wide">Operations</h4>
+        <div className="space-y-2">
+          {groupedSections.operations.map(renderSection)}
+        </div>
+      </div>
+
       <div className="space-y-4">
         <h4 className="text-sm font-semibold text-[#ECAC36] uppercase tracking-wide">Inventory</h4>
         <div className="space-y-2">

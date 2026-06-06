@@ -12,12 +12,12 @@ export default function CreateVendorPage() {
           className="inline-flex items-center gap-2 text-gray-400 hover:text-white mb-6 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to Vendors
+          Back to Suppliers / Partners
         </Link>
 
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">Add Vendor</h1>
-          <p className="text-gray-400">Configure a new vendor with optional API integration</p>
+          <h1 className="text-4xl font-bold text-white mb-2">Add Supplier / Partner</h1>
+          <p className="text-gray-400">Create a supplier profile with contacts, terms, and optional import integration</p>
         </div>
 
         <VendorFormClient />

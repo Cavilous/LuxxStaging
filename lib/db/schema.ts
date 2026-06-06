@@ -6,7 +6,7 @@ export const adminUsers = pgTable('admin_users', {
   email: text('email').notNull().unique(),
   passwordHash: text('password_hash'),
   name: text('name'),
-  role: text('role').notNull().default('admin'),
+  role: text('role').notNull().default('ops'),
   isActive: boolean('is_active').notNull().default(true),
   lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
@@ -205,6 +205,51 @@ export const vendors = pgTable('vendors', {
   activeIdx: index('idx_vendors_active').on(table.isActive),
   featuredIdx: index('idx_vendors_featured').on(table.isFeatured),
   apiTypeIdx: index('idx_vendors_api_type').on(table.apiType),
+}))
+
+export const opsTaskLists = pgTable('ops_task_lists', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  title: text('title').notNull(),
+  description: text('description'),
+  listType: text('list_type').notNull().default('daily'),
+  createdBy: uuid('created_by').references(() => adminUsers.id),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  listTypeIdx: index('idx_ops_task_lists_type').on(table.listType),
+  createdByIdx: index('idx_ops_task_lists_created_by').on(table.createdBy),
+}))
+
+export const opsTasks = pgTable('ops_tasks', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  listId: uuid('list_id').references(() => opsTaskLists.id, { onDelete: 'set null' }),
+  title: text('title').notNull(),
+  description: text('description'),
+  taskType: text('task_type').notNull().default('daily'),
+  status: text('status').notNull().default('open'),
+  priority: text('priority').notNull().default('normal'),
+  dueDate: timestamp('due_date', { withTimezone: true }),
+  assignedTo: uuid('assigned_to').references(() => adminUsers.id),
+  createdBy: uuid('created_by').references(() => adminUsers.id),
+  relatedVendorId: uuid('related_vendor_id').references(() => vendors.id, { onDelete: 'set null' }),
+  targetName: text('target_name'),
+  targetUrl: text('target_url'),
+  targetCategory: text('target_category'),
+  platform: text('platform'),
+  proofUrl: text('proof_url'),
+  notes: text('notes'),
+  completedAt: timestamp('completed_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  taskTypeIdx: index('idx_ops_tasks_type').on(table.taskType),
+  statusIdx: index('idx_ops_tasks_status').on(table.status),
+  priorityIdx: index('idx_ops_tasks_priority').on(table.priority),
+  dueDateIdx: index('idx_ops_tasks_due_date').on(table.dueDate),
+  assignedToIdx: index('idx_ops_tasks_assigned_to').on(table.assignedTo),
+  createdByIdx: index('idx_ops_tasks_created_by').on(table.createdBy),
+  relatedVendorIdx: index('idx_ops_tasks_related_vendor').on(table.relatedVendorId),
+  typeStatusDueIdx: index('idx_ops_tasks_type_status_due').on(table.taskType, table.status, table.dueDate),
 }))
 
 export const bookings = pgTable('bookings', {

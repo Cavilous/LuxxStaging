@@ -214,7 +214,7 @@ export function VendorImportClient({ vendorId, vendorName, apiType }: { vendorId
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-white font-semibold">Fetch Listings from {apiType === 'hostaway' ? 'HostAway' : apiType}</h3>
-              <p className="text-gray-400 text-sm mt-1">Pull available listings from {vendorName}&apos;s API to review before importing</p>
+              <p className="text-gray-400 text-sm mt-1">Pull available listings from {vendorName}&apos;s supplier API to review before importing</p>
             </div>
             <Button
               onClick={handleFetch}
@@ -251,7 +251,7 @@ export function VendorImportClient({ vendorId, vendorName, apiType }: { vendorId
       {listings && listings.length === 0 && (
         <Card className="bg-[#111111] border-[#333333] cut-corner">
           <CardContent className="text-center py-12">
-            <p className="text-gray-400">No listings found from this vendor&apos;s API.</p>
+            <p className="text-gray-400">No listings found from this supplier&apos;s API.</p>
           </CardContent>
         </Card>
       )}

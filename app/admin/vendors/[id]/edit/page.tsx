@@ -38,12 +38,12 @@ export default async function EditVendorPage({ params }: { params: Promise<{ id:
           className="inline-flex items-center gap-2 text-gray-400 hover:text-white mb-6 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to Vendors
+          Back to Suppliers / Partners
         </Link>
 
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">Edit Vendor</h1>
-          <p className="text-gray-400">Update vendor details and API configuration</p>
+          <h1 className="text-4xl font-bold text-white mb-2">Edit Supplier / Partner</h1>
+          <p className="text-gray-400">Update supplier CRM details, contacts, terms, and API configuration</p>
         </div>
 
         <VendorFormClient vendor={vendorForClient} />

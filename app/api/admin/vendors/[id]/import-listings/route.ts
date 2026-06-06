@@ -39,11 +39,11 @@ export async function POST(
       .limit(1)
 
     if (!vendor) {
-      return NextResponse.json({ error: 'Vendor not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Supplier not found' }, { status: 404 })
     }
 
     if (vendor.apiType !== 'hostaway') {
-      return NextResponse.json({ error: 'Vendor does not have a HostAway API configured' }, { status: 400 })
+      return NextResponse.json({ error: 'Supplier does not have a HostAway API configured' }, { status: 400 })
     }
 
     const credentials = vendor.apiCredentials as { accountId?: string; apiKey?: string }

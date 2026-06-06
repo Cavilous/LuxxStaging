@@ -1,5 +1,7 @@
 export const CMS_SECTIONS = [
   { id: "dashboard", name: "Dashboard", description: "Main admin dashboard" },
+  { id: "tasks", name: "Tasks", description: "Manage daily operations tasks" },
+  { id: "social-outreach", name: "Social Outreach", description: "Track human social outreach workflows" },
   { id: "cars", name: "Cars", description: "Manage car inventory" },
   { id: "yachts", name: "Yachts", description: "Manage yacht inventory" },
   { id: "houses", name: "Houses/Villas", description: "Manage house/villa inventory" },

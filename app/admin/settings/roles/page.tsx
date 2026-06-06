@@ -2,13 +2,19 @@ import AdminLayout from "@/components/admin-layout"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Shield, ShieldAlert, Settings } from "lucide-react"
 import { getCurrentUser } from "@/lib/auth-helpers"
-import { isSuperAdmin } from "@/lib/auth-utils"
+import { ADMIN_ROLE_OPTIONS, EDITABLE_ADMIN_ROLE_VALUES, getAdminRoleLabel, isSuperAdmin, type EditableAdminRole } from "@/lib/auth-utils"
 import { redirect } from "next/navigation"
 import { getAllRolePermissions, getUserAccessibleSections } from "@/lib/role-permissions-actions"
 import { CMS_SECTIONS } from "@/lib/cms-sections"
 import { RolePermissionsTable } from "@/components/admin/role-permissions-table"
 
 export const dynamic = 'force-dynamic'
+
+const ROLE_CARD_STYLES: Record<EditableAdminRole, { iconBg: string; iconText: string }> = {
+  admin: { iconBg: "bg-blue-500/20", iconText: "text-blue-400" },
+  ops: { iconBg: "bg-[#ECAC36]/20", iconText: "text-[#ECAC36]" },
+  marketing: { iconBg: "bg-rose-500/20", iconText: "text-rose-400" },
+}
 
 export default async function RoleSettingsPage() {
   const currentUser = await getCurrentUser()
@@ -37,7 +43,12 @@ export default async function RoleSettingsPage() {
   }
 
   const result = await getAllRolePermissions()
-  const permissions = result.success ? result.data : { admin: {} }
+  const permissions = result.success
+    ? result.data
+    : EDITABLE_ADMIN_ROLE_VALUES.reduce((roles, role) => {
+        roles[role] = {}
+        return roles
+      }, {} as Record<EditableAdminRole, Record<string, boolean>>)
 
   return (
     <AdminLayout 
@@ -83,28 +94,35 @@ export default async function RoleSettingsPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-[#111111] border-[#333333]">
-            <CardHeader>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
-                  <Settings className="h-5 w-5 text-blue-400" />
-                </div>
-                <div>
-                  <CardTitle className="text-white">Admin</CardTitle>
-                  <CardDescription className="text-gray-400">
-                    Configure which sections admin users can access. Users section is always restricted.
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <RolePermissionsTable 
-                role="admin"
-                sections={CMS_SECTIONS}
-                permissions={permissions?.admin || {}}
-              />
-            </CardContent>
-          </Card>
+          {EDITABLE_ADMIN_ROLE_VALUES.map((role) => {
+            const roleOption = ADMIN_ROLE_OPTIONS.find((option) => option.value === role)
+            const style = ROLE_CARD_STYLES[role]
+
+            return (
+              <Card key={role} className="bg-[#111111] border-[#333333]">
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-full ${style.iconBg} flex items-center justify-center`}>
+                      <Settings className={`h-5 w-5 ${style.iconText}`} />
+                    </div>
+                    <div>
+                      <CardTitle className="text-white">{getAdminRoleLabel(role)}</CardTitle>
+                      <CardDescription className="text-gray-400">
+                        {roleOption?.description || "Configure dashboard section access for this team role."}
+                      </CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <RolePermissionsTable
+                    role={role}
+                    sections={CMS_SECTIONS}
+                    permissions={permissions?.[role] || {}}
+                  />
+                </CardContent>
+              </Card>
+            )
+          })}
         </div>
 
         <Card className="bg-[#111111] border-[#333333]">
@@ -116,7 +134,7 @@ export default async function RoleSettingsPage() {
               <span className="text-[#ECAC36] font-medium">Users Section:</span> Always restricted to super admins only. This cannot be changed.
             </p>
             <p>
-              <span className="text-[#ECAC36] font-medium">Default Behavior:</span> When no permission is set for a section, admins have access by default (except Users).
+              <span className="text-[#ECAC36] font-medium">Default Behavior:</span> Admins default to all sections except Users. Ops and Marketing default to their team-specific sections.
             </p>
             <p>
               <span className="text-[#ECAC36] font-medium">Changes Take Effect:</span> Permission changes apply immediately when users navigate to a new page.

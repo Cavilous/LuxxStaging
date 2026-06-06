@@ -4,6 +4,60 @@ import { vendors } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
 import { requireApiAuth } from '@/lib/auth-helpers'
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value)
+}
+
+function cleanString(value: unknown) {
+  if (value === null || value === undefined) return null
+  const cleaned = String(value).trim()
+  return cleaned || null
+}
+
+function cleanInstagramHandle(value: unknown) {
+  const cleaned = cleanString(value)
+  return cleaned ? cleaned.replace(/^@+/, '') : null
+}
+
+function cleanTags(value: unknown) {
+  const values = Array.isArray(value) ? value : typeof value === 'string' ? value.split(',') : []
+  return values
+    .map((tag) => cleanString(tag))
+    .filter((tag): tag is string => !!tag)
+}
+
+function cleanRating(value: unknown) {
+  if (value === null || value === undefined || value === '') return null
+  const rating = Number(value)
+  if (!Number.isFinite(rating)) return null
+  return Math.min(5, Math.max(1, Math.round(rating)))
+}
+
+function cleanBoolean(value: unknown) {
+  return value === true || value === 'true'
+}
+
+function normalizeSupplierMetadata(metadata: unknown, existing: Record<string, unknown> = {}) {
+  const input = isRecord(metadata) ? metadata : {}
+  const next: Record<string, unknown> = { ...existing, ...input }
+  const has = (key: string) => Object.prototype.hasOwnProperty.call(input, key)
+
+  if (has('supplierType') || has('categoryLabel')) {
+    next.supplierType = cleanString(input.supplierType ?? input.categoryLabel)
+  }
+  if (has('instagramHandle')) next.instagramHandle = cleanInstagramHandle(input.instagramHandle)
+  if (has('serviceArea')) next.serviceArea = cleanString(input.serviceArea)
+  if (has('internalRating')) next.internalRating = cleanRating(input.internalRating)
+  if (has('preferredSupplier')) next.preferredSupplier = cleanBoolean(input.preferredSupplier)
+  if (has('paymentTerms')) next.paymentTerms = cleanString(input.paymentTerms)
+  if (has('commissionNotes')) next.commissionNotes = cleanString(input.commissionNotes)
+  if (has('source')) next.source = cleanString(input.source)
+  if (has('tags')) next.tags = cleanTags(input.tags)
+  if (has('privateNotes')) next.privateNotes = cleanString(input.privateNotes)
+
+  return next
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -23,7 +77,7 @@ export async function GET(
       .limit(1)
 
     if (!vendor) {
-      return NextResponse.json({ error: 'Vendor not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Supplier not found' }, { status: 404 })
     }
 
     const redacted = {
@@ -39,8 +93,8 @@ export async function GET(
 
     return NextResponse.json(redacted)
   } catch (error) {
-    console.error('Error fetching vendor:', error)
-    return NextResponse.json({ error: 'Failed to fetch vendor' }, { status: 500 })
+    console.error('Error fetching supplier:', error)
+    return NextResponse.json({ error: 'Failed to fetch supplier' }, { status: 500 })
   }
 }
 
@@ -57,7 +111,7 @@ export async function PUT(
 
   try {
     const body = await request.json()
-    const { name, category, description, contactName, contactEmail, contactPhone, website, apiType, apiCredentials, isActive } = body
+    const { name, category, description, contactName, contactEmail, contactPhone, website, apiType, apiCredentials, isActive, metadata } = body
 
     const updateData: Record<string, any> = { updatedAt: new Date() }
     if (name !== undefined) updateData.name = name
@@ -70,6 +124,19 @@ export async function PUT(
     if (apiType !== undefined) updateData.apiType = apiType
     if (apiCredentials !== undefined) updateData.apiCredentials = apiCredentials
     if (isActive !== undefined) updateData.isActive = isActive
+    if (metadata !== undefined) {
+      const [existingVendor] = await db
+        .select({ metadata: vendors.metadata })
+        .from(vendors)
+        .where(eq(vendors.id, id))
+        .limit(1)
+
+      if (!existingVendor) {
+        return NextResponse.json({ error: 'Supplier not found' }, { status: 404 })
+      }
+
+      updateData.metadata = normalizeSupplierMetadata(metadata, isRecord(existingVendor.metadata) ? existingVendor.metadata : {})
+    }
 
     const [vendor] = await db
       .update(vendors)
@@ -78,7 +145,7 @@ export async function PUT(
       .returning()
 
     if (!vendor) {
-      return NextResponse.json({ error: 'Vendor not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Supplier not found' }, { status: 404 })
     }
 
     const redacted = {
@@ -94,8 +161,8 @@ export async function PUT(
 
     return NextResponse.json(redacted)
   } catch (error) {
-    console.error('Error updating vendor:', error)
-    return NextResponse.json({ error: 'Failed to update vendor' }, { status: 500 })
+    console.error('Error updating supplier:', error)
+    return NextResponse.json({ error: 'Failed to update supplier' }, { status: 500 })
   }
 }
 
@@ -117,12 +184,12 @@ export async function DELETE(
       .returning()
 
     if (!vendor) {
-      return NextResponse.json({ error: 'Vendor not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Supplier not found' }, { status: 404 })
     }
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error deleting vendor:', error)
-    return NextResponse.json({ error: 'Failed to delete vendor' }, { status: 500 })
+    console.error('Error deleting supplier:', error)
+    return NextResponse.json({ error: 'Failed to delete supplier' }, { status: 500 })
   }
 }
