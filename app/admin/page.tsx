@@ -9,6 +9,25 @@ import { getUserAccessibleSections } from "@/lib/role-permissions-actions"
 
 export const dynamic = 'force-dynamic'
 
+const DEFAULT_ADMIN_SECTIONS = [
+  "dashboard",
+  "tasks",
+  "cars",
+  "yachts",
+  "houses",
+  "jets",
+  "for-sale",
+  "vendors",
+  "seo-pages",
+  "blog",
+  "services",
+  "audit",
+  "import",
+  "home-page",
+  "media-quality",
+  "duplicates",
+]
+
 export default async function AdminDashboard() {
   const currentUser = await getCurrentUser()
   
@@ -16,10 +35,23 @@ export default async function AdminDashboard() {
     redirect("/admin/login")
   }
   
-  const accessibleSections = await getUserAccessibleSections()
+  let accessibleSections = DEFAULT_ADMIN_SECTIONS
+  try {
+    const resolvedSections = await getUserAccessibleSections()
+    if (resolvedSections.length > 0) {
+      accessibleSections = resolvedSections
+    }
+  } catch (error) {
+    console.error("Error loading admin sections:", error)
+  }
   
   // Get inventory counts
-  const inventoryCounts = await db.select({ category: inventory.category }).from(inventory)
+  let inventoryCounts: { category: string }[] = []
+  try {
+    inventoryCounts = await db.select({ category: inventory.category }).from(inventory)
+  } catch (error) {
+    console.error("Error loading dashboard inventory counts:", error)
+  }
 
   const counts =
     inventoryCounts?.reduce((acc: any, item: any) => {
