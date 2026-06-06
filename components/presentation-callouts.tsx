@@ -66,10 +66,10 @@ const demoSteps: DemoStep[] = [
     label: "Homepage",
     icon: Home,
     title: "Homepage polish is ready",
-    body: "Hero, featured inventory, and the right-side walkthrough panel are ready for review.",
-    callout: "Start at the hero, then use the right-side walkthrough panel to guide the review.",
-    infoTip: "Use this as the opening proof point: the demo now feels complete from hero to inventory instead of looking like a partial staging page.",
-    note: "Open with the polished first impression: this is the clearest before-and-after moment.",
+    body: "Start on the hero, then scroll down to reveal the page index/table of contents and use it to guide the review.",
+    callout: "Scroll past the hero to reveal the table of contents, then use the walkthrough panel to guide the review.",
+    infoTip: "Use this as the opening proof point: the homepage now has a clear review flow from hero to section index to inventory.",
+    note: "Open with the polished first impression, then scroll once so the table of contents animation is easy to see.",
     href: "/",
     actionLabel: "Open homepage",
     scrollTop: true,
@@ -406,7 +406,20 @@ export function PresentationCallouts() {
                   height: `${spotlight.height}px`,
                 }}
                 aria-hidden="true"
-              />
+              >
+                <span className="luxx-demo-red-marker luxx-demo-red-marker--top">
+                  <ArrowRight className="h-6 w-6" />
+                </span>
+                <span className="luxx-demo-red-marker luxx-demo-red-marker--right">
+                  <ArrowRight className="h-6 w-6" />
+                </span>
+                <span className="luxx-demo-red-marker luxx-demo-red-marker--bottom">
+                  <ArrowRight className="h-6 w-6" />
+                </span>
+                <span className="luxx-demo-red-marker luxx-demo-red-marker--left">
+                  <ArrowRight className="h-6 w-6" />
+                </span>
+              </div>
               <div
                 className={`luxx-demo-pointer luxx-demo-pointer--${spotlight.placement}`}
                 style={{
@@ -526,7 +539,11 @@ export function PresentationCallouts() {
               ))}
             </div>
 
-            <div className="relative overflow-hidden cut-corner border border-white/10 bg-white/[0.04] p-4">
+            <div
+              className={`relative overflow-hidden cut-corner border border-white/10 bg-white/[0.04] p-4 ${
+                active.key === "homepage" ? "luxx-demo-feature-card--homepage" : ""
+              }`}
+            >
               <div className="absolute right-3 top-3 text-[#ECAC36]/30">
                 <ArrowRight className="luxx-callout-arrow h-8 w-8" />
               </div>
@@ -537,7 +554,7 @@ export function PresentationCallouts() {
                 {readySteps.some((step) => step.key === active.key) ? "Ready now" : "Coming in package"}
               </p>
               <h3 className="mb-2 pr-10 text-base font-bold">{active.title}</h3>
-              <p className="text-sm leading-relaxed text-gray-300">{active.body}</p>
+              <p className="luxx-demo-active-body text-sm leading-relaxed text-gray-300">{active.body}</p>
               <div className="luxx-demo-active-tip mt-3 flex gap-2 border border-white/10 bg-black/30 px-3 py-2.5 text-xs leading-relaxed text-gray-300">
                 <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#ECAC36]" />
                 <span>
