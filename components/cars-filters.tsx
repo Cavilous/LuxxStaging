@@ -27,19 +27,19 @@ interface CarsFiltersProps {
 }
 
 const filterButtonClass =
-  "magnetic-hover cut-corner-button h-11 min-w-0 w-full justify-between border border-white/10 bg-white/[0.035] px-3 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_12px_28px_rgba(0,0,0,0.26)] transition-all duration-200 hover:border-[#ECAC36]/50 hover:bg-[#ECAC36]/10 hover:text-white focus-angular md:h-12 md:min-w-[10rem] md:w-auto md:shrink-0 md:px-3.5"
+  "magnetic-hover cut-corner-button h-11 min-w-0 w-full justify-between border border-white/10 bg-white/[0.035] px-3 py-1.5 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_12px_28px_rgba(0,0,0,0.26)] transition-all duration-200 hover:border-[#ECAC36]/50 hover:bg-[#ECAC36]/10 hover:text-white focus-angular md:h-10 md:min-w-[9.25rem] md:w-auto md:shrink-0 md:px-3 md:py-1"
 
 const activeFilterButtonClass =
   "border-[#ECAC36]/70 bg-[#ECAC36]/15 text-[#f3c764] shadow-[inset_0_1px_0_rgba(236,172,54,0.16),0_12px_30px_rgba(0,0,0,0.32)]"
 
 const optionButtonClass =
-  "group flex min-h-11 items-center justify-between gap-2 overflow-hidden border px-3 py-2.5 text-left text-sm font-semibold transition-all duration-200 cut-corner-button focus-angular"
+  "group flex min-h-11 items-center justify-between gap-2 overflow-hidden border px-3 py-2.5 text-left text-sm font-semibold transition-all duration-200 cut-corner-button focus-angular md:min-h-9 md:px-2.5 md:py-2 md:text-[13px]"
 
 const chipButtonClass =
-  "luxx-filter-chip inline-flex h-8 max-w-[13rem] shrink-0 items-center gap-2 border border-[#ECAC36]/35 bg-[#ECAC36]/10 px-3 py-1.5 text-xs font-semibold text-[#ECAC36] transition-all duration-200 cut-corner hover:border-[#ECAC36]/70 hover:bg-[#ECAC36]/20 hover:text-[#f3c764] focus-angular md:max-w-none"
+  "luxx-filter-chip inline-flex h-8 max-w-[13rem] shrink-0 items-center gap-2 border border-[#ECAC36]/35 bg-[#ECAC36]/10 px-3 py-1.5 text-xs font-semibold text-[#ECAC36] transition-all duration-200 cut-corner hover:border-[#ECAC36]/70 hover:bg-[#ECAC36]/20 hover:text-[#f3c764] focus-angular md:h-7 md:max-w-none md:px-2.5 md:py-1"
 
 const filterPanelClass =
-  "mt-3 overflow-hidden border border-[#ECAC36]/25 bg-[#080808]/95 shadow-[0_24px_64px_rgba(0,0,0,0.42),0_0_0_1px_rgba(255,255,255,0.035)] cut-corner-card"
+  "mt-3 overflow-hidden border border-[#ECAC36]/25 bg-[#080808]/95 shadow-[0_24px_64px_rgba(0,0,0,0.42),0_0_0_1px_rgba(255,255,255,0.035)] cut-corner-card md:mt-2"
 
 function formatPrice(value: number): string {
   return `$${value.toLocaleString()}`
@@ -104,8 +104,8 @@ export function CarsFilters({
 
   return (
     <div data-demo="fleet-filters" className="sticky top-0 z-40 border-y border-[#ECAC36]/15 bg-[#050505]/95 backdrop-blur-xl">
-      <div className="container mx-auto px-4 py-3 md:py-4">
-        <div className="border border-white/[0.07] bg-[linear-gradient(180deg,rgba(255,255,255,0.045),rgba(255,255,255,0.018))] px-3 py-3 shadow-[0_18px_44px_rgba(0,0,0,0.28)] cut-corner-card md:px-4">
+      <div className="container mx-auto px-4 py-3 md:py-2">
+        <div className="border border-white/[0.07] bg-[linear-gradient(180deg,rgba(255,255,255,0.045),rgba(255,255,255,0.018))] px-3 py-3 shadow-[0_18px_44px_rgba(0,0,0,0.28)] cut-corner-card md:px-3.5 md:py-2 lg:px-4">
           <div className="luxx-brand-shortcut-rail" aria-label="Quick brand filters">
             <button
               type="button"
@@ -138,10 +138,10 @@ export function CarsFilters({
             })}
           </div>
 
-          <div className="flex flex-col items-center gap-3 text-center">
-            <div className="flex w-full shrink-0 items-center justify-center gap-3">
-              <div className="flex items-center justify-center gap-2.5 text-sm font-semibold uppercase tracking-[0.14em] text-white/90">
-                <span className="flex h-9 w-9 items-center justify-center border border-[#ECAC36]/30 bg-[#ECAC36]/10 text-[#ECAC36] cut-corner">
+          <div className="flex flex-col items-center gap-3 text-center md:flex-row md:flex-wrap md:justify-center md:gap-x-4 md:gap-y-2 md:text-left">
+            <div className="flex w-full shrink-0 items-center justify-center gap-3 md:w-auto md:gap-2">
+              <div className="flex items-center justify-center gap-2.5 text-sm font-semibold uppercase tracking-[0.14em] text-white/90 md:gap-2 md:text-xs md:tracking-[0.12em]">
+                <span className="flex h-9 w-9 items-center justify-center border border-[#ECAC36]/30 bg-[#ECAC36]/10 text-[#ECAC36] cut-corner md:h-8 md:w-8">
                   <SlidersHorizontal className="h-4 w-4" />
                 </span>
                 Fleet Filters
@@ -150,15 +150,15 @@ export function CarsFilters({
                 <button
                   type="button"
                   onClick={clearAll}
-                  className="cut-corner-button border border-[#ECAC36]/30 bg-[#ECAC36]/10 px-3 py-2 text-xs font-semibold text-[#ECAC36] transition-colors hover:border-[#ECAC36]/60 hover:bg-[#ECAC36]/15 hover:text-[#f3c764] focus-angular xl:hidden"
+                  className="cut-corner-button border border-[#ECAC36]/30 bg-[#ECAC36]/10 px-3 py-2 text-xs font-semibold text-[#ECAC36] transition-colors hover:border-[#ECAC36]/60 hover:bg-[#ECAC36]/15 hover:text-[#f3c764] focus-angular md:px-2.5 md:py-1.5 xl:hidden"
                 >
                   Clear All ({activeCount})
                 </button>
               )}
             </div>
 
-            <div className="flex w-full justify-center pb-1 xl:pb-0">
-              <div className="grid w-full max-w-4xl grid-cols-1 gap-2 sm:grid-cols-3 md:flex md:flex-wrap md:items-center md:justify-center md:gap-3">
+            <div className="flex w-full justify-center pb-1 md:w-auto md:pb-0">
+              <div className="grid w-full max-w-4xl grid-cols-1 gap-2 sm:grid-cols-3 md:flex md:max-w-none md:flex-wrap md:items-center md:justify-center md:gap-2">
                 <Button
                   type="button"
                   onClick={() => togglePanel("brand")}
@@ -166,19 +166,19 @@ export function CarsFilters({
                   aria-controls="fleet-brand-panel"
                   className={cn(filterButtonClass, (selectedBrands.length > 0 || openPanel === "brand") && activeFilterButtonClass)}
                 >
-                  <span className="flex min-w-0 items-center gap-2.5">
-                    <Tag className="h-4 w-4 text-[#ECAC36]" />
+                  <span className="flex min-w-0 items-center gap-2.5 md:gap-2">
+                    <Tag className="h-4 w-4 text-[#ECAC36] md:h-3.5 md:w-3.5" />
                     <span className="min-w-0 text-left leading-tight">
-                      <span className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-[#B5B5B5]">
+                      <span className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-[#B5B5B5] md:text-[10px] md:tracking-[0.1em]">
                         Brand
                       </span>
-                      <span className="block truncate text-sm font-semibold">
+                      <span className="block truncate text-sm font-semibold md:text-[13px]">
                         {selectedBrands.length > 0 ? `${selectedBrands.length} selected` : "All makes"}
                       </span>
                     </span>
                   </span>
                   <ChevronDown
-                    className={cn("ml-2 h-4 w-4 text-[#ECAC36] transition-transform", openPanel === "brand" && "rotate-180")}
+                    className={cn("ml-2 h-4 w-4 text-[#ECAC36] transition-transform md:h-3.5 md:w-3.5", openPanel === "brand" && "rotate-180")}
                   />
                 </Button>
 
@@ -189,19 +189,19 @@ export function CarsFilters({
                   aria-controls="fleet-body-panel"
                   className={cn(filterButtonClass, (selectedBodyTypes.length > 0 || openPanel === "body") && activeFilterButtonClass)}
                 >
-                  <span className="flex min-w-0 items-center gap-2.5">
-                    <Car className="h-4 w-4 text-[#ECAC36]" />
+                  <span className="flex min-w-0 items-center gap-2.5 md:gap-2">
+                    <Car className="h-4 w-4 text-[#ECAC36] md:h-3.5 md:w-3.5" />
                     <span className="min-w-0 text-left leading-tight">
-                      <span className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-[#B5B5B5]">
+                      <span className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-[#B5B5B5] md:text-[10px] md:tracking-[0.1em]">
                         Body
                       </span>
-                      <span className="block truncate text-sm font-semibold">
+                      <span className="block truncate text-sm font-semibold md:text-[13px]">
                         {selectedBodyTypes.length > 0 ? `${selectedBodyTypes.length} selected` : "Any style"}
                       </span>
                     </span>
                   </span>
                   <ChevronDown
-                    className={cn("ml-2 h-4 w-4 text-[#ECAC36] transition-transform", openPanel === "body" && "rotate-180")}
+                    className={cn("ml-2 h-4 w-4 text-[#ECAC36] transition-transform md:h-3.5 md:w-3.5", openPanel === "body" && "rotate-180")}
                   />
                 </Button>
 
@@ -210,20 +210,20 @@ export function CarsFilters({
                   onClick={() => togglePanel("price")}
                   aria-expanded={openPanel === "price"}
                   aria-controls="fleet-price-panel"
-                  className={cn(filterButtonClass, "md:min-w-[13.75rem]", (hasCustomPrice || openPanel === "price") && activeFilterButtonClass)}
+                  className={cn(filterButtonClass, "md:min-w-[12.5rem]", (hasCustomPrice || openPanel === "price") && activeFilterButtonClass)}
                   aria-label="Filter by price range"
                 >
-                  <span className="flex min-w-0 items-center gap-2.5">
-                    <DollarSign className="h-4 w-4 text-[#ECAC36]" />
+                  <span className="flex min-w-0 items-center gap-2.5 md:gap-2">
+                    <DollarSign className="h-4 w-4 text-[#ECAC36] md:h-3.5 md:w-3.5" />
                     <span className="min-w-0 text-left leading-tight">
-                      <span className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-[#B5B5B5]">
+                      <span className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-[#B5B5B5] md:text-[10px] md:tracking-[0.1em]">
                         Daily Rate
                       </span>
-                      <span className="block truncate text-sm font-semibold">{priceLabel}</span>
+                      <span className="block truncate text-sm font-semibold md:text-[13px]">{priceLabel}</span>
                     </span>
                   </span>
                   <ChevronDown
-                    className={cn("ml-2 h-4 w-4 text-[#ECAC36] transition-transform", openPanel === "price" && "rotate-180")}
+                    className={cn("ml-2 h-4 w-4 text-[#ECAC36] transition-transform md:h-3.5 md:w-3.5", openPanel === "price" && "rotate-180")}
                   />
                 </Button>
 
@@ -232,7 +232,7 @@ export function CarsFilters({
                     type="button"
                     onClick={clearAll}
                     variant="ghost"
-                    className="magnetic-hover hidden h-12 shrink-0 border border-[#ECAC36]/25 px-3.5 text-[#ECAC36] transition-all duration-200 cut-corner-button hover:border-[#ECAC36]/60 hover:bg-[#ECAC36]/10 hover:text-[#f3c764] xl:inline-flex"
+                    className="magnetic-hover hidden h-10 shrink-0 border border-[#ECAC36]/25 px-3 text-[#ECAC36] transition-all duration-200 cut-corner-button hover:border-[#ECAC36]/60 hover:bg-[#ECAC36]/10 hover:text-[#f3c764] xl:inline-flex"
                   >
                     <X className="h-4 w-4" />
                     Clear All ({activeCount})
@@ -244,15 +244,15 @@ export function CarsFilters({
 
           {openPanel === "brand" && (
             <div id="fleet-brand-panel" className={filterPanelClass}>
-              <div className="border-b border-white/[0.07] p-4">
+              <div className="border-b border-white/[0.07] p-4 md:px-3 md:py-2.5">
                 <div className="flex items-center justify-between gap-3">
-                  <h4 className="font-heading text-sm font-semibold uppercase tracking-[0.12em] text-white">
+                  <h4 className="font-heading text-sm font-semibold uppercase tracking-[0.12em] text-white md:text-xs">
                     Brands
                   </h4>
                   <span className="text-xs text-[#B5B5B5]">{displayBrands.length} available</span>
                 </div>
               </div>
-              <div className="grid max-h-[22rem] grid-cols-1 gap-2 overflow-y-auto p-3 pr-2 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid max-h-[22rem] grid-cols-1 gap-2 overflow-y-auto p-3 pr-2 sm:grid-cols-2 md:max-h-[15rem] md:gap-1.5 md:p-2.5 md:pr-2 lg:grid-cols-4">
                 {displayBrands.map(({ name: brand, count }) => {
                   const isSelected = selectedBrands.includes(brand)
 
@@ -290,12 +290,12 @@ export function CarsFilters({
 
           {openPanel === "body" && (
             <div id="fleet-body-panel" className={filterPanelClass}>
-              <div className="border-b border-white/[0.07] p-4">
-                <h4 className="font-heading text-sm font-semibold uppercase tracking-[0.12em] text-white">
+              <div className="border-b border-white/[0.07] p-4 md:px-3 md:py-2.5">
+                <h4 className="font-heading text-sm font-semibold uppercase tracking-[0.12em] text-white md:text-xs">
                   Body Types
                 </h4>
               </div>
-              <div className="grid grid-cols-2 gap-2 p-3 sm:grid-cols-3 lg:grid-cols-5">
+              <div className="grid grid-cols-2 gap-2 p-3 sm:grid-cols-3 md:gap-1.5 md:p-2.5 lg:grid-cols-5">
                 {displayBodyTypes.map((bodyType) => {
                   const isSelected = selectedBodyTypes.includes(bodyType)
 
@@ -323,15 +323,15 @@ export function CarsFilters({
 
           {openPanel === "price" && (
             <div id="fleet-price-panel" className={filterPanelClass}>
-              <div className="border-b border-white/[0.07] p-4">
+              <div className="border-b border-white/[0.07] p-4 md:px-3 md:py-2.5">
                 <div className="flex items-center justify-between gap-3">
-                  <h4 className="font-heading text-sm font-semibold uppercase tracking-[0.12em] text-white">
+                  <h4 className="font-heading text-sm font-semibold uppercase tracking-[0.12em] text-white md:text-xs">
                     Daily Rate
                   </h4>
                   <span className="text-xs font-semibold text-[#ECAC36]">{priceLabel}</span>
                 </div>
               </div>
-              <div className="mx-auto max-w-full space-y-5 p-4 md:max-w-xl">
+              <div className="mx-auto max-w-full space-y-5 p-4 md:max-w-xl md:space-y-3 md:p-3">
                 <Slider
                   value={filters.priceRange}
                   onValueChange={(value) =>
@@ -340,16 +340,16 @@ export function CarsFilters({
                   max={priceMax}
                   min={0}
                   step={100}
-                  className="py-3 [&_[data-slot=slider-range]]:bg-[#ECAC36] [&_[data-slot=slider-thumb]]:size-5 [&_[data-slot=slider-thumb]]:border-2 [&_[data-slot=slider-thumb]]:border-[#ECAC36] [&_[data-slot=slider-thumb]]:bg-[#080808] [&_[data-slot=slider-track]]:h-1.5 [&_[data-slot=slider-track]]:bg-white/15"
+                  className="py-3 md:py-2 [&_[data-slot=slider-range]]:bg-[#ECAC36] [&_[data-slot=slider-thumb]]:size-5 [&_[data-slot=slider-thumb]]:border-2 [&_[data-slot=slider-thumb]]:border-[#ECAC36] [&_[data-slot=slider-thumb]]:bg-[#080808] [&_[data-slot=slider-track]]:h-1.5 [&_[data-slot=slider-track]]:bg-white/15"
                 />
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="border border-white/10 bg-white/[0.035] px-3 py-2.5 cut-corner">
+                  <div className="border border-white/10 bg-white/[0.035] px-3 py-2.5 cut-corner md:py-2">
                     <span className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-[#B5B5B5]">
                       Min
                     </span>
                     <span className="text-sm font-semibold text-white">{formatPrice(filters.priceRange[0])}</span>
                   </div>
-                  <div className="border border-white/10 bg-white/[0.035] px-3 py-2.5 text-right cut-corner">
+                  <div className="border border-white/10 bg-white/[0.035] px-3 py-2.5 text-right cut-corner md:py-2">
                     <span className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-[#B5B5B5]">
                       Max
                     </span>
@@ -364,8 +364,8 @@ export function CarsFilters({
           )}
 
           {activeCount > 0 && (
-            <div className="mt-3 max-w-full overflow-x-auto pb-1 scrollbar-hide">
-              <div className="flex max-w-full justify-center gap-2 md:flex-wrap md:pb-0">
+            <div className="mt-3 max-w-full overflow-x-auto pb-1 scrollbar-hide md:mt-2">
+              <div className="flex max-w-full justify-center gap-2 md:flex-wrap md:gap-1.5 md:pb-0">
                 {selectedBrands.map((brand) => (
                   <button
                     key={`brand-${brand}`}

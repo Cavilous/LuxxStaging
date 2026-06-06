@@ -856,12 +856,15 @@
 
   .luxx-brand-shortcut-rail {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    justify-content: center;
-    margin: 0 0 0.85rem;
-    overflow: visible;
-    padding-bottom: 0.2rem;
+    max-width: 100%;
+    flex-wrap: nowrap;
+    gap: 0.38rem;
+    justify-content: flex-start;
+    margin: 0 0 0.5rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 0.1rem;
+    scroll-padding-inline: 0.25rem;
     scrollbar-width: none;
   }
 
@@ -874,18 +877,21 @@
     position: relative;
     isolation: isolate;
     display: inline-flex;
-    min-height: 2.85rem;
+    min-height: 2.2rem;
+    max-width: 8.75rem;
+    flex: 0 0 auto;
     min-width: 0;
     align-items: center;
-    gap: 0.55rem;
+    gap: 0.42rem;
     overflow: hidden;
     border: 1px solid rgba(255, 255, 255, 0.1);
     background: rgba(255, 255, 255, 0.035);
-    padding: 0.48rem 0.68rem;
+    padding: 0.34rem 0.55rem;
     color: rgba(255, 255, 255, 0.78);
-    font-size: 0.76rem;
+    font-size: 0.68rem;
     font-weight: 800;
     letter-spacing: 0;
+    line-height: 1;
     transition:
       border-color 220ms var(--ease-luxury),
       background 220ms var(--ease-luxury),
@@ -909,8 +915,8 @@
   }
 
   .luxx-brand-shortcut-logo {
-    width: 1.45rem;
-    height: 1.45rem;
+    width: 1.15rem;
+    height: 1.15rem;
     flex: 0 0 auto;
     background: currentColor;
     opacity: 0.86;
@@ -935,13 +941,13 @@
 
   .luxx-brand-shortcut em {
     display: inline-grid;
-    min-width: 1.35rem;
-    height: 1.35rem;
+    min-width: 1.12rem;
+    height: 1.12rem;
     place-items: center;
     border: 1px solid rgba(255, 255, 255, 0.1);
     background: rgba(0, 0, 0, 0.25);
     color: #b5b5b5;
-    font-size: 0.66rem;
+    font-size: 0.58rem;
     font-style: normal;
     line-height: 1;
     clip-path: polygon(0 0, calc(100% - 0.28rem) 0, 100% 0.28rem, 100% 100%, 0.28rem 100%, 0 calc(100% - 0.28rem));
@@ -961,8 +967,8 @@
     background: rgba(236, 172, 54, 0.11);
     color: #f3c764;
     box-shadow:
-      0 12px 28px rgba(0, 0, 0, 0.26),
-      0 0 24px rgba(var(--brand-glow-rgb), 0.16),
+      0 8px 18px rgba(0, 0, 0, 0.22),
+      0 0 18px rgba(var(--brand-glow-rgb), 0.13),
       inset 0 1px 0 rgba(255, 255, 255, 0.08);
   }
 
@@ -975,8 +981,10 @@
 
   @media (max-width: 768px) {
     .luxx-brand-shortcut-rail {
+      flex-wrap: wrap;
       gap: 8px;
       justify-content: center;
+      margin-bottom: 0.85rem;
       overflow: visible;
       padding-bottom: 0;
     }
