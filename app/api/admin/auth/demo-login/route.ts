@@ -24,22 +24,65 @@ function getJwtSecret() {
   return process.env.JWT_SECRET || JWT_SECRET_FALLBACK
 }
 
+function safeReturnTo(request: NextRequest) {
+  const requestedReturnTo = request.nextUrl.searchParams.get("returnTo")
+
+  if (!requestedReturnTo || !requestedReturnTo.startsWith("/") || requestedReturnTo.startsWith("//")) {
+    return "/admin"
+  }
+
+  return requestedReturnTo
+}
+
+function createDemoToken() {
+  return jwt.sign(
+    {
+      userId: DEMO_ADMIN_ID,
+      email: DEMO_ADMIN_EMAIL,
+      role: "admin",
+    },
+    getJwtSecret(),
+    { expiresIn: SESSION_DURATION }
+  )
+}
+
+function setDemoSessionCookie(response: NextResponse, token: string) {
+  response.cookies.set("admin_session", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: SESSION_DURATION,
+    path: "/",
+  })
+}
+
+function isDemoAccessEnabled(request: NextRequest) {
+  return process.env.DISABLE_DEMO_ADMIN_ACCESS !== "true" && isDemoAccessHost(request.headers.get("host"))
+}
+
+export async function GET(request: NextRequest) {
+  if (!isDemoAccessEnabled(request)) {
+    return NextResponse.redirect(new URL("/admin/login", request.url))
+  }
+
+  try {
+    const token = createDemoToken()
+    const response = NextResponse.redirect(new URL(safeReturnTo(request), request.url))
+    setDemoSessionCookie(response, token)
+    return response
+  } catch (error) {
+    console.error("Demo admin redirect error:", error)
+    return NextResponse.redirect(new URL("/admin/login", request.url))
+  }
+}
+
 export async function POST(request: NextRequest) {
-  if (process.env.DISABLE_DEMO_ADMIN_ACCESS === "true" || !isDemoAccessHost(request.headers.get("host"))) {
+  if (!isDemoAccessEnabled(request)) {
     return NextResponse.json({ error: "Demo admin access is not enabled for this domain." }, { status: 403 })
   }
 
   try {
-    const token = jwt.sign(
-      {
-        userId: DEMO_ADMIN_ID,
-        email: DEMO_ADMIN_EMAIL,
-        role: "admin",
-      },
-      getJwtSecret(),
-      { expiresIn: SESSION_DURATION }
-    )
-
+    const token = createDemoToken()
     const response = NextResponse.json({
       success: true,
       user: {
@@ -50,13 +93,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    response.cookies.set("admin_session", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: SESSION_DURATION,
-      path: "/",
-    })
+    setDemoSessionCookie(response, token)
 
     return response
   } catch (error) {
