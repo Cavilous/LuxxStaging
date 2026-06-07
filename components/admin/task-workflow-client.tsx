@@ -120,6 +120,17 @@ interface TaskWorkflowClientProps {
   dailyInstagramTracker?: DailyInstagramTracker
 }
 
+type DemoTaskState = {
+  status?: string
+  proofUrl?: string | null
+  notes?: string | null
+  checklist?: Record<string, boolean>
+  completedAt?: string | null
+  updatedAt?: string
+}
+
+const DEMO_TASK_STORAGE_KEY = "luxx-demo-task-board-v1"
+
 const BOARD_COLUMNS: {
   status: TaskStatus
   title: string
@@ -174,6 +185,10 @@ const STATUS_LABELS: Record<string, string> = {
 const TASK_TYPE_LABELS: Record<string, string> = {
   daily: "Daily",
   social_outreach: "Social outreach",
+}
+
+function isDemoTaskId(taskId: string) {
+  return taskId.startsWith("demo-")
 }
 
 function formatDate(dateValue: string | null) {
@@ -312,22 +327,56 @@ export function TaskWorkflowClient({
   const [checkingItemId, setCheckingItemId] = useState<string | null>(null)
   const [optimisticStatuses, setOptimisticStatuses] = useState<Record<string, string>>({})
   const [optimisticChecklist, setOptimisticChecklist] = useState<Record<string, boolean>>({})
+  const [demoTaskState, setDemoTaskState] = useState<Record<string, DemoTaskState>>({})
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(
     dailyInstagramTracker?.todayTaskId || tasks[0]?.id || null
   )
   const [isPending, startTransition] = useTransition()
 
+  useEffect(() => {
+    try {
+      const rawState = window.localStorage.getItem(DEMO_TASK_STORAGE_KEY)
+      if (rawState) {
+        setDemoTaskState(JSON.parse(rawState))
+      }
+    } catch {
+      setDemoTaskState({})
+    }
+  }, [])
+
+  const updateDemoTaskState = (taskId: string, updater: (previous: DemoTaskState) => DemoTaskState) => {
+    setDemoTaskState((previous) => {
+      const next = {
+        ...previous,
+        [taskId]: updater(previous[taskId] || {}),
+      }
+      try {
+        window.localStorage.setItem(DEMO_TASK_STORAGE_KEY, JSON.stringify(next))
+      } catch {
+        // Local demo persistence is best-effort.
+      }
+      return next
+    })
+  }
+
   const displayTasks = useMemo(
     () =>
-      tasks.map((task) => ({
-        ...task,
-        status: optimisticStatuses[task.id] || task.status,
-        checklistItems: task.checklistItems.map((item) => ({
-          ...item,
-          isDone: optimisticChecklist[item.id] ?? item.isDone,
-        })),
-      })),
-    [optimisticChecklist, optimisticStatuses, tasks]
+      tasks.map((task) => {
+        const demoState = demoTaskState[task.id]
+        return {
+          ...task,
+          status: demoState?.status || optimisticStatuses[task.id] || task.status,
+          proofUrl: demoState?.proofUrl ?? task.proofUrl,
+          notes: demoState?.notes ?? task.notes,
+          completedAt: demoState?.completedAt ?? task.completedAt,
+          updatedAt: demoState?.updatedAt || task.updatedAt,
+          checklistItems: task.checklistItems.map((item) => ({
+            ...item,
+            isDone: demoState?.checklist?.[item.id] ?? optimisticChecklist[item.id] ?? item.isDone,
+          })),
+        }
+      }),
+    [demoTaskState, optimisticChecklist, optimisticStatuses, tasks]
   )
 
   const todayTask = useMemo(() => {
@@ -393,6 +442,31 @@ export function TaskWorkflowClient({
   }
 
   const handleStatusChange = (taskId: string, status: string) => {
+    if (isDemoTaskId(taskId)) {
+      const task = displayTasks.find((item) => item.id === taskId)
+      if (task && status === "completed") {
+        const progress = getChecklistProgress(task)
+        if (!hasProof(task)) {
+          setDetailsMessage("Add a proof URL or proof note before marking social outreach complete.")
+          return
+        }
+        if (progress.total > 0 && progress.done < progress.total) {
+          setDetailsMessage("Finish Megan's daily checklist before marking the task complete.")
+          return
+        }
+      }
+
+      const now = new Date().toISOString()
+      updateDemoTaskState(taskId, (previous) => ({
+        ...previous,
+        status,
+        completedAt: status === "completed" ? now : null,
+        updatedAt: now,
+      }))
+      setDetailsMessage(`Task moved to ${STATUS_LABELS[status] || status}.`)
+      return
+    }
+
     const previousStatus =
       optimisticStatuses[taskId] || tasks.find((task) => task.id === taskId)?.status || "open"
 
@@ -425,6 +499,20 @@ export function TaskWorkflowClient({
     setSavingTaskId(taskId)
     setDetailsMessage(null)
 
+    if (isDemoTaskId(taskId)) {
+      const proofUrl = String(formData.get("proofUrl") || "").trim() || null
+      const notes = String(formData.get("notes") || "").trim() || null
+      updateDemoTaskState(taskId, (previous) => ({
+        ...previous,
+        proofUrl,
+        notes,
+        updatedAt: new Date().toISOString(),
+      }))
+      setSavingTaskId(null)
+      setDetailsMessage("Task details saved.")
+      return
+    }
+
     const result = await updateTaskDetails(formData)
     setSavingTaskId(null)
 
@@ -438,6 +526,22 @@ export function TaskWorkflowClient({
   }
 
   const handleChecklistChange = (itemId: string, checked: boolean) => {
+    const [taskId] = itemId.split("::")
+    if (isDemoTaskId(taskId)) {
+      setCheckingItemId(itemId)
+      updateDemoTaskState(taskId, (previous) => ({
+        ...previous,
+        checklist: {
+          ...(previous.checklist || {}),
+          [itemId]: checked,
+        },
+        updatedAt: new Date().toISOString(),
+      }))
+      setCheckingItemId(null)
+      setDetailsMessage("Checklist updated.")
+      return
+    }
+
     setCheckingItemId(itemId)
     setDetailsMessage(null)
     setOptimisticChecklist((previous) => ({ ...previous, [itemId]: checked }))
