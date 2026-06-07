@@ -9,7 +9,9 @@ import { canUserAccessSection } from "@/lib/role-permissions-actions"
 import { ensureOpsTaskStorage } from "@/lib/ops-task-storage"
 import {
   allMeganChecklistItemsDone,
+  extractDelegationNotes,
   extractTaskNotes,
+  formatDelegationNotes,
   formatTaskNotes,
   MEGAN_DAILY_CHECKLIST,
   MEGAN_DAILY_OUTREACH_TITLE,
@@ -85,7 +87,10 @@ export async function createOpsTask(formData: FormData): Promise<ActionResult> {
   const priority: TaskPriority = TASK_PRIORITIES.includes(rawPriority as TaskPriority) ? (rawPriority as TaskPriority) : "normal"
 
   const assignedTo = getNullableFormString(formData, "assignedTo") || auth.currentUser.userId
+  const ownerName = getNullableFormString(formData, "ownerName")
+  const requesterName = getNullableFormString(formData, "requesterName")
   const dueDate = parseDateInput(getFormString(formData, "dueDate"))
+  const notes = formatDelegationNotes(getNullableFormString(formData, "notes"), requesterName, ownerName)
 
   await db.insert(opsTasks).values({
     title,
@@ -101,7 +106,7 @@ export async function createOpsTask(formData: FormData): Promise<ActionResult> {
     targetCategory: getNullableFormString(formData, "targetCategory"),
     platform: getNullableFormString(formData, "platform"),
     proofUrl: getNullableFormString(formData, "proofUrl"),
-    notes: getNullableFormString(formData, "notes"),
+    notes,
     completedAt: status === "completed" ? new Date() : null,
   })
 
@@ -136,7 +141,8 @@ export async function updateTaskStatus(taskId: string, status: string): Promise<
     const task = taskRows[0]
     if (task?.taskType === "social_outreach") {
       const parsedNotes = extractTaskNotes(task.notes)
-      const note = parsedNotes.notes?.trim()
+      const delegationNotes = extractDelegationNotes(parsedNotes.notes)
+      const note = delegationNotes.notes?.trim()
       const hasProof = Boolean(task.proofUrl?.trim() || note)
       if (!hasProof) {
         return { error: "Add a proof URL or proof note before marking social outreach complete." }
@@ -176,12 +182,16 @@ export async function updateTaskDetails(formData: FormData): Promise<ActionResul
     .where(eq(opsTasks.id, taskId))
     .limit(1)
   const existingNotes = extractTaskNotes(existingTaskRows[0]?.notes)
+  const existingDelegation = extractDelegationNotes(existingNotes.notes)
+  const requesterName = getNullableFormString(formData, "requesterName") || existingDelegation.requestedByName
+  const ownerName = getNullableFormString(formData, "ownerName") || existingDelegation.ownerName
+  const notes = formatDelegationNotes(getNullableFormString(formData, "notes"), requesterName, ownerName)
 
   await db
     .update(opsTasks)
     .set({
       proofUrl: getNullableFormString(formData, "proofUrl"),
-      notes: formatTaskNotes(getNullableFormString(formData, "notes"), existingNotes.checklistState),
+      notes: formatTaskNotes(notes, existingNotes.checklistState),
       updatedAt: new Date(),
     })
     .where(eq(opsTasks.id, taskId))

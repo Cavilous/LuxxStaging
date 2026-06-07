@@ -63,6 +63,7 @@ export interface TaskWorkflowItem {
   assignedToName: string | null
   createdBy: string | null
   createdByName: string | null
+  requestedByName: string | null
   targetName: string | null
   targetUrl: string | null
   targetCategory: string | null
@@ -174,6 +175,7 @@ const MIAMI_CATEGORIES = [
 ]
 
 const PLATFORM_OPTIONS = ["Instagram", "TikTok", "Google Maps", "Website", "Other"]
+const DELEGATION_PEOPLE = ["Clint", "Krenar", "Megan", "Chase", "Jake"]
 
 const STATUS_LABELS: Record<string, string> = {
   open: "To Do",
@@ -568,9 +570,9 @@ export function TaskWorkflowClient({
     <div className="space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white">Team Work Board</h1>
+          <h1 className="text-3xl font-bold text-white">Team Delegation Board</h1>
           <p className="mt-1 text-sm text-gray-400">
-            Daily tasks, social outreach, proof links, and simple status tracking.
+            Assign work from Clint, Krenar, Jake, or the team to Megan, Chase, and the right owner.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -643,6 +645,23 @@ export function TaskWorkflowClient({
           </CardContent>
         </Card>
       </div>
+
+      <Card className="bg-[#111111] border-[#333333] cut-corner">
+        <CardContent className="grid grid-cols-1 gap-3 p-4 md:grid-cols-3">
+          <div className="rounded-md border border-[#242424] bg-[#0A0A0A] p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[#ECAC36]">1. Request</p>
+            <p className="mt-1 text-sm text-gray-300">Clint, Krenar, or Jake writes the task in plain English.</p>
+          </div>
+          <div className="rounded-md border border-[#242424] bg-[#0A0A0A] p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[#ECAC36]">2. Owner</p>
+            <p className="mt-1 text-sm text-gray-300">Megan, Chase, or Jake owns the next action and moves the card.</p>
+          </div>
+          <div className="rounded-md border border-[#242424] bg-[#0A0A0A] p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[#ECAC36]">3. Proof</p>
+            <p className="mt-1 text-sm text-gray-300">A proof link or note closes the loop so nobody has to guess.</p>
+          </div>
+        </CardContent>
+      </Card>
 
       {dailyInstagramTracker && (
         <Card className="overflow-hidden border-[#ECAC36]/35 bg-[#111111] cut-corner">
@@ -912,9 +931,14 @@ export function TaskWorkflowClient({
                                         IG
                                       </Badge>
                                     )}
-                                    {!hasProof(task) && task.taskType === "social_outreach" && (
+                                {!hasProof(task) && task.taskType === "social_outreach" && (
                                       <Badge className="cut-corner border-[#ECAC36]/30 bg-[#ECAC36]/10 text-[#ECAC36]">
                                         Proof needed
+                                      </Badge>
+                                    )}
+                                    {task.requestedByName && (
+                                      <Badge className="cut-corner border-[#333333] bg-black text-gray-300">
+                                        From {task.requestedByName}
                                       </Badge>
                                     )}
                                   </div>
@@ -1023,7 +1047,7 @@ export function TaskWorkflowClient({
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-white">
               <Plus className="h-4 w-4 text-[#ECAC36]" />
-              Quick Add
+              New Delegated Task
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -1031,15 +1055,51 @@ export function TaskWorkflowClient({
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="space-y-2 sm:col-span-2">
                   <Label htmlFor="task-title" className="text-gray-300">
-                    Title
+                    What needs to get done?
                   </Label>
                   <Input
                     id="task-title"
                     name="title"
                     required
-                    placeholder="Follow up with villa supplier"
+                    placeholder="Example: Megan should post one IG story today"
                     className="border-[#333333] bg-[#0A0A0A] text-white placeholder:text-gray-600"
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="task-requester" className="text-gray-300">
+                    Requested by
+                  </Label>
+                  <select
+                    id="task-requester"
+                    name="requesterName"
+                    defaultValue="Clint"
+                    className="h-9 w-full rounded-md border border-[#333333] bg-[#0A0A0A] px-3 text-sm text-white outline-none focus:border-[#ECAC36]"
+                  >
+                    {DELEGATION_PEOPLE.map((person) => (
+                      <option key={person} value={person}>
+                        {person}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="task-owner-name" className="text-gray-300">
+                    Owner
+                  </Label>
+                  <select
+                    id="task-owner-name"
+                    name="ownerName"
+                    defaultValue="Megan"
+                    className="h-9 w-full rounded-md border border-[#333333] bg-[#0A0A0A] px-3 text-sm text-white outline-none focus:border-[#ECAC36]"
+                  >
+                    {DELEGATION_PEOPLE.map((person) => (
+                      <option key={person} value={person}>
+                        {person}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="space-y-2">
@@ -1111,7 +1171,7 @@ export function TaskWorkflowClient({
 
                 <div className="space-y-2 sm:col-span-2">
                   <Label htmlFor="task-assignee" className="text-gray-300">
-                    Assignee
+                    Dashboard account
                   </Label>
                   <select
                     id="task-assignee"
@@ -1129,12 +1189,12 @@ export function TaskWorkflowClient({
 
                 <div className="space-y-2 sm:col-span-2">
                   <Label htmlFor="task-description" className="text-gray-300">
-                    Description
+                    Details
                   </Label>
                   <Textarea
                     id="task-description"
                     name="description"
-                    placeholder="Context, handoff notes, or next step"
+                    placeholder="Context, handoff notes, exact instructions, deadline, or acceptance details"
                     className="min-h-20 border-[#333333] bg-[#0A0A0A] text-white placeholder:text-gray-600"
                   />
                 </div>
@@ -1241,6 +1301,11 @@ export function TaskWorkflowClient({
                       <Badge className={cn("cut-corner", priorityBadgeClass(selectedTask.priority))}>
                         {selectedTask.priority}
                       </Badge>
+                      {selectedTask.requestedByName && (
+                        <Badge className="cut-corner border-[#333333] bg-[#0A0A0A] text-gray-300">
+                          From {selectedTask.requestedByName}
+                        </Badge>
+                      )}
                       <Badge className="cut-corner border-[#333333] bg-[#0A0A0A] text-gray-300">
                         {TASK_TYPE_LABELS[selectedTask.taskType] || selectedTask.taskType}
                       </Badge>
@@ -1278,7 +1343,7 @@ export function TaskWorkflowClient({
                   </div>
                   <div className="flex items-center gap-2 rounded-md border border-[#242424] bg-[#0A0A0A] p-3">
                     <UserCheck className="h-4 w-4" />
-                    {selectedTask.assignedToName || "Unassigned"}
+                    Owner: {selectedTask.assignedToName || "Unassigned"}
                   </div>
                   <div className="flex items-center gap-2 rounded-md border border-[#242424] bg-[#0A0A0A] p-3">
                     {selectedTask.taskType === "social_outreach" ? (
@@ -1377,6 +1442,8 @@ export function TaskWorkflowClient({
                   className="grid grid-cols-1 gap-3 border-t border-[#242424] pt-4 lg:grid-cols-[minmax(180px,1fr)_minmax(220px,1.3fr)_auto]"
                 >
                   <input type="hidden" name="taskId" value={selectedTask.id} />
+                  <input type="hidden" name="requesterName" value={selectedTask.requestedByName || ""} />
+                  <input type="hidden" name="ownerName" value={selectedTask.assignedToName || ""} />
                   <div className="space-y-2">
                     <Label className="text-gray-300">Proof URL</Label>
                     <Input

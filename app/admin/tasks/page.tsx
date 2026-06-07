@@ -8,7 +8,13 @@ import { getCurrentUser } from "@/lib/auth-helpers"
 import { canUserAccessSection } from "@/lib/role-permissions-actions"
 import { ensureOpsTaskStorage } from "@/lib/ops-task-storage"
 import { getDemoSafeAccessibleSections, isDemoAdminUser } from "../demo-safe-admin"
-import { buildMeganChecklistItems, extractTaskNotes, MEGAN_DAILY_OUTREACH_TITLE } from "@/lib/ops-task-checklist"
+import {
+  buildMeganChecklistItems,
+  extractDelegationNotes,
+  extractTaskNotes,
+  formatDelegationNotes,
+  MEGAN_DAILY_OUTREACH_TITLE,
+} from "@/lib/ops-task-checklist"
 
 export const dynamic = "force-dynamic"
 
@@ -109,7 +115,7 @@ async function ensureMeganDailyOutreachTask(assignedTo: string | null) {
     targetName: "Miami-based Instagram pages",
     targetCategory: "Miami social outreach",
     platform: "Instagram",
-    notes: null,
+      notes: formatDelegationNotes(null, "Clint", "Megan"),
   })
 }
 
@@ -323,6 +329,7 @@ export default async function AdminTasksPage({
     const assigneeRecord = task.assignedTo ? adminById.get(task.assignedTo) : undefined
     const creatorRecord = task.createdBy ? adminById.get(task.createdBy) : undefined
     const parsedNotes = extractTaskNotes(task.notes)
+    const delegationNotes = extractDelegationNotes(parsedNotes.notes)
     const isMeganTask = isMeganDailyOutreachTask(task)
 
     return {
@@ -334,15 +341,16 @@ export default async function AdminTasksPage({
       priority: task.priority,
       dueDate: task.dueDate?.toISOString() ?? null,
       assignedTo: task.assignedTo,
-      assignedToName: assigneeRecord?.name || assigneeRecord?.email || (isMeganDailyOutreachTask(task) ? meganAssignedToLabel : null),
+      assignedToName: delegationNotes.ownerName || assigneeRecord?.name || assigneeRecord?.email || (isMeganDailyOutreachTask(task) ? meganAssignedToLabel : null),
       createdBy: task.createdBy,
       createdByName: creatorRecord?.name || creatorRecord?.email || null,
+      requestedByName: delegationNotes.requestedByName || creatorRecord?.name || creatorRecord?.email || null,
       targetName: task.targetName,
       targetUrl: task.targetUrl,
       targetCategory: task.targetCategory,
       platform: task.platform,
       proofUrl: task.proofUrl,
-      notes: parsedNotes.notes,
+      notes: delegationNotes.notes,
       checklistItems: isMeganTask ? buildMeganChecklistItems(task.id, parsedNotes.checklistState) : [],
       completedAt: task.completedAt?.toISOString() ?? null,
       createdAt: task.createdAt.toISOString(),
@@ -374,7 +382,8 @@ export default async function AdminTasksPage({
       assignedTo: null,
       assignedToName: meganAssignedToLabel,
       createdBy: null,
-      createdByName: null,
+      createdByName: "Clint",
+      requestedByName: "Clint",
       targetName: "Miami-based Instagram pages",
       targetUrl: null,
       targetCategory: "Miami social outreach",
