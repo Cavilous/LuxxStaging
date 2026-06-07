@@ -48,7 +48,7 @@ type DailyInstagramTracker = {
 }
 
 const MEGAN_DAILY_OUTREACH_DESCRIPTION =
-  "Daily Instagram checklist: post 1 Luxx Miami IG Story, then leave 5 thoughtful comments on Miami-based IG pages. Focus on restaurants, nightlife, real estate, concierge, yacht, auto, and luxury lifestyle accounts. Add proof links or screenshot notes before marking complete."
+  "Daily Instagram checklist: post 1 Luxx Miami IG Story, then leave 5 thoughtful comments on Miami-based IG pages. Focus on restaurants, nightlife, real estate, concierge, yacht, auto, and luxury lifestyle accounts. Add a completion update, link, or screenshot note before marking complete."
 const DEMO_MEGAN_TASK_ID = "demo-megan-daily-outreach"
 
 function startOfLocalDay(date = new Date()) {

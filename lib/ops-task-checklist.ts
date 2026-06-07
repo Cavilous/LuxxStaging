@@ -7,7 +7,7 @@ export const MEGAN_DAILY_CHECKLIST = [
   "Comment on Miami page 3",
   "Comment on Miami page 4",
   "Comment on Miami page 5",
-  "Add proof URL or note",
+  "Add completion update or link",
 ]
 
 const CHECKLIST_PREFIX = "__LUXX_CHECKLIST__="

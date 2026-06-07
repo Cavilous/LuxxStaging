@@ -143,9 +143,9 @@ export async function updateTaskStatus(taskId: string, status: string): Promise<
       const parsedNotes = extractTaskNotes(task.notes)
       const delegationNotes = extractDelegationNotes(parsedNotes.notes)
       const note = delegationNotes.notes?.trim()
-      const hasProof = Boolean(task.proofUrl?.trim() || note)
-      if (!hasProof) {
-        return { error: "Add a proof URL or proof note before marking social outreach complete." }
+      const hasCompletionUpdate = Boolean(task.proofUrl?.trim() || note)
+      if (!hasCompletionUpdate) {
+        return { error: "Add a completion update or link before marking social outreach complete." }
       }
 
       if (task.title === MEGAN_DAILY_OUTREACH_TITLE && !allMeganChecklistItemsDone(parsedNotes.checklistState)) {

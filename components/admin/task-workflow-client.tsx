@@ -140,14 +140,14 @@ const BOARD_COLUMNS: {
 }[] = [
   { status: "open", title: "To Do", description: "Ready to start", icon: CircleDot },
   { status: "in_progress", title: "Doing", description: "Being worked on", icon: Clock3 },
-  { status: "needs_proof", title: "Needs Proof", description: "Save link or note", icon: LinkIcon },
+  { status: "needs_proof", title: "Needs Update", description: "Save result or link", icon: LinkIcon },
   { status: "completed", title: "Done", description: "Finished and tracked", icon: CheckCircle2 },
 ]
 
 const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
   { value: "open", label: "To Do" },
   { value: "in_progress", label: "Doing" },
-  { value: "needs_proof", label: "Needs Proof" },
+  { value: "needs_proof", label: "Needs Update" },
   { value: "completed", label: "Done" },
 ]
 
@@ -180,7 +180,7 @@ const DELEGATION_PEOPLE = ["Clint", "Krenar", "Megan", "Chase", "Jake"]
 const STATUS_LABELS: Record<string, string> = {
   open: "To Do",
   in_progress: "Doing",
-  needs_proof: "Needs Proof",
+  needs_proof: "Needs Update",
   completed: "Done",
 }
 
@@ -252,7 +252,7 @@ function getChecklistProgress(task: TaskWorkflowItem) {
   return { done, total }
 }
 
-function hasProof(task: TaskWorkflowItem) {
+function hasCompletionUpdate(task: TaskWorkflowItem) {
   const note = task.notes?.trim()
   return Boolean(task.proofUrl?.trim() || (note && !note.toLowerCase().startsWith("checklist:")))
 }
@@ -394,6 +394,36 @@ export function TaskWorkflowClient({
     return displayTasks.find((task) => task.id === selectedTaskId) || todayTask || displayTasks[0] || null
   }, [displayTasks, selectedTaskId, todayTask])
 
+  const ownerSummaries = useMemo(() => {
+    return DELEGATION_PEOPLE.map((person) => {
+      const ownedTasks = displayTasks.filter((task) => {
+        const owner = task.assignedToName?.toLowerCase() || ""
+        return owner === person.toLowerCase() || owner.includes(person.toLowerCase())
+      })
+      const active = ownedTasks.filter((task) => task.status !== "completed").length
+      const completed = ownedTasks.filter((task) => task.status === "completed").length
+      const needsUpdate = ownedTasks.filter(
+        (task) => task.status === "needs_proof" || (task.taskType === "social_outreach" && !hasCompletionUpdate(task))
+      ).length
+      const nextTask = ownedTasks
+        .filter((task) => task.status !== "completed")
+        .sort((a, b) => {
+          const aTime = a.dueDate ? new Date(a.dueDate).getTime() : Number.MAX_SAFE_INTEGER
+          const bTime = b.dueDate ? new Date(b.dueDate).getTime() : Number.MAX_SAFE_INTEGER
+          return aTime - bTime
+        })[0]
+
+      return {
+        person,
+        active,
+        completed,
+        needsUpdate,
+        firstTaskId: nextTask?.id || ownedTasks[0]?.id || null,
+        nextDue: nextTask ? formatDate(nextTask.dueDate) : "No open tasks",
+      }
+    })
+  }, [displayTasks])
+
   const tasksByStatus = useMemo(() => {
     const grouped = new Map<string, TaskWorkflowItem[]>()
     for (const column of BOARD_COLUMNS) {
@@ -448,8 +478,8 @@ export function TaskWorkflowClient({
       const task = displayTasks.find((item) => item.id === taskId)
       if (task && status === "completed") {
         const progress = getChecklistProgress(task)
-        if (!hasProof(task)) {
-          setDetailsMessage("Add a proof URL or proof note before marking social outreach complete.")
+        if (!hasCompletionUpdate(task)) {
+          setDetailsMessage("Add a completion update or link before marking social outreach complete.")
           return
         }
         if (progress.total > 0 && progress.done < progress.total) {
@@ -657,9 +687,57 @@ export function TaskWorkflowClient({
             <p className="mt-1 text-sm text-gray-300">Megan, Chase, or Jake owns the next action and moves the card.</p>
           </div>
           <div className="rounded-md border border-[#242424] bg-[#0A0A0A] p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-[#ECAC36]">3. Proof</p>
-            <p className="mt-1 text-sm text-gray-300">A proof link or note closes the loop so nobody has to guess.</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-[#ECAC36]">3. Update</p>
+            <p className="mt-1 text-sm text-gray-300">A completion update or link closes the loop so nobody has to guess.</p>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card className="bg-[#111111] border-[#333333] cut-corner">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-white">
+            <UserCheck className="h-4 w-4 text-[#ECAC36]" />
+            Owner View
+          </CardTitle>
+          <p className="text-sm text-gray-400">
+            Each person can scan their name, open the next card, add an update, and move the work forward.
+          </p>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          {ownerSummaries.map((owner) => (
+            <button
+              key={owner.person}
+              type="button"
+              disabled={!owner.firstTaskId}
+              onClick={() => owner.firstTaskId && setSelectedTaskId(owner.firstTaskId)}
+              className={cn(
+                "rounded-md border border-[#242424] bg-[#0A0A0A] p-4 text-left transition",
+                owner.firstTaskId
+                  ? "hover:border-[#ECAC36]/60 hover:bg-[#141414]"
+                  : "cursor-default opacity-70"
+              )}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <p className="font-semibold text-white">{owner.person}</p>
+                {owner.needsUpdate > 0 && (
+                  <Badge className="cut-corner border-[#ECAC36]/30 bg-[#ECAC36]/15 text-[#ECAC36]">
+                    {owner.needsUpdate} update
+                  </Badge>
+                )}
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <p className="text-gray-500">Open</p>
+                  <p className="text-lg font-semibold text-white">{owner.active}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Done</p>
+                  <p className="text-lg font-semibold text-green-300">{owner.completed}</p>
+                </div>
+              </div>
+              <p className="mt-3 text-xs text-gray-500">Next: {owner.nextDue}</p>
+            </button>
+          ))}
         </CardContent>
       </Card>
 
@@ -693,7 +771,7 @@ export function TaskWorkflowClient({
                 <div>
                   <h2 className="text-2xl font-semibold text-white">Megan's daily outreach</h2>
                   <p className="mt-1 max-w-3xl text-sm text-gray-400">
-                    Post one IG Story, leave five comments on Miami-based pages, then save the proof link or note here.
+                    Post one IG Story, leave five comments on Miami-based pages, then save a completion update or link here.
                   </p>
                 </div>
 
@@ -731,13 +809,13 @@ export function TaskWorkflowClient({
                     >
                       <input type="hidden" name="taskId" value={todayTask.id} />
                       <div>
-                        <p className="text-sm font-semibold text-white">Proof and notes</p>
+                        <p className="text-sm font-semibold text-white">Completion update</p>
                         <p className="mt-1 text-xs text-gray-500">Paste a link or write exactly what got done.</p>
                       </div>
                       <Input
                         name="proofUrl"
                         defaultValue={todayTask.proofUrl || ""}
-                        placeholder="Proof URL"
+                        placeholder="Update link"
                         className="border-[#333333] bg-black text-white placeholder:text-gray-600"
                       />
                       <Textarea
@@ -753,7 +831,7 @@ export function TaskWorkflowClient({
                           className="bg-[#ECAC36] text-black hover:bg-[#B8860B] cut-corner"
                         >
                           <Save className="h-4 w-4" />
-                          {savingTaskId === todayTask.id ? "Saving..." : "Save Proof"}
+                          {savingTaskId === todayTask.id ? "Saving..." : "Save Update"}
                         </Button>
                         <Button
                           type="button"
@@ -931,9 +1009,9 @@ export function TaskWorkflowClient({
                                         IG
                                       </Badge>
                                     )}
-                                {!hasProof(task) && task.taskType === "social_outreach" && (
+                                {!hasCompletionUpdate(task) && task.taskType === "social_outreach" && (
                                       <Badge className="cut-corner border-[#ECAC36]/30 bg-[#ECAC36]/10 text-[#ECAC36]">
-                                        Proof needed
+                                        Update needed
                                       </Badge>
                                     )}
                                     {task.requestedByName && (
@@ -1003,7 +1081,7 @@ export function TaskWorkflowClient({
                                     onClick={() => handleStatusChange(task.id, "needs_proof")}
                                     className="border-[#ECAC36]/30 bg-[#ECAC36]/10 text-[#ECAC36] hover:bg-[#ECAC36]/20"
                                   >
-                                    Proof
+                                    Update
                                   </Button>
                                 )}
                                 {task.status !== "completed" && (
@@ -1049,6 +1127,9 @@ export function TaskWorkflowClient({
               <Plus className="h-4 w-4 text-[#ECAC36]" />
               New Delegated Task
             </CardTitle>
+            <p className="text-sm text-gray-400">
+              Pick who asked, who owns it, when it is due, and what finished should look like.
+            </p>
           </CardHeader>
           <CardContent>
             <form ref={formRef} action={handleCreate} className="space-y-4">
@@ -1171,7 +1252,7 @@ export function TaskWorkflowClient({
 
                 <div className="space-y-2 sm:col-span-2">
                   <Label htmlFor="task-assignee" className="text-gray-300">
-                    Dashboard account
+                    Dashboard login (optional)
                   </Label>
                   <select
                     id="task-assignee"
@@ -1185,6 +1266,9 @@ export function TaskWorkflowClient({
                       </option>
                     ))}
                   </select>
+                  <p className="text-xs text-gray-500">
+                    Use this when a matching admin login exists; the owner name above is what the team sees first.
+                  </p>
                 </div>
 
                 <div className="space-y-2 sm:col-span-2">
@@ -1408,7 +1492,7 @@ export function TaskWorkflowClient({
 
                     {(selectedTask.proofUrl || selectedTask.notes) && (
                       <div className="min-w-0">
-                        <p className="mb-1 text-xs font-medium uppercase tracking-wide text-gray-500">Current proof / notes</p>
+                        <p className="mb-1 text-xs font-medium uppercase tracking-wide text-gray-500">Current update / notes</p>
                         <div className="space-y-1 text-sm text-gray-300">
                           {selectedTask.proofUrl && getExternalHref(selectedTask.proofUrl) && (
                             <a
@@ -1445,11 +1529,11 @@ export function TaskWorkflowClient({
                   <input type="hidden" name="requesterName" value={selectedTask.requestedByName || ""} />
                   <input type="hidden" name="ownerName" value={selectedTask.assignedToName || ""} />
                   <div className="space-y-2">
-                    <Label className="text-gray-300">Proof URL</Label>
+                    <Label className="text-gray-300">Update link</Label>
                     <Input
                       name="proofUrl"
                       defaultValue={selectedTask.proofUrl || ""}
-                      placeholder="Link to proof"
+                      placeholder="Link to the post, screenshot, or result"
                       className="border-[#333333] bg-[#0A0A0A] text-white placeholder:text-gray-600"
                     />
                   </div>
@@ -1458,7 +1542,7 @@ export function TaskWorkflowClient({
                     <Textarea
                       name="notes"
                       defaultValue={selectedTask.notes || ""}
-                      placeholder="What happened, blocker, or proof note"
+                      placeholder="What happened, what is blocked, or what changed"
                       className="min-h-20 border-[#333333] bg-[#0A0A0A] text-white placeholder:text-gray-600"
                     />
                   </div>
@@ -1479,7 +1563,7 @@ export function TaskWorkflowClient({
               <div className="py-16 text-center">
                 <ListChecks className="mx-auto mb-4 h-12 w-12 text-gray-600" />
                 <p className="text-lg font-medium text-white">No task selected</p>
-                <p className="mt-1 text-sm text-gray-500">Select a card from the board to add notes or proof.</p>
+                <p className="mt-1 text-sm text-gray-500">Select a card from the board to add notes or a completion update.</p>
               </div>
             )}
           </CardContent>
