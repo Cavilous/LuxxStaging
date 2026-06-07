@@ -1,17 +1,24 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { eq, sql } from "drizzle-orm"
+import { eq } from "drizzle-orm"
 import { db } from "@/lib/db"
-import { opsTaskChecklistItems, opsTasks } from "@/lib/db/schema"
+import { opsTasks } from "@/lib/db/schema"
 import { getCurrentUser } from "@/lib/auth-helpers"
 import { canUserAccessSection } from "@/lib/role-permissions-actions"
 import { ensureOpsTaskStorage } from "@/lib/ops-task-storage"
+import {
+  allMeganChecklistItemsDone,
+  extractTaskNotes,
+  formatTaskNotes,
+  MEGAN_DAILY_CHECKLIST,
+  MEGAN_DAILY_OUTREACH_TITLE,
+  setChecklistItemState,
+} from "@/lib/ops-task-checklist"
 
 const TASK_TYPES = ["daily", "social_outreach"] as const
 const TASK_STATUSES = ["open", "in_progress", "needs_proof", "completed"] as const
 const TASK_PRIORITIES = ["low", "normal", "high", "urgent"] as const
-const MEGAN_DAILY_OUTREACH_TITLE = "Megan: IG story + 5 Miami comments"
 
 type TaskType = (typeof TASK_TYPES)[number]
 type TaskStatus = (typeof TASK_STATUSES)[number]
@@ -128,24 +135,14 @@ export async function updateTaskStatus(taskId: string, status: string): Promise<
 
     const task = taskRows[0]
     if (task?.taskType === "social_outreach") {
-      const note = task.notes?.trim()
-      const hasProof = Boolean(task.proofUrl?.trim() || (note && !note.toLowerCase().startsWith("checklist:")))
+      const parsedNotes = extractTaskNotes(task.notes)
+      const note = parsedNotes.notes?.trim()
+      const hasProof = Boolean(task.proofUrl?.trim() || note)
       if (!hasProof) {
         return { error: "Add a proof URL or proof note before marking social outreach complete." }
       }
-    }
 
-    if (task?.title === MEGAN_DAILY_OUTREACH_TITLE) {
-      const checklistRows = await db
-        .select({
-          total: sql<number>`count(*)::int`,
-          done: sql<number>`count(*) filter (where ${opsTaskChecklistItems.isDone} = true)::int`,
-        })
-        .from(opsTaskChecklistItems)
-        .where(eq(opsTaskChecklistItems.taskId, taskId))
-
-      const checklist = checklistRows[0]
-      if (checklist && checklist.total > 0 && checklist.done < checklist.total) {
+      if (task.title === MEGAN_DAILY_OUTREACH_TITLE && !allMeganChecklistItemsDone(parsedNotes.checklistState)) {
         return { error: "Finish Megan's daily checklist before marking the task complete." }
       }
     }
@@ -173,11 +170,18 @@ export async function updateTaskDetails(formData: FormData): Promise<ActionResul
     return { error: "Task id is required." }
   }
 
+  const existingTaskRows = await db
+    .select({ notes: opsTasks.notes })
+    .from(opsTasks)
+    .where(eq(opsTasks.id, taskId))
+    .limit(1)
+  const existingNotes = extractTaskNotes(existingTaskRows[0]?.notes)
+
   await db
     .update(opsTasks)
     .set({
       proofUrl: getNullableFormString(formData, "proofUrl"),
-      notes: getNullableFormString(formData, "notes"),
+      notes: formatTaskNotes(getNullableFormString(formData, "notes"), existingNotes.checklistState),
       updatedAt: new Date(),
     })
     .where(eq(opsTasks.id, taskId))
@@ -194,13 +198,29 @@ export async function updateChecklistItemStatus(itemId: string, isDone: boolean)
     return { error: "Checklist item id is required." }
   }
 
+  const [taskId, indexValue] = itemId.split("::")
+  const itemIndex = Number(indexValue)
+  const label = MEGAN_DAILY_CHECKLIST[itemIndex]
+
+  if (!taskId || !label) {
+    return { error: "Checklist item is invalid." }
+  }
+
+  const existingTaskRows = await db
+    .select({ notes: opsTasks.notes })
+    .from(opsTasks)
+    .where(eq(opsTasks.id, taskId))
+    .limit(1)
+  const existingNotes = extractTaskNotes(existingTaskRows[0]?.notes)
+  const nextChecklistState = setChecklistItemState(existingNotes.checklistState, label, isDone)
+
   await db
-    .update(opsTaskChecklistItems)
+    .update(opsTasks)
     .set({
-      isDone,
+      notes: formatTaskNotes(existingNotes.notes, nextChecklistState),
       updatedAt: new Date(),
     })
-    .where(eq(opsTaskChecklistItems.id, itemId))
+    .where(eq(opsTasks.id, taskId))
 
   revalidatePath("/admin/tasks")
   return { success: true }

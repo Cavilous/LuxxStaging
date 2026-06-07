@@ -3,11 +3,12 @@ import { and, asc, desc, eq, gte, inArray, lt, sql } from "drizzle-orm"
 import AdminLayout from "@/components/admin-layout"
 import { TaskWorkflowClient } from "@/components/admin/task-workflow-client"
 import { db } from "@/lib/db"
-import { adminUsers, opsTaskChecklistItems, opsTasks } from "@/lib/db/schema"
+import { adminUsers, opsTasks } from "@/lib/db/schema"
 import { getCurrentUser } from "@/lib/auth-helpers"
 import { canUserAccessSection } from "@/lib/role-permissions-actions"
 import { ensureOpsTaskStorage } from "@/lib/ops-task-storage"
 import { getDemoSafeAccessibleSections, isDemoAdminUser } from "../demo-safe-admin"
+import { buildMeganChecklistItems, extractTaskNotes, MEGAN_DAILY_OUTREACH_TITLE } from "@/lib/ops-task-checklist"
 
 export const dynamic = "force-dynamic"
 
@@ -18,7 +19,6 @@ type TaskSearchParams = {
 }
 
 type OpsTaskRow = typeof opsTasks.$inferSelect
-type OpsTaskChecklistRow = typeof opsTaskChecklistItems.$inferSelect
 type ActiveAdminRow = {
   id: string
   email: string
@@ -41,18 +41,8 @@ type DailyInstagramTracker = {
   days: DailyTrackerDay[]
 }
 
-const MEGAN_DAILY_OUTREACH_TITLE = "Megan: IG story + 5 Miami comments"
 const MEGAN_DAILY_OUTREACH_DESCRIPTION =
   "Daily Instagram checklist: post 1 Luxx Miami IG Story, then leave 5 thoughtful comments on Miami-based IG pages. Focus on restaurants, nightlife, real estate, concierge, yacht, auto, and luxury lifestyle accounts. Add proof links or screenshot notes before marking complete."
-const MEGAN_DAILY_CHECKLIST = [
-  "Post 1 IG Story",
-  "Comment on Miami page 1",
-  "Comment on Miami page 2",
-  "Comment on Miami page 3",
-  "Comment on Miami page 4",
-  "Comment on Miami page 5",
-  "Add proof URL or note",
-]
 
 function startOfLocalDay(date = new Date()) {
   const day = new Date(date)
@@ -103,11 +93,10 @@ async function ensureMeganDailyOutreachTask(assignedTo: string | null) {
     .limit(1)
 
   if (existingToday.length > 0) {
-    await ensureMeganChecklist(existingToday[0].id)
     return
   }
 
-  const inserted = await db.insert(opsTasks).values({
+  await db.insert(opsTasks).values({
     title: MEGAN_DAILY_OUTREACH_TITLE,
     description: MEGAN_DAILY_OUTREACH_DESCRIPTION,
     taskType: "social_outreach",
@@ -120,35 +109,7 @@ async function ensureMeganDailyOutreachTask(assignedTo: string | null) {
     targetCategory: "Miami social outreach",
     platform: "Instagram",
     notes: null,
-  }).returning({ id: opsTasks.id })
-
-  if (inserted[0]?.id) {
-    await ensureMeganChecklist(inserted[0].id)
-  }
-}
-
-async function ensureMeganChecklist(taskId: string) {
-  const existingItems = await db
-    .select({ label: opsTaskChecklistItems.label })
-    .from(opsTaskChecklistItems)
-    .where(eq(opsTaskChecklistItems.taskId, taskId))
-
-  const existingLabels = new Set(existingItems.map((item) => item.label))
-  const missingItems = MEGAN_DAILY_CHECKLIST
-    .map((label, index) => ({ label, index }))
-    .filter((item) => !existingLabels.has(item.label))
-
-  if (missingItems.length === 0) {
-    return
-  }
-
-  await db.insert(opsTaskChecklistItems).values(
-    missingItems.map((item) => ({
-      taskId,
-      label: item.label,
-      displayOrder: item.index + 1,
-    }))
-  )
+  })
 }
 
 async function getDailyInstagramTracker(assignedToLabel: string): Promise<DailyInstagramTracker> {
@@ -271,7 +232,6 @@ export default async function AdminTasksPage({
   let completedResult: CountRow[] = [{ count: 0 }]
   let socialResult: CountRow[] = [{ count: 0 }]
   let myOpenResult: CountRow[] = [{ count: 0 }]
-  let checklistRows: OpsTaskChecklistRow[] = []
 
   try {
     activeAdmins = await db
@@ -350,13 +310,6 @@ export default async function AdminTasksPage({
         )),
     ])
 
-    if (taskRows.length > 0) {
-      checklistRows = await db
-        .select()
-        .from(opsTaskChecklistItems)
-        .where(inArray(opsTaskChecklistItems.taskId, taskRows.map((task) => task.id)))
-        .orderBy(asc(opsTaskChecklistItems.displayOrder), asc(opsTaskChecklistItems.createdAt))
-    }
   } catch (error) {
     console.error("Error loading ops tasks:", error)
     schemaWarning = "Task storage is still being prepared. Refresh once, then try again if this appears during the demo."
@@ -364,16 +317,12 @@ export default async function AdminTasksPage({
 
   const adminById = new Map(activeAdmins.map((admin) => [admin.id, admin]))
   const currentUserOption = adminById.get(currentUser.userId)
-  const checklistByTaskId = new Map<string, OpsTaskChecklistRow[]>()
-  for (const item of checklistRows) {
-    const existing = checklistByTaskId.get(item.taskId) || []
-    existing.push(item)
-    checklistByTaskId.set(item.taskId, existing)
-  }
 
   const tasks = taskRows.map((task) => {
     const assigneeRecord = task.assignedTo ? adminById.get(task.assignedTo) : undefined
     const creatorRecord = task.createdBy ? adminById.get(task.createdBy) : undefined
+    const parsedNotes = extractTaskNotes(task.notes)
+    const isMeganTask = isMeganDailyOutreachTask(task)
 
     return {
       id: task.id,
@@ -392,13 +341,8 @@ export default async function AdminTasksPage({
       targetCategory: task.targetCategory,
       platform: task.platform,
       proofUrl: task.proofUrl,
-      notes: task.notes,
-      checklistItems: (checklistByTaskId.get(task.id) || []).map((item) => ({
-        id: item.id,
-        label: item.label,
-        isDone: item.isDone,
-        displayOrder: item.displayOrder,
-      })),
+      notes: parsedNotes.notes,
+      checklistItems: isMeganTask ? buildMeganChecklistItems(task.id, parsedNotes.checklistState) : [],
       completedAt: task.completedAt?.toISOString() ?? null,
       createdAt: task.createdAt.toISOString(),
       updatedAt: task.updatedAt.toISOString(),
