@@ -252,6 +252,19 @@ export const opsTasks = pgTable('ops_tasks', {
   typeStatusDueIdx: index('idx_ops_tasks_type_status_due').on(table.taskType, table.status, table.dueDate),
 }))
 
+export const opsTaskChecklistItems = pgTable('ops_task_checklist_items', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  taskId: uuid('task_id').notNull().references(() => opsTasks.id, { onDelete: 'cascade' }),
+  label: text('label').notNull(),
+  isDone: boolean('is_done').notNull().default(false),
+  displayOrder: integer('display_order').notNull().default(0),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  taskIdx: index('idx_ops_task_checklist_task').on(table.taskId),
+  taskOrderIdx: index('idx_ops_task_checklist_task_order').on(table.taskId, table.displayOrder),
+}))
+
 export const bookings = pgTable('bookings', {
   id: uuid('id').defaultRandom().primaryKey(),
   bookingNumber: text('booking_number').notNull().unique(),

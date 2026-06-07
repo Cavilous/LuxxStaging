@@ -3,7 +3,7 @@ import { and, asc, desc, eq, gte, inArray, lt, sql } from "drizzle-orm"
 import AdminLayout from "@/components/admin-layout"
 import { TaskWorkflowClient } from "@/components/admin/task-workflow-client"
 import { db } from "@/lib/db"
-import { adminUsers, opsTasks } from "@/lib/db/schema"
+import { adminUsers, opsTaskChecklistItems, opsTasks } from "@/lib/db/schema"
 import { getCurrentUser } from "@/lib/auth-helpers"
 import { canUserAccessSection } from "@/lib/role-permissions-actions"
 import { ensureOpsTaskStorage } from "@/lib/ops-task-storage"
@@ -18,6 +18,7 @@ type TaskSearchParams = {
 }
 
 type OpsTaskRow = typeof opsTasks.$inferSelect
+type OpsTaskChecklistRow = typeof opsTaskChecklistItems.$inferSelect
 type ActiveAdminRow = {
   id: string
   email: string
@@ -33,6 +34,7 @@ type DailyTrackerDay = {
 type DailyInstagramTracker = {
   title: string
   assignedToLabel: string
+  todayTaskId: string | null
   todayComplete: boolean
   completedDaysLast14: number
   currentStreak: number
@@ -42,6 +44,15 @@ type DailyInstagramTracker = {
 const MEGAN_DAILY_OUTREACH_TITLE = "Megan: IG story + 5 Miami comments"
 const MEGAN_DAILY_OUTREACH_DESCRIPTION =
   "Daily Instagram checklist: post 1 Luxx Miami IG Story, then leave 5 thoughtful comments on Miami-based IG pages. Focus on restaurants, nightlife, real estate, concierge, yacht, auto, and luxury lifestyle accounts. Add proof links or screenshot notes before marking complete."
+const MEGAN_DAILY_CHECKLIST = [
+  "Post 1 IG Story",
+  "Comment on Miami page 1",
+  "Comment on Miami page 2",
+  "Comment on Miami page 3",
+  "Comment on Miami page 4",
+  "Comment on Miami page 5",
+  "Add proof URL or note",
+]
 
 function startOfLocalDay(date = new Date()) {
   const day = new Date(date)
@@ -92,10 +103,11 @@ async function ensureMeganDailyOutreachTask(assignedTo: string | null) {
     .limit(1)
 
   if (existingToday.length > 0) {
+    await ensureMeganChecklist(existingToday[0].id)
     return
   }
 
-  await db.insert(opsTasks).values({
+  const inserted = await db.insert(opsTasks).values({
     title: MEGAN_DAILY_OUTREACH_TITLE,
     description: MEGAN_DAILY_OUTREACH_DESCRIPTION,
     taskType: "social_outreach",
@@ -107,18 +119,47 @@ async function ensureMeganDailyOutreachTask(assignedTo: string | null) {
     targetName: "Miami-based Instagram pages",
     targetCategory: "Miami social outreach",
     platform: "Instagram",
-    notes: "Checklist: 1 IG Story posted + 5 comments left. Add proof before marking complete.",
-  })
+    notes: null,
+  }).returning({ id: opsTasks.id })
+
+  if (inserted[0]?.id) {
+    await ensureMeganChecklist(inserted[0].id)
+  }
+}
+
+async function ensureMeganChecklist(taskId: string) {
+  const existingItems = await db
+    .select({ label: opsTaskChecklistItems.label })
+    .from(opsTaskChecklistItems)
+    .where(eq(opsTaskChecklistItems.taskId, taskId))
+
+  const existingLabels = new Set(existingItems.map((item) => item.label))
+  const missingItems = MEGAN_DAILY_CHECKLIST
+    .map((label, index) => ({ label, index }))
+    .filter((item) => !existingLabels.has(item.label))
+
+  if (missingItems.length === 0) {
+    return
+  }
+
+  await db.insert(opsTaskChecklistItems).values(
+    missingItems.map((item) => ({
+      taskId,
+      label: item.label,
+      displayOrder: item.index + 1,
+    }))
+  )
 }
 
 async function getDailyInstagramTracker(assignedToLabel: string): Promise<DailyInstagramTracker> {
   const todayStart = startOfLocalDay()
   const rangeStart = addDays(todayStart, -13)
 
-  let rows: Pick<OpsTaskRow, "dueDate" | "status" | "completedAt">[] = []
+  let rows: Pick<OpsTaskRow, "id" | "dueDate" | "status" | "completedAt">[] = []
   try {
     rows = await db
       .select({
+        id: opsTasks.id,
         dueDate: opsTasks.dueDate,
         status: opsTasks.status,
         completedAt: opsTasks.completedAt,
@@ -133,9 +174,12 @@ async function getDailyInstagramTracker(assignedToLabel: string): Promise<DailyI
   }
 
   const completedByDate = new Map<string, boolean>()
+  let todayTaskId: string | null = null
+  const todayKey = dateKey(todayStart)
   for (const row of rows) {
     if (!row.dueDate) continue
     const key = dateKey(startOfLocalDay(row.dueDate))
+    if (key === todayKey) todayTaskId = row.id
     completedByDate.set(key, completedByDate.get(key) || row.status === "completed" || !!row.completedAt)
   }
 
@@ -158,6 +202,7 @@ async function getDailyInstagramTracker(assignedToLabel: string): Promise<DailyI
   return {
     title: MEGAN_DAILY_OUTREACH_TITLE,
     assignedToLabel,
+    todayTaskId,
     todayComplete: days[days.length - 1]?.completed || false,
     completedDaysLast14: days.filter((day) => day.completed).length,
     currentStreak,
@@ -194,7 +239,7 @@ export default async function AdminTasksPage({
     await ensureOpsTaskStorage()
   } catch (error) {
     console.error("Error preparing ops task storage:", error)
-    schemaWarning = "Task storage is not active yet. Apply scripts/016_create_ops_tasks.sql to the staging database to enable saving daily tasks and social outreach."
+    schemaWarning = "Task storage is still being prepared. Refresh once, then try again if this appears during the demo."
   }
 
   const { status, type, assignee } = resolvedSearchParams
@@ -226,6 +271,7 @@ export default async function AdminTasksPage({
   let completedResult: CountRow[] = [{ count: 0 }]
   let socialResult: CountRow[] = [{ count: 0 }]
   let myOpenResult: CountRow[] = [{ count: 0 }]
+  let checklistRows: OpsTaskChecklistRow[] = []
 
   try {
     activeAdmins = await db
@@ -281,12 +327,12 @@ export default async function AdminTasksPage({
         .where(and(
           gte(opsTasks.dueDate, todayStart),
           lt(opsTasks.dueDate, tomorrowStart),
-          inArray(opsTasks.status, ["open", "in_progress"])
+          inArray(opsTasks.status, ["open", "in_progress", "needs_proof"])
         )),
       db
         .select({ count: sql<number>`count(*)::int` })
         .from(opsTasks)
-        .where(inArray(opsTasks.status, ["open", "in_progress"])),
+        .where(inArray(opsTasks.status, ["open", "in_progress", "needs_proof"])),
       db
         .select({ count: sql<number>`count(*)::int` })
         .from(opsTasks)
@@ -300,16 +346,30 @@ export default async function AdminTasksPage({
         .from(opsTasks)
         .where(and(
           eq(opsTasks.assignedTo, currentUser.userId),
-          inArray(opsTasks.status, ["open", "in_progress"])
+          inArray(opsTasks.status, ["open", "in_progress", "needs_proof"])
         )),
     ])
+
+    if (taskRows.length > 0) {
+      checklistRows = await db
+        .select()
+        .from(opsTaskChecklistItems)
+        .where(inArray(opsTaskChecklistItems.taskId, taskRows.map((task) => task.id)))
+        .orderBy(asc(opsTaskChecklistItems.displayOrder), asc(opsTaskChecklistItems.createdAt))
+    }
   } catch (error) {
-    console.error("Error loading ops tasks. Apply scripts/016_create_ops_tasks.sql to enable task storage:", error)
-    schemaWarning = "Task storage is not active yet. Apply scripts/016_create_ops_tasks.sql to the staging database to enable saving daily tasks and social outreach."
+    console.error("Error loading ops tasks:", error)
+    schemaWarning = "Task storage is still being prepared. Refresh once, then try again if this appears during the demo."
   }
 
   const adminById = new Map(activeAdmins.map((admin) => [admin.id, admin]))
   const currentUserOption = adminById.get(currentUser.userId)
+  const checklistByTaskId = new Map<string, OpsTaskChecklistRow[]>()
+  for (const item of checklistRows) {
+    const existing = checklistByTaskId.get(item.taskId) || []
+    existing.push(item)
+    checklistByTaskId.set(item.taskId, existing)
+  }
 
   const tasks = taskRows.map((task) => {
     const assigneeRecord = task.assignedTo ? adminById.get(task.assignedTo) : undefined
@@ -333,6 +393,12 @@ export default async function AdminTasksPage({
       platform: task.platform,
       proofUrl: task.proofUrl,
       notes: task.notes,
+      checklistItems: (checklistByTaskId.get(task.id) || []).map((item) => ({
+        id: item.id,
+        label: item.label,
+        isDone: item.isDone,
+        displayOrder: item.displayOrder,
+      })),
       completedAt: task.completedAt?.toISOString() ?? null,
       createdAt: task.createdAt.toISOString(),
       updatedAt: task.updatedAt.toISOString(),
