@@ -10,6 +10,7 @@ import {
   getReservationTotal,
   getTieredDailyRate,
   parseDailyRate,
+  type RateOverrides,
 } from "@/lib/car-discount-tiers"
 import { getFleetBrandLogo, getFleetBrandLogoStyle } from "@/lib/brand-logo-utils"
 import { useLuxxCardMotion } from "@/components/use-luxx-card-motion"
@@ -32,6 +33,12 @@ interface InventoryCardProps {
   flipHorizontal?: boolean
   flipVertical?: boolean
   priority?: boolean
+  /**
+   * Optional per-listing multi-day rates (inventory.pricePerWeek /
+   * pricePerMonth). When provided, they win over the config-computed tier rate;
+   * when omitted, the config in lib/car-discount-tiers is the fallback.
+   */
+  rateOverrides?: RateOverrides
   yachtPricing?: {
     "4h": number
     "6h": number
@@ -111,6 +118,7 @@ export function InventoryCard({
   flipHorizontal = false,
   flipVertical = false,
   priority = false,
+  rateOverrides,
   yachtPricing,
 }: InventoryCardProps) {
   const { cardRef, handlePointerMove, resetPointerEffect } = useLuxxCardMotion<HTMLDivElement>()
@@ -177,7 +185,9 @@ export function InventoryCard({
   const brandLogoStyle = type === "car" ? getFleetBrandLogoStyle(brand, title) : null
   const lowestRateTier = CAR_DISCOUNT_TIERS[CAR_DISCOUNT_TIERS.length - 1]
   const lowestDailyRate =
-    showDiscountTiers && lowestRateTier ? getTieredDailyRate(dailyRate, lowestRateTier.days) : 0
+    showDiscountTiers && lowestRateTier
+      ? getTieredDailyRate(dailyRate, lowestRateTier.days, rateOverrides)
+      : 0
   const cardSpecs = getCardSpecs(type, specs)
 
   useEffect(() => {
@@ -394,8 +404,8 @@ export function InventoryCard({
             <div className="luxx-rate-guide-delivery-sticker">Free delivery</div>
             <div className="luxx-rate-guide-header">Multi-Day Rate Tiers</div>
             {CAR_DISCOUNT_TIERS.map((tier) => {
-              const rate = getTieredDailyRate(dailyRate, tier.days)
-              const tierHref = getDiscountHref(detailUrl, tier, dailyRate)
+              const rate = getTieredDailyRate(dailyRate, tier.days, rateOverrides)
+              const tierHref = getDiscountHref(detailUrl, tier, dailyRate, rateOverrides)
               const savingsPerDay = Math.max(0, dailyRate - rate)
               const reservationTotal = getReservationTotal(rate, tier.days)
 

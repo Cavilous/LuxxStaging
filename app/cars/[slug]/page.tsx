@@ -227,7 +227,14 @@ export default async function CarDetailPage({ params, searchParams }: CarDetailP
   const brand = (car as any).brand || car.title?.split(' ')[0] || "Luxury"
   const similarCars = await getSimilarCars(car.id, brand)
   const basePricePerDay = Number(car.pricePerDay || 0)
-  const selectedDiscount = getSelectedCarDiscount(resolvedSearchParams, basePricePerDay)
+  // Per-listing multi-day rates from the inventory table (populated by vendor /
+  // Hostaway imports). When present these win over the config-computed rate for
+  // the matching tier; otherwise the config in lib/car-discount-tiers is used.
+  const rateOverrides = {
+    pricePerWeek: (car as any).pricePerWeek ?? null,
+    pricePerMonth: (car as any).pricePerMonth ?? null,
+  }
+  const selectedDiscount = getSelectedCarDiscount(resolvedSearchParams, basePricePerDay, rateOverrides)
   const displayedPricePerDay = selectedDiscount?.rate || basePricePerDay
   const selectedReservationTotal = selectedDiscount?.reservationTotal || displayedPricePerDay
   const selectedStandardReservationTotal = selectedDiscount
@@ -415,7 +422,7 @@ export default async function CarDetailPage({ params, searchParams }: CarDetailP
                 )}
                 <div className="mb-4 grid grid-cols-2 gap-2">
                   {CAR_DISCOUNT_TIERS.map((tier) => {
-                    const rate = getTieredDailyRate(basePricePerDay, tier.days)
+                    const rate = getTieredDailyRate(basePricePerDay, tier.days, rateOverrides)
                     const isSelected = selectedDiscount?.days === tier.days
                     const tierSavingsPerDay = Math.max(0, basePricePerDay - rate)
                     const reservationTotal = getReservationTotal(rate, tier.days)
@@ -425,7 +432,7 @@ export default async function CarDetailPage({ params, searchParams }: CarDetailP
                     return (
                       <a
                         key={tier.slug}
-                        href={getDiscountHref(detailPath, tier, basePricePerDay)}
+                        href={getDiscountHref(detailPath, tier, basePricePerDay, rateOverrides)}
                         className={`rounded-md border px-3 py-2 text-sm transition-colors duration-200 focus-angular ${
                           isSelected
                             ? "border-[#ECAC36] bg-[#ECAC36] text-black"
