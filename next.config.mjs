@@ -72,6 +72,21 @@ const nextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: '/:path*',
+        has: [
+          {
+            type: 'host',
+            value: 'www.luxxmiami.com',
+          },
+        ],
+        destination: 'https://luxxmiami.com/:path*',
+        permanent: true,
+      },
+    ]
+  },
   async headers() {
     const isProduction = process.env.NODE_ENV === 'production'
 
