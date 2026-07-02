@@ -89,17 +89,22 @@ const nextConfig = {
   },
   async headers() {
     const isProduction = process.env.NODE_ENV === 'production'
+    // Only the live site (NEXT_PUBLIC_SITE_URL=https://luxxmiami.com) is crawlable;
+    // staging/preview deployments keep the blanket noindex header.
+    const isProductionSite = process.env.NEXT_PUBLIC_SITE_URL === 'https://luxxmiami.com'
 
     return [
-      {
-        source: '/:path*',
-        headers: [
-          {
-            key: 'X-Robots-Tag',
-            value: 'noindex, nofollow, noarchive',
-          },
-        ],
-      },
+      ...(!isProductionSite ? [
+        {
+          source: '/:path*',
+          headers: [
+            {
+              key: 'X-Robots-Tag',
+              value: 'noindex, nofollow, noarchive',
+            },
+          ],
+        },
+      ] : []),
       ...(!isProduction ? [
         {
           source: '/_next/:path*',

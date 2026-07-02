@@ -22,6 +22,10 @@ const openSans = Open_Sans({
   weight: ["400", "500", "600"],
 })
 
+// Only the live site (NEXT_PUBLIC_SITE_URL=https://luxxmiami.com) is indexable;
+// staging/preview deployments keep noindex robots metadata.
+const isProductionSite = process.env.NEXT_PUBLIC_SITE_URL === 'https://luxxmiami.com'
+
 export const metadata: Metadata = {
   metadataBase: new URL('https://luxxmiami.com'),
   title: "Luxx Miami - Luxury Rentals | Exotic Cars, Yachts, Villas & Jets",
@@ -78,11 +82,11 @@ export const metadata: Metadata = {
     images: ['/luxx-logo.png'],
   },
   robots: {
-    index: false,
-    follow: false,
+    index: isProductionSite,
+    follow: isProductionSite,
     googleBot: {
-      index: false,
-      follow: false,
+      index: isProductionSite,
+      follow: isProductionSite,
       'max-video-preview': -1,
       'max-image-preview': 'large',
       'max-snippet': -1,
