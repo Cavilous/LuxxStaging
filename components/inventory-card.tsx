@@ -1,14 +1,11 @@
 "use client"
 
-import { useEffect, useId, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import type { CSSProperties } from "react"
 import { normalizeImageUrl } from "@/lib/media-utils"
 import { ProgressiveImage } from "@/components/progressive-image"
 import {
-  CAR_DISCOUNT_TIERS,
-  getDiscountHref,
-  getReservationTotal,
-  getTieredDailyRate,
+  effectiveDailyRate,
   parseDailyRate,
   type RateOverrides,
 } from "@/lib/car-discount-tiers"
@@ -122,9 +119,8 @@ export function InventoryCard({
   yachtPricing,
 }: InventoryCardProps) {
   const { cardRef, handlePointerMove, resetPointerEffect } = useLuxxCardMotion<HTMLDivElement>()
-  const rateGuideRef = useRef<HTMLDivElement>(null)
-  const [isRateGuideOpen, setIsRateGuideOpen] = useState(false)
-  const rateGuidePanelId = useId()
+  // Limitless-style pill control: which duration the card is currently quoting.
+  const [selectedPillDays, setSelectedPillDays] = useState(1)
   const normalizedImage = normalizeImageUrl(image)
 
   const getFlipTransform = () => {
@@ -183,11 +179,17 @@ export function InventoryCard({
   const showDiscountTiers = type === "car" && dailyRate > 0
   const brandLogo = type === "car" ? getFleetBrandLogo(brand, title) : null
   const brandLogoStyle = type === "car" ? getFleetBrandLogoStyle(brand, title) : null
-  const lowestRateTier = CAR_DISCOUNT_TIERS[CAR_DISCOUNT_TIERS.length - 1]
-  const lowestDailyRate =
-    showDiscountTiers && lowestRateTier
-      ? getTieredDailyRate(dailyRate, lowestRateTier.days, rateOverrides)
-      : 0
+  // Segmented-control pills (label -> day count fed to effectiveDailyRate).
+  const durationPills: { label: string; days: number }[] = [
+    { label: "1D", days: 1 },
+    { label: "3D", days: 3 },
+    { label: "5D", days: 5 },
+    { label: "7D", days: 7 },
+    { label: "14D+", days: 14 },
+  ]
+  const displayedDailyRate = showDiscountTiers
+    ? effectiveDailyRate(selectedPillDays, dailyRate, rateOverrides)
+    : dailyRate
   const cardSpecs = getCardSpecs(type, specs)
 
   useEffect(() => {
@@ -263,29 +265,6 @@ export function InventoryCard({
     }
   }, [brandLogo, cardRef])
 
-  useEffect(() => {
-    if (!showDiscountTiers) return
-
-    const closeOnOutsidePointer = (event: Event) => {
-      const guide = rateGuideRef.current
-      if (!guide || !(event.target instanceof Node) || guide.contains(event.target)) return
-      setIsRateGuideOpen(false)
-    }
-
-    const closeOnEscape = (event: globalThis.KeyboardEvent) => {
-      if (event.key !== "Escape") return
-      setIsRateGuideOpen(false)
-    }
-
-    document.addEventListener("pointerdown", closeOnOutsidePointer)
-    document.addEventListener("keydown", closeOnEscape)
-
-    return () => {
-      document.removeEventListener("pointerdown", closeOnOutsidePointer)
-      document.removeEventListener("keydown", closeOnEscape)
-    }
-  }, [showDiscountTiers])
-
   const cardStyle = {
     "--luxx-shine-x": "50%",
     "--luxx-shine-y": "50%",
@@ -294,10 +273,6 @@ export function InventoryCard({
     "--mobile-logo-glimmer-x": "50%",
     ...(brandLogoStyle || {}),
   } as CSSProperties
-
-  const handleRateGuideTriggerClick = () => {
-    setIsRateGuideOpen((isOpen) => !isOpen)
-  }
 
   return (
     <div
@@ -346,8 +321,9 @@ export function InventoryCard({
           <div className="luxx-card-edge absolute inset-x-4 top-0 h-px"></div>
           <div className="mb-3">
             {hasValidPrice ? (
-              <div className="font-bold text-2xl md:text-3xl leading-none text-[#ECAC36] tracking-normal">
-                {price}<span className="font-medium text-sm md:text-base text-gray-400 ml-1">/{priceUnit}</span>
+              <div className="font-bold text-2xl md:text-3xl leading-none text-[#ECAC36] tracking-normal tabular-nums">
+                {showDiscountTiers ? `$${displayedDailyRate.toLocaleString()}` : price}
+                <span className="font-medium text-sm md:text-base text-gray-400 ml-1">/{priceUnit}</span>
               </div>
             ) : (
               <div className="font-semibold text-lg text-[#ECAC36]">
@@ -377,75 +353,29 @@ export function InventoryCard({
       </a>
       {showDiscountTiers && (
         <div
-          ref={rateGuideRef}
-          className={`luxx-rate-guide relative z-[4] mx-4 mb-4 mt-1 ${
-            isRateGuideOpen ? "is-open" : ""
-          }`}
+          className="relative z-[4] mx-4 mb-4 mt-1 flex gap-1.5 rounded-xl border border-white/5 bg-white/5 p-1"
+          role="group"
+          aria-label={`Multi-day rate options for ${title}`}
         >
-          <button
-            type="button"
-            className="luxx-rate-guide-trigger flex min-h-10 w-full items-center justify-between gap-3 border border-[#ECAC36]/25 bg-white/[0.035] px-3 py-2 text-left text-inherit cut-corner-button"
-            aria-controls={rateGuidePanelId}
-            aria-expanded={isRateGuideOpen}
-            aria-label={`View multi-day rate tiers for ${title}`}
-            onClick={handleRateGuideTriggerClick}
-          >
-            <div>
-              <span className="block text-[0.68rem] font-semibold uppercase tracking-normal text-[#ECAC36]">
-                Prices as low as
-              </span>
-              <span className="block text-sm font-black leading-tight text-white">
-                ${lowestDailyRate.toLocaleString()}<span className="text-[0.7rem] font-semibold text-gray-500">/day</span>
-              </span>
-            </div>
-            <span className="text-xs font-semibold text-white/80">View rates</span>
-          </button>
-          <div id={rateGuidePanelId} className="luxx-rate-guide-panel">
-            <div className="luxx-rate-guide-delivery-sticker">Free delivery</div>
-            <div className="luxx-rate-guide-header">Multi-Day Rate Tiers</div>
-            {CAR_DISCOUNT_TIERS.map((tier) => {
-              const rate = getTieredDailyRate(dailyRate, tier.days, rateOverrides)
-              const tierHref = getDiscountHref(detailUrl, tier, dailyRate, rateOverrides)
-              const savingsPerDay = Math.max(0, dailyRate - rate)
-              const reservationTotal = getReservationTotal(rate, tier.days)
-
-              return (
-                <a
-                  key={tier.slug}
-                  href={tierHref}
-                  className={`luxx-rate-guide-row focus-angular ${
-                    tier.emphasis === "best"
-                      ? "luxx-rate-guide-row--best"
-                      : ""
-                  }`}
-                  aria-label={`${tier.label} rate for ${title}: $${rate.toLocaleString()} per day, ${reservationTotal.toLocaleString()} total`}
-                  onClick={() => setIsRateGuideOpen(false)}
-                >
-                  <span className="luxx-rate-guide-duration">{tier.label}</span>
-                  <span className="luxx-rate-guide-price-group">
-                    <span className="flex items-baseline justify-end gap-1">
-                      <span className="text-sm font-bold text-[#ECAC36]">${rate.toLocaleString()}</span>
-                      <span className="text-[0.7rem] text-gray-500">/day</span>
-                    </span>
-                    <span className="luxx-rate-guide-total">
-                      Total ${reservationTotal.toLocaleString()}
-                    </span>
-                    <span
-                      className={`luxx-rate-guide-save ${
-                        tier.emphasis === "best"
-                          ? "luxx-rate-guide-save--best"
-                          : tier.emphasis === "mid"
-                            ? "luxx-rate-guide-save--mid"
-                            : ""
-                      }`}
-                    >
-                      Save <span className="luxx-rate-guide-save-value">${savingsPerDay.toLocaleString()}/day</span>
-                    </span>
-                  </span>
-                </a>
-              )
-            })}
-          </div>
+          {durationPills.map((pill) => {
+            const isActive = selectedPillDays === pill.days
+            return (
+              <button
+                key={pill.days}
+                type="button"
+                onClick={() => setSelectedPillDays(pill.days)}
+                aria-pressed={isActive}
+                aria-label={`${pill.label} rate: $${effectiveDailyRate(pill.days, dailyRate, rateOverrides).toLocaleString()} per day`}
+                className={`flex-1 rounded-lg py-2 text-[10px] font-black transition-all ${
+                  isActive
+                    ? "bg-[#ECAC36] text-black"
+                    : "text-white/40 hover:text-white"
+                }`}
+              >
+                {pill.label}
+              </button>
+            )
+          })}
         </div>
       )}
       <div className="luxx-card-shine pointer-events-none" aria-hidden="true"></div>

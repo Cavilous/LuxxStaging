@@ -7,13 +7,6 @@ export type CarDiscountTier = {
   emphasis?: "mid" | "best"
 }
 
-export type SelectedCarDiscount = CarDiscountTier & {
-  rate: number
-  savingsPerDay: number
-  totalSavings: number
-  reservationTotal: number
-}
-
 /**
  * Optional per-listing multi-day rates sourced from the inventory table
  * (inventory.pricePerWeek / inventory.pricePerMonth). When a listing supplies
@@ -114,46 +107,46 @@ export function getReservationTotal(dailyRate: number, days: number) {
   return dailyRate * days
 }
 
-export function getDiscountHref(
-  detailUrl: string,
-  tier: CarDiscountTier,
-  baseRate: number,
-  overrides?: RateOverrides,
-) {
-  const rate = getTieredDailyRate(baseRate, tier.days, overrides)
-  const params = new URLSearchParams({
-    tier: tier.slug,
-    days: String(tier.days),
-    rate: String(rate),
-  })
+// ---------------------------------------------------------------------------
+// CONTINUOUS RATE (Limitless-style estimator)
+// A single piecewise-continuous function over 1..30 days built from the same
+// CAR_DISCOUNT_TIERS + RateOverrides above. Used by both the listing-card pills
+// (1D / 3D / 5D / 7D / 14D+) and the detail-page slider, so every day value
+// resolves through one source of truth.
+//
+//   1-2   -> base daily rate (no discount)
+//   3-4   -> 3-day tier
+//   5-6   -> midpoint between the 3-day and 7-day tiers (rounded to $5)
+//   7-13  -> 7-day tier (weekly override wins when present)
+//   14-29 -> 14-day tier
+//   30    -> monthly tier (monthly override wins when present)
+// ---------------------------------------------------------------------------
+export function effectiveDailyRate(days: number, baseRate: number, overrides?: RateOverrides): number {
+  if (baseRate <= 0) return baseRate
 
-  return `${detailUrl}?${params.toString()}`
+  const clampedDays = Math.max(1, Math.min(30, Math.round(days)))
+
+  // 1-2 days: no multi-day discount, quote the base rate.
+  if (clampedDays < 3) return baseRate
+
+  // 5-6 days: interpolate halfway between the 3-day and 7-day tier rates. The
+  // Limitless design has a dedicated 5D pill with no matching tier, so we blend.
+  if (clampedDays >= 5 && clampedDays < 7) {
+    const threeDay = getTieredDailyRate(baseRate, 3, overrides)
+    const sevenDay = getTieredDailyRate(baseRate, 7, overrides)
+    return roundRateToFive((threeDay + sevenDay) / 2)
+  }
+
+  // Every other bracket resolves to its governing tier's day count so the
+  // per-listing weekly/monthly overrides are honored via getTieredDailyRate.
+  let tierDays = 3
+  if (clampedDays >= 30) tierDays = 30
+  else if (clampedDays >= 14) tierDays = 14
+  else if (clampedDays >= 7) tierDays = 7
+
+  return getTieredDailyRate(baseRate, tierDays, overrides)
 }
 
 export function parseDailyRate(price: string) {
   return Number.parseInt(price.replace(/[^0-9]/g, ""), 10) || 0
-}
-
-export function getSelectedCarDiscount(
-  searchParams: Record<string, string | string[] | undefined>,
-  baseRate: number,
-  overrides?: RateOverrides,
-): SelectedCarDiscount | null {
-  const rawDays = Array.isArray(searchParams.days) ? searchParams.days[0] : searchParams.days
-  const days = Number.parseInt(rawDays || "", 10)
-  const tier = CAR_DISCOUNT_TIERS.find((candidate) => candidate.days === days)
-
-  if (!tier || baseRate <= 0) return null
-
-  const rate = getTieredDailyRate(baseRate, tier.days, overrides)
-  const savingsPerDay = Math.max(0, baseRate - rate)
-  const reservationTotal = getReservationTotal(rate, tier.days)
-
-  return {
-    ...tier,
-    rate,
-    savingsPerDay,
-    totalSavings: savingsPerDay * tier.days,
-    reservationTotal,
-  }
 }

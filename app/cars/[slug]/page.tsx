@@ -1,6 +1,7 @@
 import { InventoryRow } from "@/components/inventory-row"
-import { Calendar, Users, Gauge, Fuel, Shield, MapPin, Settings, Car, Truck } from 'lucide-react'
+import { Calendar, Users, Gauge, Fuel, Shield, MapPin, Settings, Car } from 'lucide-react'
 import { notFound } from "next/navigation"
+import { CarRateEstimator } from "@/components/car-rate-estimator"
 import { EmbeddedInquiryForm } from "@/components/embedded-inquiry-form"
 import { ProductSchema } from "@/components/product-schema"
 import { BreadcrumbSchema } from "@/components/breadcrumb-schema"
@@ -12,13 +13,6 @@ import { buildCarSpecRows, getExplicitFeatures, isPresentString, isPresentNumber
 import { getBrandSeoUrl } from "@/lib/seo-constants"
 import { PhotoGallery } from "@/components/photo-gallery-wrapper"
 import { getFallbackCars } from "@/lib/fallback-cars"
-import {
-  CAR_DISCOUNT_TIERS,
-  getDiscountHref,
-  getReservationTotal,
-  getSelectedCarDiscount,
-  getTieredDailyRate,
-} from "@/lib/car-discount-tiers"
 
 export const revalidate = 0
 export const dynamic = "force-dynamic"
@@ -28,7 +22,6 @@ interface CarDetailPageProps {
   params: Promise<{
     slug: string
   }>
-  searchParams?: Promise<Record<string, string | string[] | undefined>>
 }
 
 async function getCarBySlug(slug: string) {
@@ -214,9 +207,8 @@ export async function generateMetadata({ params }: CarDetailPageProps): Promise<
   }
 }
 
-export default async function CarDetailPage({ params, searchParams }: CarDetailPageProps) {
+export default async function CarDetailPage({ params }: CarDetailPageProps) {
   const { slug } = await params
-  const resolvedSearchParams = searchParams ? await searchParams : {}
   const car = await getCarBySlug(slug)
 
   if (!car) {
@@ -230,25 +222,12 @@ export default async function CarDetailPage({ params, searchParams }: CarDetailP
   // Per-listing multi-day rates from the inventory table (populated by vendor /
   // Hostaway imports). When present these win over the config-computed rate for
   // the matching tier; otherwise the config in lib/car-discount-tiers is used.
+  // Serialized to a plain object because the estimator is a client component.
   const rateOverrides = {
     pricePerWeek: (car as any).pricePerWeek ?? null,
     pricePerMonth: (car as any).pricePerMonth ?? null,
   }
-  const selectedDiscount = getSelectedCarDiscount(resolvedSearchParams, basePricePerDay, rateOverrides)
-  const displayedPricePerDay = selectedDiscount?.rate || basePricePerDay
-  const selectedReservationTotal = selectedDiscount?.reservationTotal || displayedPricePerDay
-  const selectedStandardReservationTotal = selectedDiscount
-    ? getReservationTotal(basePricePerDay, selectedDiscount.days)
-    : selectedReservationTotal
-  const selectedSavingsPercent =
-    selectedDiscount && selectedStandardReservationTotal > 0
-      ? Math.round((selectedDiscount.totalSavings / selectedStandardReservationTotal) * 100)
-      : 0
-  const detailPath = `/cars/${slug}`
-  const pricingNote = selectedDiscount
-    ? `${selectedDiscount.label} multi-day rate selected: $${selectedDiscount.rate.toLocaleString()}/day for ${selectedDiscount.days} days. Reservation total is $${selectedReservationTotal.toLocaleString()}. Base rate is $${basePricePerDay.toLocaleString()}/day.`
-    : undefined
-  
+
   // Fallback gradient image (data URI) instead of placeholder.svg
   const fallbackImage = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400"%3E%3Cdefs%3E%3ClinearGradient id="g" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%23000;stop-opacity:1"/%3E%3Cstop offset="100%25" style="stop-color:%23333;stop-opacity:1"/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23g)" width="600" height="400"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" fill="%23ECAC36" font-size="24" font-family="Arial"%3ELuxx Miami%3C/text%3E%3C/svg%3E'
   
@@ -260,7 +239,7 @@ export default async function CarDetailPage({ params, searchParams }: CarDetailP
     type: "car",
     title: car.title || "Luxury Vehicle",
     subtitle: car.subtitle || "",
-    price: `$${displayedPricePerDay.toLocaleString()}`,
+    price: `$${basePricePerDay.toLocaleString()}`,
     priceUnit: "day",
     brand: brand,
     year: isPresentNumber(specs.year) ? specs.year : null,
@@ -285,7 +264,7 @@ export default async function CarDetailPage({ params, searchParams }: CarDetailP
         name={carData.title}
         description={carData.description || `${carData.title} available for rental in Miami.`}
         image={carData.images.filter(img => typeof img === 'string')}
-        price={displayedPricePerDay}
+        price={basePricePerDay}
         category="car"
         brand={carData.brand}
         year={carData.year || undefined}
@@ -343,143 +322,23 @@ export default async function CarDetailPage({ params, searchParams }: CarDetailP
               </div>
             </div>
 
-            {/* Pricing - Conditionally show price or contact message */}
+            {/* Multi-day estimator (slider) + inquiry form */}
             {basePricePerDay > 0 ? (
-              <div
-                className="relative overflow-hidden bg-charcoal/50 rounded-2xl p-6 border border-[#ECAC36]/20"
-                data-demo="multi-day-pricing"
-              >
-                <div className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full border border-[#ECAC36]/50 bg-[#ECAC36]/10 px-3 py-1 text-[0.68rem] font-black uppercase tracking-[0.12em] text-[#ECAC36] shadow-[0_0_24px_rgba(236,172,54,0.22)]">
-                  <Truck className="h-3.5 w-3.5" aria-hidden="true" />
-                  Free Miami delivery included
-                </div>
-                <div className="mb-4 flex flex-wrap items-baseline gap-2 pt-8 sm:pt-0 sm:pr-40">
-                  <span className="text-4xl font-heading font-black text-[#ECAC36]">
-                    ${displayedPricePerDay.toLocaleString()}
-                  </span>
-                  <span className="text-gray-400">/ day</span>
-                  {selectedDiscount && (
-                    <span className="rounded-md bg-[#ECAC36] px-2 py-1 text-xs font-bold text-black">
-                      {selectedDiscount.label} rate
-                    </span>
-                  )}
-                </div>
-                {selectedDiscount && (
-                  <div className="mb-4 rounded-xl border border-[#ECAC36]/35 bg-gradient-to-br from-[#ECAC36]/16 via-[#ECAC36]/8 to-black/50 p-4 text-sm shadow-[0_0_40px_rgba(236,172,54,0.10)]">
-                    <div className="grid gap-4 lg:grid-cols-[1fr_0.9fr] lg:items-center">
-                      <div className="space-y-3">
-                        <div className="inline-flex items-center rounded-full border border-[#ECAC36]/45 bg-black/35 px-3 py-1 text-[0.68rem] font-black uppercase tracking-[0.12em] text-[#ECAC36]">
-                          {selectedSavingsPercent}% off the standard total
-                        </div>
-                        <div>
-                          <p className="text-lg font-black text-white">
-                            Multi-day savings locked in for {selectedDiscount.days} days.
-                          </p>
-                          <p className="mt-1 text-gray-300">
-                            Standard rate{" "}
-                            <span className="text-white">${basePricePerDay.toLocaleString()}/day</span>
-                            {" "}drops to{" "}
-                            <span className="font-black text-[#ECAC36]">${selectedDiscount.rate.toLocaleString()}/day</span>.
-                          </p>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          <span className="inline-flex items-center gap-1.5 rounded-full border border-[#ECAC36]/40 bg-black/35 px-3 py-1 text-[0.68rem] font-black uppercase tracking-[0.12em] text-[#ECAC36]">
-                            <Truck className="h-3.5 w-3.5" aria-hidden="true" />
-                            Delivery fee waived
-                          </span>
-                          <span className="inline-flex rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[0.68rem] font-bold uppercase tracking-[0.12em] text-gray-200">
-                            Concierge handoff included
-                          </span>
-                        </div>
-                      </div>
-                      <div className="rounded-xl border border-[#ECAC36]/40 bg-black/45 px-4 py-4 text-left shadow-[inset_0_0_0_1px_rgba(236,172,54,0.08)] sm:text-right">
-                        <span className="block text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-[#B5B5B5]">
-                          Reservation total
-                        </span>
-                        <span className="mt-2 block text-sm font-bold uppercase tracking-[0.12em] text-gray-500">
-                          Was{" "}
-                          <span className="text-[#ff4d4d] line-through decoration-[#ff4d4d] decoration-2">
-                            ${selectedStandardReservationTotal.toLocaleString()}
-                          </span>
-                        </span>
-                        <strong className="mt-1 block text-3xl font-black leading-none text-[#ECAC36] md:text-4xl">
-                          ${selectedReservationTotal.toLocaleString()}
-                        </strong>
-                        <span className="mt-1 block text-[0.78rem] text-gray-400">
-                          {selectedDiscount.days} days at ${selectedDiscount.rate.toLocaleString()}/day
-                        </span>
-                        <div className="mt-3 border-t border-white/10 pt-3">
-                          <span className="block text-[0.68rem] font-black uppercase tracking-[0.14em] text-gray-400">
-                            You save today
-                          </span>
-                          <span className="mt-0.5 block text-2xl font-black text-[#ECAC36]">
-                            ${selectedDiscount.totalSavings.toLocaleString()}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                <div className="mb-4 grid grid-cols-2 gap-2">
-                  {CAR_DISCOUNT_TIERS.map((tier) => {
-                    const rate = getTieredDailyRate(basePricePerDay, tier.days, rateOverrides)
-                    const isSelected = selectedDiscount?.days === tier.days
-                    const tierSavingsPerDay = Math.max(0, basePricePerDay - rate)
-                    const reservationTotal = getReservationTotal(rate, tier.days)
-                    const standardReservationTotal = getReservationTotal(basePricePerDay, tier.days)
-                    const tierTotalSavings = standardReservationTotal - reservationTotal
-
-                    return (
-                      <a
-                        key={tier.slug}
-                        href={getDiscountHref(detailPath, tier, basePricePerDay, rateOverrides)}
-                        className={`rounded-md border px-3 py-2 text-sm transition-colors duration-200 focus-angular ${
-                          isSelected
-                            ? "border-[#ECAC36] bg-[#ECAC36] text-black"
-                            : "border-white/10 bg-white/[0.035] text-white hover:border-[#ECAC36]/50 hover:bg-[#ECAC36]/10"
-                        }`}
-                      >
-                        <span className="block font-semibold">{tier.label}</span>
-                        <span className={isSelected ? "text-black/80" : "text-[#ECAC36]"}>
-                          ${rate.toLocaleString()}/day
-                        </span>
-                        <span className={isSelected ? "mt-0.5 block text-[0.68rem] font-semibold text-black/80" : "mt-0.5 block text-[0.68rem] font-semibold text-gray-300"}>
-                          Total ${reservationTotal.toLocaleString()}
-                        </span>
-                        <span className={isSelected ? "mt-0.5 block text-[0.68rem] text-black/70" : "mt-0.5 block text-[0.68rem] text-gray-500"}>
-                          Was{" "}
-                          <span className={isSelected ? "font-bold text-red-700 line-through decoration-red-700 decoration-2" : "font-bold text-[#ff4d4d] line-through decoration-[#ff4d4d] decoration-2"}>
-                            ${standardReservationTotal.toLocaleString()}
-                          </span>
-                        </span>
-                        <span className={isSelected ? "mt-0.5 block text-[0.68rem] font-black text-black" : "mt-0.5 block text-[0.68rem] font-black text-[#ECAC36]"}>
-                          Save ${tierTotalSavings.toLocaleString()} total
-                          <span className={isSelected ? "ml-1 text-black/60" : "ml-1 text-gray-500"}>
-                            (${tierSavingsPerDay.toLocaleString()}/day)
-                          </span>
-                        </span>
-                      </a>
-                    )
-                  })}
-                </div>
-                <div className="space-y-2 text-sm text-gray-400">
-                  {carData.policies.deposit && <p>• Deposit: {carData.policies.deposit}</p>}
-                  {carData.policies.mileageLimit && <p>• Included: {carData.policies.mileageLimit}</p>}
-                </div>
-              </div>
+              <CarRateEstimator
+                title={carData.title}
+                basePricePerDay={basePricePerDay}
+                overrides={rateOverrides}
+                deposit={carData.policies.deposit}
+                mileageLimit={carData.policies.mileageLimit}
+              />
             ) : (
-              <div className="bg-charcoal/50 rounded-2xl p-6 border border-[#ECAC36]/20">
-                <p className="text-gray-400">Contact us for pricing and availability.</p>
-              </div>
+              <>
+                <div className="bg-charcoal/50 rounded-2xl p-6 border border-[#ECAC36]/20">
+                  <p className="text-gray-400">Contact us for pricing and availability.</p>
+                </div>
+                <EmbeddedInquiryForm itemTitle={carData.title} itemCategory="car" />
+              </>
             )}
-
-            {/* Embedded Inquiry Form */}
-            <EmbeddedInquiryForm
-              itemTitle={carData.title}
-              itemCategory="car"
-              pricingNote={pricingNote}
-              initialRentalDays={selectedDiscount?.days}
-            />
 
             {/* Specifications - Only show if we have explicitly set specs */}
             {carData.specRows.length > 0 && (
